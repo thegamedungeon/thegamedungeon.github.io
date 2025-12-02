@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Guild Roster - Contact</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Dungeon-themed CSS */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Dark stone background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .header-glow {
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+            color: #00ff00; /* Neon green glow */
+        }
+        .contact-button {
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        .contact-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 255, 0, 0.4);
+            background-color: #00ff00;
+            color: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Content Area -->
+    <main class="w-full max-w-xl text-center p-8 bg-[#2a2a2a] rounded-xl shadow-2xl border-2 border-green-700">
+
+        <!-- Header: The Guild Roster -->
+        <h1 class="text-3xl sm:text-4xl font-bold header-glow mb-2">THE GUILD ROSTER</h1>
+        <p class="text-gray-400 text-lg mb-8">Got a question, a link request, or just need to talk to the crew? Hit us up!</p>
+
+        <!-- The Main Mailto Link (The only job of this file) -->
+        <a 
+            href="mailto:open.it.out.fortnite@gmail.com?subject=Contact%20Us%20(The%20Game%20Dungeon)" 
+            class="contact-button inline-block px-8 py-4 bg-green-900/50 text-green-400 font-bold uppercase tracking-wider rounded-lg shadow-lg border border-green-400"
+        >
+            <span class="mr-2 text-xl">📧</span> Initiate Contact Scroll
+        </a>
+
+        <p class="text-gray-500 mt-4 text-sm">
+            <span class="font-mono">open.it.out.fortnite@gmail.com</span>
+        </p>
+
+        <!-- Crew Shoutout -->
+        <div class="mt-10 pt-4 border-t border-gray-700">
+            <h2 class="text-xl text-white mb-2">The Dungeon Crew:</h2>
+            <ul class="text-gray-400 list-disc list-inside mx-auto w-fit">
+                <li><span class="text-green-400 font-semibold">Daimyan</span> (The Leader)</li>
+                <li><span class="text-green-400 font-semibold">Alex</span> (The Link Maker/Green Belt Master)</li>
+                <li><span class="text-green-400 font-semibold">Jayden</span> (The Freaky Jester)</li>
+            </ul>
+        </div>
+
+        <!-- Secret Roast -->
+        <p class="text-xs text-fuchsia-500 mt-8 opacity-70">
+            Connor is still zesty and will never be listed on this roster.
+        </p>
+    </main>
+
+    <!-- Back to Home -->
+    <a href="index.html" class="inline-block mt-8 text-green-400 hover:text-green-200 transition duration-150 text-sm">
+        <span class="mr-2">⬅️</span> Back to The Hallway
+    </a>
+
+</body>
+</html>

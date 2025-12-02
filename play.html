@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Vault - Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Dungeon-themed CSS */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Dark stone background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header-glow {
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+            color: #00ff00; /* Neon green glow */
+        }
+        .game-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .game-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 255, 0, 0.3);
+            background-color: #333333; /* Slightly lighter on hover */
+        }
+        .game-card img {
+            width: 120px; /* Adjust size as needed */
+            height: 120px; /* Adjust size as needed */
+            object-fit: contain; /* Ensures the image fits without cropping */
+            border-radius: 10px; /* Slightly rounded corners for the images */
+            margin-bottom: 1rem;
+            border: 2px solid rgba(0, 255, 0, 0.4); /* Subtle green border */
+        }
+
+        /* --- Custom Styles for Google Programmable Search Engine (PSE) --- */
+        /* This targets the search results container */
+        .gsc-control-cse, .gsc-control-cse-en {
+            padding: 0 !important;
+            margin-top: 2rem;
+        }
+        .gsc-table-result {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gs-webResult.gs-result {
+            background-color: transparent !important;
+        }
+        /* Ensure all text elements are readable */
+        .gs-result a:link, .gs-result a:link b, .gs-result .gs-title a {
+            color: #4f46e5 !important; /* Indigo/Purple link color for contrast */
+        }
+        .gs-result a:visited, .gs-result a:visited b, .gs-result .gs-title a:visited {
+            color: #818cf8 !important; /* Lighter purple for visited */
+        }
+        .gs-snippet, .gs-label, .gs-result .gs-url {
+            color: #d1d5db !important; /* Light gray for snippets/URLs */
+        }
+        /* Style the search container itself */
+        .cse .gsc-control-cse, .gsc-control-cse {
+            background-color: transparent !important;
+            border: none !important;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Header: The Vault -->
+    <header class="text-center mb-10 w-full max-w-4xl">
+        <h1 class="text-4xl sm:text-6xl font-bold header-glow mb-2">THE VAULT</h1>
+        <p class="text-gray-400 text-lg">Choose your loot, champion. These links are battle-tested.</p>
+        <a href="index.html" class="inline-block mt-4 text-green-400 hover:text-green-200 transition duration-150">
+            <span class="mr-2">⬅️</span> Back to The Hallway
+        </a>
+    </header>
+
+    <!-- Programmable Search Engine Container -->
+    <div class="w-full max-w-4xl mx-auto mb-10 bg-gray-800 p-4 rounded-xl border border-green-700/50 shadow-lg shadow-green-900/50">
+        <!-- This is the Google PSE Code -->
+        <!-- CX ID needs to be configured in Google's CSE panel to search your specific domain. -->
+        <script async src="https://cse.google.com/cse.js?cx=d587030c8600d417d">
+        </script>
+        <div class="gcse-search"></div>
+        <!-- End of Google PSE Code -->
+    </div>
+
+
+    <!-- Game Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+
+        <!-- Game 1: Cookie Clicker -->
+        <a href="https://thegamedungeon.netlify.app/play/cookieclicker" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+            <div class="flex flex-col items-center">
+                <img src="cc.png" alt="Cookie Clicker Logo"> <!-- Replaced with your Cookie Clicker image -->
+                <h2 class="text-2xl font-bold text-white mb-2">Cookie Clicker</h2>
+                <p class="text-gray-400 text-sm text-center">The ancient and addictive art of numerical ascension. Click 'til your thumb breaks.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
+            </div>
+        </a>
+
+        <!-- Game 2: Geometry Dash -->
+        <a href="https://thegamedungeon.netlify.app/play/geometrydash" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+            <div class="flex flex-col items-center">
+                <img src="gd.png" alt="Geometry Dash Logo"> <!-- Replaced with your Geometry Dash image -->
+                <h2 class="text-2xl font-bold text-white mb-2">Geometry Dash</h2>
+                <p class="text-gray-400 text-sm text-center">Rhythm, rage, and reckless squares. Can you beat the toughest levels?</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Start Rolling</div>
+            </div>
+        </a>
+
+        <!-- Game 3: Poly Track -->
+        <a href="https://thegamedungeon.netlify.app/play/polytrack" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+            <div class="flex flex-col items-center">
+                <img src="polytrack.png" alt="Poly Track Logo"> <!-- Replaced with your Poly Track image -->
+                <h2 class="text-2xl font-bold text-white mb-2">Poly Track</h2>
+                <p class="text-gray-400 text-sm text-center">Low-poly racing action that flies under the radar. Quick laps, fast fun.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Race Time</div>
+            </div>
+        </a>
+
+          <!-- Game 4: Basket Random -->
+          <a href="https://thegamedungeon.netlify.app/play/basketrandom" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+            <div class="flex flex-col items-center">
+                <img src="br.png" alt="Basket Random Logo"> <!-- Replaced with your Poly Track image -->
+                <h2 class="text-2xl font-bold text-white mb-2">Basket Random</h2>
+                <p class="text-gray-400 text-sm text-center">Ruining friendships one basket at a time.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Put It Up</div>
+            </div>
+        </a>
+  
+        <!-- Game 5: Fancy Pants: Adventures -->
+        <a href="https://thegamedungeon.netlify.app/play/fancypants" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+            <div class="flex flex-col items-center">
+                <img src="fancypants.png" alt="Fancy Pants Logo"> <!-- Replaced with your Poly Track image -->
+                <h2 class="text-2xl font-bold text-white mb-2">Fancy Pants: Adventures</h2>
+                <p class="text-gray-400 text-sm text-center">Fast paced game for times when someone needs to think fast. Kill the spiders and achive your goal.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Run Here</div>
+            </div>
+        </a>
+
+        <!-- Game 6: Ragdoll Hit -->
+        <a href="https://thegamedungeon.netlify.app/play/ragdollhit" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+            <div class="flex flex-col items-center">
+                <img src="rh.png" alt="Ragdoll Hit Logo"> <!-- Replaced with your Poly Track image -->
+                <h2 class="text-2xl font-bold text-white mb-2">Ragdoll Hit</h2>
+                <p class="text-gray-400 text-sm text-center">Jump into pure, unpredictable chaos where the winner is decided by the wackiest ragdoll flops. Grab a friend for an absurd, physics-based fight that takes zero skill and delivers maximum laughs.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Smack Em</div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-gray-500 text-xs w-full">
+        <b>Bro, there are 6 games.</b>
+        <p>&copy; The Game Dungeon | Guild Initials: D, A, J.</p>
+    </footer>
+
+</body>
+</html>
