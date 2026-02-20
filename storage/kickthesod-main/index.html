@@ -13,6 +13,8 @@
             background: #050505;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         canvas {
             display: block;
@@ -53,6 +55,7 @@
             justify-content: center;
             font-size: 18px;
             transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn:active { transform: scale(0.9); }
         .btn.active { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
@@ -66,6 +69,7 @@
             font-size: 1.2rem;
             text-shadow: 2px 2px 0px #000;
             animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
         }
         @keyframes floatUp {
             0% { transform: translateY(0) scale(0.5); opacity: 1; }
@@ -78,9 +82,10 @@
             border-radius: 8px;
             margin-bottom: 8px;
             border-left: 3px solid #e74c3c;
+            min-width: 160px;
         }
         .aura-bar-container {
-            width: 150px;
+            width: 100%;
             height: 8px;
             background: #222;
             border-radius: 4px;
@@ -131,9 +136,7 @@
     <div class="ui-overlay">
         <h1 class="text-red-600 text-2xl font-black italic tracking-tighter mb-2">KICK THE SODS</h1>
         <p class="text-gray-300 font-bold text-sm mb-2">Total Humiliations: <span id="total-score" class="text-white">0</span></p>
-        <div id="sod-stats-container">
-            <!-- Dynamic Sod Stats go here -->
-        </div>
+        <div id="sod-stats-container"></div>
     </div>
 
     <div id="shield-indicator" class="spawn-shield">Spawn Protection Active</div>
@@ -151,8 +154,6 @@
         let currentTool = 'grab';
         let gravityState = 1;
         let bloodParticles = [];
-        let timeScaleTarget = 1;
-        let lastActionTime = Date.now();
         
         const PROTECTION_DURATION = 2000; 
         const MERCY_TIMEOUT = 5000; 
@@ -172,20 +173,16 @@
         const runner = Runner.create();
         Runner.run(runner, engine);
 
-        // Walls
+        // Ground/Walls
         const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight + 25, window.innerWidth*2, 50, { isStatic: true, label: 'ground', render: { fillStyle: '#111' } });
         const wallLeft = Bodies.rectangle(-100, window.innerHeight/2, 50, window.innerHeight * 4, { isStatic: true });
         const wallRight = Bodies.rectangle(window.innerWidth + 100, window.innerHeight/2, 50, window.innerHeight * 4, { isStatic: true });
         World.add(world, [ground, wallLeft, wallRight]);
 
-        const tweakRoasts = ["Skibidi...", "Ohio?", "W Sigma", "Gyatt!", "L Boss", "Fanum Taxed", "Is that a Mew?"];
-        const deathGurgles = ["No... my iPad...", "I'm still tuff...", "Cringe...", "L-L-Life..."];
-        const overkillPoof = ["STOP HES DEAD", "OVERKILL", "EMOTIONAL DAMAGE", "BRO CHILL", "L REMAINS"];
-
         let sodInstances = [];
 
         function createSodInstance() {
-            if (sodInstances.length >= 3) return; // Limit to 3 Sods for performance and chaos management
+            if (sodInstances.length >= 3) return;
 
             const id = Math.random().toString(36).substr(2, 9);
             const x = Math.random() * (window.innerWidth - 200) + 100;
@@ -212,7 +209,7 @@
 
             const allBodies = [head, torso, ipad, ...limbs];
             const joints = [
-                Constraint.create({ bodyA: head, pointB: { x: 0, y: -30 }, bodyB: torso, stiffness: 0.15, length: 2, render: {visible: false}, label: 'joint' }),
+                Constraint.create({ bodyA: head, pointB: { x: 0, y: -30 }, bodyB: torso, stiffness: 0.15, length: 2, render: {visible: false} }),
                 Constraint.create({ bodyA: torso, pointA: { x: -20, y: -25 }, bodyB: limbs[0], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
                 Constraint.create({ bodyA: limbs[0], pointA: { x: 0, y: 15 }, bodyB: limbs[1], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
                 Constraint.create({ bodyA: torso, pointA: { x: 20, y: -25 }, bodyB: limbs[2], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
@@ -234,14 +231,13 @@
                 aura: 100,
                 spawnTime: Date.now(),
                 lastHitTime: Date.now(),
-                constraints: joints,
                 isDead: false,
                 ui: createSodUI(id)
             };
 
             sodInstances.push(instance);
             shieldEl.style.opacity = "1";
-            setTimeout(() => { shieldEl.style.opacity = "0"; }, 2000);
+            setTimeout(() => { if(shieldEl) shieldEl.style.opacity = "0"; }, 2000);
         }
 
         function createSodUI(id) {
@@ -254,7 +250,7 @@
                     <span id="status-${id}" class="text-[9px] text-red-400 font-bold uppercase">Tweaking</span>
                 </div>
                 <div class="aura-bar-container"><div id="aura-${id}" class="aura-fill"></div></div>
-                <div id="mercy-${id}" class="mercy-timer-text" style="display:none">Mercy: <span id="timer-${id}">5.0</span>s</div>
+                <div id="mercy-${id}" class="mercy-timer-text" style="display:none">Respawn in: <span id="timer-${id}">5.0</span>s</div>
             `;
             statsContainer.appendChild(div);
             return div;
@@ -263,7 +259,7 @@
         function damageSod(instance, amt) {
             if (Date.now() - instance.spawnTime < PROTECTION_DURATION) return;
             
-            instance.aura = Math.max(0, instance.aura - (amt/1.05));
+            instance.aura = Math.max(0, instance.aura - (amt/1.2));
             totalScore += amt;
             totalScoreEl.innerText = Math.floor(totalScore);
             instance.lastHitTime = Date.now();
@@ -283,7 +279,6 @@
         function resetSpecificSod(id) {
             const index = sodInstances.findIndex(s => s.id === id);
             if (index === -1) return;
-            
             const instance = sodInstances[index];
             World.remove(world, instance.composite);
             instance.ui.remove();
@@ -311,16 +306,11 @@
                 if (g && other && other.sodId) {
                     const inst = sodInstances.find(s => s.id === other.sodId);
                     if (!inst) return;
-                    
-                    const velocity = Vector.magnitude(other.velocity);
-                    if (velocity > 8) {
-                        damageSod(inst, Math.floor(velocity * 1.5));
-                        spawnBlood(other.position.x, other.position.y, Math.floor(velocity/2));
-                        triggerShake(velocity/2);
-                        
-                        if (velocity > 15) {
-                            showPopup(other.position.x, other.position.y - 30, inst.isDead ? "OVERKILL" : "SLAMMED");
-                        }
+                    const vel = Vector.magnitude(other.velocity);
+                    if (vel > 8) {
+                        damageSod(inst, Math.floor(vel * 2.5));
+                        spawnBlood(other.position.x, other.position.y, 5);
+                        triggerShake(vel/3);
                     }
                 }
             });
@@ -332,47 +322,27 @@
 
             sodInstances.forEach(inst => {
                 const bodies = Composite.allBodies(inst.composite);
-                
-                // Mercy Timer logic
                 if (inst.isDead) {
                     const elapsed = now - inst.lastHitTime;
                     const remaining = (MERCY_TIMEOUT - elapsed) / 1000;
                     const mercyDiv = document.getElementById(`mercy-${inst.id}`);
                     const timerSpan = document.getElementById(`timer-${inst.id}`);
-                    
-                    if (remaining <= 0) {
-                        resetSpecificSod(inst.id);
-                        return;
-                    }
+                    if (remaining <= 0) { resetSpecificSod(inst.id); return; }
                     if (mercyDiv) mercyDiv.style.display = "block";
                     if (timerSpan) timerSpan.innerText = remaining.toFixed(1);
+                } else {
+                    const mercyDiv = document.getElementById(`mercy-${inst.id}`);
+                    if (mercyDiv) mercyDiv.style.display = "none";
                 }
 
                 bodies.forEach(body => {
-                    // Small twitch logic
-                    if (!mouseConstraint.body && now - lastActionTime > 300) {
-                        Body.applyForce(body, body.position, {
-                            x: (Math.random() - 0.5) * (inst.isDead ? 0.004 : 0.001),
-                            y: (Math.random() - 0.5) * (inst.isDead ? 0.004 : 0.001)
-                        });
-                    }
-
                     if (body.label === 'head') {
-                        context.font = '20px Arial';
-                        let emoji = inst.isDead ? '💀' : (inst.aura < 40 ? '😵‍💫' : '😤');
-                        context.fillText(emoji, body.position.x - 12, body.position.y + 6);
-
-                        if (now - inst.spawnTime < PROTECTION_DURATION) {
-                            context.beginPath();
-                            context.arc(body.position.x, body.position.y, 35, 0, Math.PI * 2);
-                            context.strokeStyle = `rgba(52, 152, 219, ${0.4 + Math.sin(now/100)*0.2})`;
-                            context.stroke();
-                        }
+                        context.font = '24px Arial';
+                        context.fillText(inst.isDead ? '💀' : '😤', body.position.x - 12, body.position.y + 8);
                     }
                 });
             });
 
-            // Particles
             bloodParticles.forEach((p, i) => {
                 context.beginPath();
                 context.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -407,15 +377,43 @@
         const mouseConstraint = MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.1, render: { visible: false } } });
         World.add(world, mouseConstraint);
 
-        document.getElementById('grab-tool').onclick = () => setTool('grab');
-        document.getElementById('slap-tool').onclick = () => setTool('slap');
-        document.getElementById('sword-tool').onclick = () => setTool('sword');
-        document.getElementById('fork-tool').onclick = () => setTool('fork');
-        document.getElementById('tnt-tool').onclick = () => setTool('tnt');
-        document.getElementById('gravity-tool').onclick = () => toggleGravity();
-        document.getElementById('clear-tool').onclick = () => clearForks();
-        document.getElementById('add-sod-btn').onclick = () => createSodInstance();
-        document.getElementById('reset-btn').onclick = () => resetAll();
+        // iPad Touch Support for Matter mouse
+        mouse.element.removeEventListener("mousewheel", mouse.mousewheel);
+        mouse.element.removeEventListener("DOMMouseScroll", mouse.mousewheel);
+
+        // BUTTONS
+        const toolBtns = ['grab', 'slap', 'sword', 'fork', 'tnt'];
+        toolBtns.forEach(t => {
+            const btn = document.getElementById(t + '-tool');
+            btn.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                setTool(t);
+            });
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setTool(t);
+            });
+        });
+
+        document.getElementById('gravity-tool').addEventListener('click', (e) => {
+            e.stopPropagation();
+            gravityState *= -1;
+            engine.world.gravity.y = gravityState;
+            triggerShake(10);
+        });
+        document.getElementById('clear-tool').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const bodies = Composite.allBodies(world);
+            bodies.forEach(b => { if (b.label === 'fork') World.remove(world, b); });
+        });
+        document.getElementById('add-sod-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            createSodInstance();
+        });
+        document.getElementById('reset-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetAll();
+        });
 
         function setTool(tool) {
             currentTool = tool;
@@ -424,36 +422,52 @@
             mouseConstraint.enabled = (tool === 'grab');
         }
 
-        function toggleGravity() {
-            gravityState *= -1;
-            engine.world.gravity.y = gravityState;
-            triggerShake(10);
+        // Global Handlers (Touch + Mouse)
+        function handleInput(e) {
+            if (currentTool === 'grab') return;
+            
+            // Get coordinates from touch or mouse
+            let x, y;
+            if (e.touches) {
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+            
+            handleAction(x, y);
         }
 
-        function clearForks() {
-            const bodies = Composite.allBodies(world);
-            bodies.forEach(b => { if (b.label === 'fork') World.remove(world, b); });
-        }
+        render.canvas.addEventListener('touchstart', (e) => {
+            if (currentTool !== 'grab') e.preventDefault();
+            handleInput(e);
+        }, { passive: false });
 
-        render.canvas.addEventListener('mousedown', (e) => handleAction(e));
+        render.canvas.addEventListener('mousedown', (e) => {
+            handleInput(e);
+        });
 
-        function handleAction(e) {
-            lastActionTime = Date.now();
-            const pos = { x: e.clientX, y: e.clientY };
+        function handleAction(x, y) {
+            const pos = { x, y };
             
             if (currentTool === 'slap' || currentTool === 'sword') {
-                const power = currentTool === 'sword' ? 0.6 : 0.25;
+                const power = currentTool === 'sword' ? 0.9 : 0.4;
+                const range = currentTool === 'sword' ? 160 : 110;
                 sodInstances.forEach(inst => {
                     const bodies = Composite.allBodies(inst.composite);
                     bodies.forEach(body => {
-                        if (Vector.magnitude(Vector.sub(body.position, pos)) < 100) {
-                            Body.applyForce(body, body.position, Vector.mult(Vector.normalise(Vector.sub(body.position, pos)), power));
-                            damageSod(inst, currentTool === 'sword' ? 30 : 15);
-                            spawnBlood(body.position.x, body.position.y, 5);
+                        const dist = Vector.magnitude(Vector.sub(body.position, pos));
+                        if (dist < range) {
+                            const force = Vector.mult(Vector.normalise(Vector.sub(body.position, pos)), power);
+                            Body.applyForce(body, body.position, force);
+                            damageSod(inst, currentTool === 'sword' ? 45 : 20);
+                            spawnBlood(body.position.x, body.position.y, 6);
                         }
                     });
                 });
-                triggerShake(power * 20);
+                triggerShake(power * 15);
+                showPopup(x, y, currentTool === 'sword' ? "CRITICAL" : "SLAP");
             }
             
             if (currentTool === 'tnt') {
@@ -463,34 +477,38 @@
                     const dir = Vector.sub(body.position, pos);
                     const dist = Vector.magnitude(dir);
                     if (dist < 600) {
-                        Body.applyForce(body, body.position, Vector.mult(Vector.normalise(dir), (600 - dist) * 0.02));
+                        const forceMag = (600 - dist) * 0.035;
+                        Body.applyForce(body, body.position, Vector.mult(Vector.normalise(dir), forceMag));
                         if (body.sodId) {
                             const inst = sodInstances.find(s => s.id === body.sodId);
-                            if (inst) damageSod(inst, 80);
+                            if (inst) damageSod(inst, 95);
                         }
                     }
                 });
-                triggerShake(30);
+                triggerShake(35);
+                showPopup(x, y, "BOOM");
             }
 
             if (currentTool === 'fork') {
-                const fork = Bodies.rectangle(pos.x, pos.y, 40, 5, { label: 'fork', render: { fillStyle: '#95a5a6' } });
-                const target = Composite.allBodies(world).find(b => b.label === 'chest') || { position: { x: window.innerWidth/2, y: window.innerHeight/2 } };
-                Body.setVelocity(fork, Vector.mult(Vector.normalise(Vector.sub(target.position, pos)), 35));
+                const fork = Bodies.rectangle(pos.x, pos.y, 45, 6, { label: 'fork', render: { fillStyle: '#bdc3c7' } });
+                const bodies = Composite.allBodies(world);
+                const chest = bodies.find(b => b.label === 'chest') || { position: { x: window.innerWidth/2, y: 0 } };
+                const dir = Vector.normalise(Vector.sub(chest.position, pos));
+                Body.setVelocity(fork, Vector.mult(dir, 42));
+                Body.setAngle(fork, Math.atan2(dir.y, dir.x));
                 World.add(world, fork);
             }
         }
 
         function showPopup(x, y, text) {
-            const popup = document.createElement('div');
-            popup.id = 'damage-popup';
-            popup.style.left = x + 'px'; popup.style.top = y + 'px';
-            popup.innerText = text;
-            document.body.appendChild(popup);
-            setTimeout(() => popup.remove(), 800);
+            const p = document.createElement('div');
+            p.id = 'damage-popup';
+            p.style.left = x + 'px'; p.style.top = y + 'px';
+            p.innerText = text;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 800);
         }
 
-        // Init first Sod
         createSodInstance();
     </script>
 </body>
