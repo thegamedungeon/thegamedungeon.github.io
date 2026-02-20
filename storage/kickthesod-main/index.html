@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kick the Sod: Gory Edition - The Game Dungeon</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+        }
+        .ui-overlay {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            background: rgba(0,0,0,0.9);
+            padding: 12px;
+            border-radius: 20px;
+            border: 2px solid #e74c3c;
+            pointer-events: auto;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+        }
+        .btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            border: none;
+            background: #1a1a1a;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        .btn:active { transform: scale(0.9); }
+        .btn.active { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        
+        #damage-popup {
+            position: absolute;
+            color: #e74c3c;
+            font-weight: 900;
+            text-transform: uppercase;
+            pointer-events: none;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 0px #000;
+            animation: floatUp 0.8s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 1; }
+            50% { transform: translateY(-40px) scale(1.2); }
+            100% { transform: translateY(-100px) scale(1.3); opacity: 0; }
+        }
+        .stat-card {
+            background: rgba(20, 20, 20, 0.8);
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #e74c3c;
+        }
+        .aura-bar-container {
+            width: 150px;
+            height: 8px;
+            background: #222;
+            border-radius: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+        .aura-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            transition: width 0.1s ease;
+        }
+        .spawn-shield {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            color: #3498db;
+            font-weight: bold;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .mercy-timer-text {
+            color: #f1c40f;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="btn active" id="grab-tool" title="Grab">🖐️</button>
+        <button class="btn" id="slap-tool" title="Slap">👊</button>
+        <button class="btn" id="sword-tool" title="Castle Crasher Sword">🗡️</button>
+        <button class="btn" id="fork-tool" title="The Fork Test">🍴</button>
+        <button class="btn" id="tnt-tool" title="TNT">💣</button>
+        <button class="btn" id="gravity-tool" title="Gravity Shift">🌀</button>
+        <button class="btn" id="clear-tool" title="Clean Scene">🧹</button>
+        <button class="btn" id="add-sod-btn" title="Spawn Another Sod">➕</button>
+        <button class="btn" id="reset-btn" title="Reset All">🔄</button>
+    </div>
+
+    <div class="ui-overlay">
+        <h1 class="text-red-600 text-2xl font-black italic tracking-tighter mb-2">KICK THE SODS</h1>
+        <p class="text-gray-300 font-bold text-sm mb-2">Total Humiliations: <span id="total-score" class="text-white">0</span></p>
+        <div id="sod-stats-container">
+            <!-- Dynamic Sod Stats go here -->
+        </div>
+    </div>
+
+    <div id="shield-indicator" class="spawn-shield">Spawn Protection Active</div>
+
+    <script>
+        const { Engine, Render, Runner, World, Bodies, Body, Constraint, MouseConstraint, Mouse, Composite, Vector, Events } = Matter;
+
+        const engine = Engine.create();
+        const world = engine.world;
+        const totalScoreEl = document.getElementById('total-score');
+        const statsContainer = document.getElementById('sod-stats-container');
+        const shieldEl = document.getElementById('shield-indicator');
+        
+        let totalScore = 0;
+        let currentTool = 'grab';
+        let gravityState = 1;
+        let bloodParticles = [];
+        let timeScaleTarget = 1;
+        let lastActionTime = Date.now();
+        
+        const PROTECTION_DURATION = 2000; 
+        const MERCY_TIMEOUT = 5000; 
+
+        const render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                wireframes: false,
+                background: '#0a0a0a'
+            }
+        });
+
+        Render.run(render);
+        const runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // Walls
+        const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight + 25, window.innerWidth*2, 50, { isStatic: true, label: 'ground', render: { fillStyle: '#111' } });
+        const wallLeft = Bodies.rectangle(-100, window.innerHeight/2, 50, window.innerHeight * 4, { isStatic: true });
+        const wallRight = Bodies.rectangle(window.innerWidth + 100, window.innerHeight/2, 50, window.innerHeight * 4, { isStatic: true });
+        World.add(world, [ground, wallLeft, wallRight]);
+
+        const tweakRoasts = ["Skibidi...", "Ohio?", "W Sigma", "Gyatt!", "L Boss", "Fanum Taxed", "Is that a Mew?"];
+        const deathGurgles = ["No... my iPad...", "I'm still tuff...", "Cringe...", "L-L-Life..."];
+        const overkillPoof = ["STOP HES DEAD", "OVERKILL", "EMOTIONAL DAMAGE", "BRO CHILL", "L REMAINS"];
+
+        let sodInstances = [];
+
+        function createSodInstance() {
+            if (sodInstances.length >= 3) return; // Limit to 3 Sods for performance and chaos management
+
+            const id = Math.random().toString(36).substr(2, 9);
+            const x = Math.random() * (window.innerWidth - 200) + 100;
+            const y = window.innerHeight / 2;
+
+            const skinTone = '#f1c40f'; 
+            const pantsColor = '#2c3e50';
+            const shirtColor = '#e74c3c';
+
+            const head = Bodies.circle(x, y - 110, 24, { friction: 0.1, restitution: 0.5, render: { fillStyle: skinTone }, label: 'head', sodId: id });
+            const torso = Bodies.rectangle(x, y - 55, 40, 60, { friction: 0.1, render: { fillStyle: shirtColor }, label: 'chest', sodId: id });
+            const ipad = Bodies.rectangle(x + 50, y - 40, 25, 35, { render: { fillStyle: '#000', strokeStyle: '#3498db', lineWidth: 2 }, label: 'ipad', sodId: id });
+
+            const limbs = [
+                Bodies.rectangle(x - 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x - 30, y - 35, 10, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x + 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x + 30, y - 35, 10, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x - 15, y - 10, 16, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x - 15, y + 25, 14, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x + 15, y - 10, 16, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id }),
+                Bodies.rectangle(x + 15, y + 25, 14, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id })
+            ];
+
+            const allBodies = [head, torso, ipad, ...limbs];
+            const joints = [
+                Constraint.create({ bodyA: head, pointB: { x: 0, y: -30 }, bodyB: torso, stiffness: 0.15, length: 2, render: {visible: false}, label: 'joint' }),
+                Constraint.create({ bodyA: torso, pointA: { x: -20, y: -25 }, bodyB: limbs[0], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: limbs[0], pointA: { x: 0, y: 15 }, bodyB: limbs[1], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, pointA: { x: 20, y: -25 }, bodyB: limbs[2], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: limbs[2], pointA: { x: 0, y: 15 }, bodyB: limbs[3], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, pointA: { x: -12, y: 30 }, bodyB: limbs[4], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: limbs[4], pointA: { x: 0, y: 15 }, bodyB: limbs[5], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, pointA: { x: 12, y: 30 }, bodyB: limbs[6], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: limbs[6], pointA: { x: 0, y: 15 }, bodyB: limbs[7], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: limbs[3], pointA: { x: 0, y: 15 }, bodyB: ipad, stiffness: 0.03, length: 5, render: {visible: false} })
+            ];
+
+            const group = Composite.create();
+            Composite.add(group, [...allBodies, ...joints]);
+            World.add(world, group);
+
+            const instance = {
+                id: id,
+                composite: group,
+                aura: 100,
+                spawnTime: Date.now(),
+                lastHitTime: Date.now(),
+                constraints: joints,
+                isDead: false,
+                ui: createSodUI(id)
+            };
+
+            sodInstances.push(instance);
+            shieldEl.style.opacity = "1";
+            setTimeout(() => { shieldEl.style.opacity = "0"; }, 2000);
+        }
+
+        function createSodUI(id) {
+            const div = document.createElement('div');
+            div.className = 'stat-card';
+            div.id = `ui-${id}`;
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] text-white font-black uppercase">Sod Unit</span>
+                    <span id="status-${id}" class="text-[9px] text-red-400 font-bold uppercase">Tweaking</span>
+                </div>
+                <div class="aura-bar-container"><div id="aura-${id}" class="aura-fill"></div></div>
+                <div id="mercy-${id}" class="mercy-timer-text" style="display:none">Mercy: <span id="timer-${id}">5.0</span>s</div>
+            `;
+            statsContainer.appendChild(div);
+            return div;
+        }
+
+        function damageSod(instance, amt) {
+            if (Date.now() - instance.spawnTime < PROTECTION_DURATION) return;
+            
+            instance.aura = Math.max(0, instance.aura - (amt/1.05));
+            totalScore += amt;
+            totalScoreEl.innerText = Math.floor(totalScore);
+            instance.lastHitTime = Date.now();
+
+            const auraBar = document.getElementById(`aura-${instance.id}`);
+            const statusText = document.getElementById(`status-${instance.id}`);
+            if (auraBar) auraBar.style.width = instance.aura + '%';
+
+            if (instance.aura <= 0) {
+                instance.isDead = true;
+                if (statusText) statusText.innerText = "CLAPPED";
+            } else if (instance.aura < 35) {
+                if (statusText) statusText.innerText = "FOLDED";
+            }
+        }
+
+        function resetSpecificSod(id) {
+            const index = sodInstances.findIndex(s => s.id === id);
+            if (index === -1) return;
+            
+            const instance = sodInstances[index];
+            World.remove(world, instance.composite);
+            instance.ui.remove();
+            sodInstances.splice(index, 1);
+            createSodInstance();
+        }
+
+        function resetAll() {
+            sodInstances.forEach(inst => {
+                World.remove(world, inst.composite);
+                inst.ui.remove();
+            });
+            sodInstances = [];
+            totalScore = 0;
+            totalScoreEl.innerText = "0";
+            createSodInstance();
+        }
+
+        Events.on(engine, 'collisionStart', (event) => {
+            event.pairs.forEach(pair => {
+                const bodies = [pair.bodyA, pair.bodyB];
+                const g = bodies.find(b => b.label === 'ground');
+                const other = bodies.find(b => b.label !== 'ground');
+                
+                if (g && other && other.sodId) {
+                    const inst = sodInstances.find(s => s.id === other.sodId);
+                    if (!inst) return;
+                    
+                    const velocity = Vector.magnitude(other.velocity);
+                    if (velocity > 8) {
+                        damageSod(inst, Math.floor(velocity * 1.5));
+                        spawnBlood(other.position.x, other.position.y, Math.floor(velocity/2));
+                        triggerShake(velocity/2);
+                        
+                        if (velocity > 15) {
+                            showPopup(other.position.x, other.position.y - 30, inst.isDead ? "OVERKILL" : "SLAMMED");
+                        }
+                    }
+                }
+            });
+        });
+
+        Events.on(render, 'afterRender', () => {
+            const context = render.context;
+            const now = Date.now();
+
+            sodInstances.forEach(inst => {
+                const bodies = Composite.allBodies(inst.composite);
+                
+                // Mercy Timer logic
+                if (inst.isDead) {
+                    const elapsed = now - inst.lastHitTime;
+                    const remaining = (MERCY_TIMEOUT - elapsed) / 1000;
+                    const mercyDiv = document.getElementById(`mercy-${inst.id}`);
+                    const timerSpan = document.getElementById(`timer-${inst.id}`);
+                    
+                    if (remaining <= 0) {
+                        resetSpecificSod(inst.id);
+                        return;
+                    }
+                    if (mercyDiv) mercyDiv.style.display = "block";
+                    if (timerSpan) timerSpan.innerText = remaining.toFixed(1);
+                }
+
+                bodies.forEach(body => {
+                    // Small twitch logic
+                    if (!mouseConstraint.body && now - lastActionTime > 300) {
+                        Body.applyForce(body, body.position, {
+                            x: (Math.random() - 0.5) * (inst.isDead ? 0.004 : 0.001),
+                            y: (Math.random() - 0.5) * (inst.isDead ? 0.004 : 0.001)
+                        });
+                    }
+
+                    if (body.label === 'head') {
+                        context.font = '20px Arial';
+                        let emoji = inst.isDead ? '💀' : (inst.aura < 40 ? '😵‍💫' : '😤');
+                        context.fillText(emoji, body.position.x - 12, body.position.y + 6);
+
+                        if (now - inst.spawnTime < PROTECTION_DURATION) {
+                            context.beginPath();
+                            context.arc(body.position.x, body.position.y, 35, 0, Math.PI * 2);
+                            context.strokeStyle = `rgba(52, 152, 219, ${0.4 + Math.sin(now/100)*0.2})`;
+                            context.stroke();
+                        }
+                    }
+                });
+            });
+
+            // Particles
+            bloodParticles.forEach((p, i) => {
+                context.beginPath();
+                context.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                context.fillStyle = `rgba(180, 0, 0, ${p.opacity})`;
+                context.fill();
+                p.opacity -= 0.005;
+                if (p.opacity <= 0) bloodParticles.splice(i, 1);
+            });
+        });
+
+        function spawnBlood(x, y, count = 5) {
+            for (let i = 0; i < count; i++) {
+                bloodParticles.push({
+                    x: x + (Math.random() - 0.5) * 20,
+                    y: y + (Math.random() - 0.5) * 20,
+                    size: Math.random() * 4 + 1,
+                    opacity: 0.9
+                });
+            }
+        }
+
+        function triggerShake(intensity = 5) {
+            intensity = Math.min(intensity, 15);
+            let count = 0;
+            const interval = setInterval(() => {
+                document.body.style.transform = `translate(${(Math.random()-0.5)*intensity}px, ${(Math.random()-0.5)*intensity}px)`;
+                if (++count > 6) { clearInterval(interval); document.body.style.transform = ''; }
+            }, 30);
+        }
+
+        const mouse = Mouse.create(render.canvas);
+        const mouseConstraint = MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.1, render: { visible: false } } });
+        World.add(world, mouseConstraint);
+
+        document.getElementById('grab-tool').onclick = () => setTool('grab');
+        document.getElementById('slap-tool').onclick = () => setTool('slap');
+        document.getElementById('sword-tool').onclick = () => setTool('sword');
+        document.getElementById('fork-tool').onclick = () => setTool('fork');
+        document.getElementById('tnt-tool').onclick = () => setTool('tnt');
+        document.getElementById('gravity-tool').onclick = () => toggleGravity();
+        document.getElementById('clear-tool').onclick = () => clearForks();
+        document.getElementById('add-sod-btn').onclick = () => createSodInstance();
+        document.getElementById('reset-btn').onclick = () => resetAll();
+
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tool + '-tool').classList.add('active');
+            mouseConstraint.enabled = (tool === 'grab');
+        }
+
+        function toggleGravity() {
+            gravityState *= -1;
+            engine.world.gravity.y = gravityState;
+            triggerShake(10);
+        }
+
+        function clearForks() {
+            const bodies = Composite.allBodies(world);
+            bodies.forEach(b => { if (b.label === 'fork') World.remove(world, b); });
+        }
+
+        render.canvas.addEventListener('mousedown', (e) => handleAction(e));
+
+        function handleAction(e) {
+            lastActionTime = Date.now();
+            const pos = { x: e.clientX, y: e.clientY };
+            
+            if (currentTool === 'slap' || currentTool === 'sword') {
+                const power = currentTool === 'sword' ? 0.6 : 0.25;
+                sodInstances.forEach(inst => {
+                    const bodies = Composite.allBodies(inst.composite);
+                    bodies.forEach(body => {
+                        if (Vector.magnitude(Vector.sub(body.position, pos)) < 100) {
+                            Body.applyForce(body, body.position, Vector.mult(Vector.normalise(Vector.sub(body.position, pos)), power));
+                            damageSod(inst, currentTool === 'sword' ? 30 : 15);
+                            spawnBlood(body.position.x, body.position.y, 5);
+                        }
+                    });
+                });
+                triggerShake(power * 20);
+            }
+            
+            if (currentTool === 'tnt') {
+                const bodies = Composite.allBodies(world);
+                bodies.forEach(body => {
+                    if (body.isStatic) return;
+                    const dir = Vector.sub(body.position, pos);
+                    const dist = Vector.magnitude(dir);
+                    if (dist < 600) {
+                        Body.applyForce(body, body.position, Vector.mult(Vector.normalise(dir), (600 - dist) * 0.02));
+                        if (body.sodId) {
+                            const inst = sodInstances.find(s => s.id === body.sodId);
+                            if (inst) damageSod(inst, 80);
+                        }
+                    }
+                });
+                triggerShake(30);
+            }
+
+            if (currentTool === 'fork') {
+                const fork = Bodies.rectangle(pos.x, pos.y, 40, 5, { label: 'fork', render: { fillStyle: '#95a5a6' } });
+                const target = Composite.allBodies(world).find(b => b.label === 'chest') || { position: { x: window.innerWidth/2, y: window.innerHeight/2 } };
+                Body.setVelocity(fork, Vector.mult(Vector.normalise(Vector.sub(target.position, pos)), 35));
+                World.add(world, fork);
+            }
+        }
+
+        function showPopup(x, y, text) {
+            const popup = document.createElement('div');
+            popup.id = 'damage-popup';
+            popup.style.left = x + 'px'; popup.style.top = y + 'px';
+            popup.innerText = text;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 800);
+        }
+
+        // Init first Sod
+        createSodInstance();
+    </script>
+</body>
+</html>
