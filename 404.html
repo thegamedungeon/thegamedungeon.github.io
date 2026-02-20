@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Dungeon Lost</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden; /* Stops scrolling so the vibe stays clean */
+            background-color: #000; /* Black background if the image takes a sec to load */
+        }
+
+        .bg-image {
+            /* This points to your image file */
+            background-image: url('404.png');
+
+            /* This makes the image cover the whole screen without stretching weirdly */
+            height: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        /* Pro tip: This makes the whole screen a clickable link back to the main site */
+        a {
+            display: block;
+            height: 100%;
+            width: 100%;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="https://thegamedungeon.github.io/">
+        <div class="bg-image"></div>
+    </a>
+
+</body>
+</html>
