@@ -132,7 +132,7 @@
 
     // Handle the redirect back from Google
     getRedirectResult(auth).then((result) => {
-        if (result) window.location.href = "index.html";
+        if (result) window.location.href = "/index.html";
     }).catch((err) => {
         console.error(err);
     });
