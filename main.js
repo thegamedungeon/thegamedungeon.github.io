@@ -1,3 +1,4 @@
+alert("Main.js has started!");
 // 1. IMMEDIATE BRIDGE CHECK (Before anything else runs)
 const statusText = document.getElementById('debug-status');
 if (statusText) statusText.innerText = "Bridge Loading...";
