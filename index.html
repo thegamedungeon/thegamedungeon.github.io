@@ -6,7 +6,7 @@
     <title>THE CRIB</title>
     <link rel="stylesheet" href="/css/style.css"> 
     <style>
-        /* Basic styles just to make the buttons visible while you test! */
+        /* Your existing styles */
         body {
             font-family: sans-serif;
             background-color: #333;
@@ -14,6 +14,35 @@
             text-align: center;
             padding: 20px;
         }
+
+        /* NEW TOP BAR STYLES */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 20px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .signin-btn {
+            background-color: #0f0; /* Green like your borders */
+            color: #000;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: 0.3s;
+        }
+
+        .signin-btn:hover {
+            background-color: #0c0;
+            box-shadow: 0 0 10px #0f0;
+        }
+
         .main-buttons a {
             display: block;
             margin: 15px auto;
@@ -31,33 +60,37 @@
         }
         .secret-roast {
             font-size: 0.8em;
-            color: #ff00ff; /* Zesty color, naturally */
+            color: #ff00ff; 
             margin-top: 50px;
         }
     </style>
 </head>
 <body>
 
-    <header>
+<div class="top-bar" id="auth-section">
+    <a href="login.html" class="signin-btn">🔑 SIGN IN</a>
+</div>
+
+    <header style="margin-top: 40px;">
         <h1>THE CRIB</h1>
         <p>Enter the Crib. Defeat the Block. Escape the Grind.</p>
     </header>
 
     <nav class="main-buttons">
-        <a href="play/" class="button primary">
+        <a href="play.html" class="button primary">
             <span class="icon">🎮</span> The Vault (Play Games)
         </a>
 
-        <a href="request/" class="button secondary">
+        <a href="request.html" class="button secondary">
             <span class="icon">📜</span> The Cartographer's Desk (Request)
         </a>
 
-        <a href="about/" class="button tertiary">
+        <a href="about.html" class="button tertiary">
             <span class="icon">🧑‍🤝‍🧑</span> The Guild Roster (About Us)
         </a>
       
       <a href="https://thegamedungeon.github.io/theoldgamedungeon" class="button tertiary">
-            <span class="icon"></span> The Old Game Dungeon (The Past)
+            <span class="icon">🕰️</span> The Old Game Dungeon (The Past)
         </a>
     </nav>
 
@@ -68,10 +101,46 @@
     
     <p class="secret-roast">Connor is still zesty and won't make it past Crib security.</p>
 
-
     <footer>
         <p>&copy; The Crib, formally The Game Dungeon | Built by the Green Belt Master. Guild Initials: D, A, J.</p>
     </footer>
+  
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  // Your actual Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+    authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+    projectId: "the-game-dungeon-4d75d",
+    storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+    messagingSenderId: "533459716906",
+    appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+    measurementId: "G-CER9SE96MC"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const authSection = document.getElementById('auth-section');
+
+  // THE MAGIC: Check if user is logged in
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // User is logged in! Show their email and link to settings
+      authSection.innerHTML = `
+        <a href="settings.html" class="signin-btn" style="background: #555; color: #0f0; border: 1px solid #0f0;">
+          👤 ${user.email}
+        </a>
+      `;
+    } else {
+      // No one is logged in. Show the default Sign In button
+      authSection.innerHTML = `
+        <a href="login.html" class="signin-btn">🔑 SIGN IN</a>
+      `;
+    }
+  });
+</script>
 
 </body>
 </html>
