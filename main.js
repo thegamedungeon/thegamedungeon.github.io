@@ -1,72 +1,102 @@
-<script type="module">
-  // 1. Import the Firebase SDKs
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  // 2. Your Firebase Config (The Crib's Credentials)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-    authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-    projectId: "the-game-dungeon-4d75d",
-    storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-    messagingSenderId: "533459716906",
-    appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
-    measurementId: "G-CER9SE96MC"
-  };
+// 1. Your Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+  authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+  projectId: "the-game-dungeon-4d75d",
+  storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+  messagingSenderId: "533459716906",
+  appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+  measurementId: "G-CER9SE96MC"
+};
 
-  // 3. Initialize Firebase Services
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+// 2. Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  // 4. THE SYNC LOGIC (The Brain)
-  
-  // Track if a user is logged in
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      console.log("Yo Alex, " + user.uid + " is logged in!");
-      await loadSavesFromCloud(user.uid);
-    } else {
-      console.log("No user logged in. Progress won't sync to the cloud.");
+// 3. The Magic Keys (MUST match what the games use in LocalStorage)
+const gameKeys = {
+  cookieClicker: 'CookieClickerSave',
+  geometryDash: 'GDSaveData',
+  polytrack: 'polytrack_save',
+  basketRandom: 'basket_random_stats',
+  ragdollHit: 'ragdoll_hit_data', // Double check this key in the game files!
+  minecraft: 'minecraft_world',
+  kickTheSod: 'kts_save',
+  proxycrib: 'proxy_settings'
+};
+
+// 4. The Auth Watcher
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log("Yo Alex, logged in as:", user.uid);
+
+    // --- CONNECTION TEST: Look for this in Firestore! ---
+    try {
+      await setDoc(doc(db, "saves", user.uid), { 
+        connection_status: "Online",
+        last_login: new Date().toISOString(),
+        owner: "Alex"
+      }, { merge: true });
+    } catch (e) {
+      console.error("Firebase connection failed:", e);
     }
-  });
 
-  // FUNCTION: Upload Local Storage to Firebase
-  // Call this function when a user clicks a "Save Progress" button
-  async function syncToCloud(gameName, localStorageKey) {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("You gotta sign in to save your progress, bro!");
-      return;
-    }
-
-    const gameData = localStorage.getItem(localStorageKey);
-    if (gameData) {
-      try {
-        await setDoc(doc(db, "saves", user.uid), {
-          [gameName]: gameData,
-          lastUpdated: new Date().toISOString()
-        }, { merge: true });
-        console.log(`Saved ${gameName} to the cloud!`);
-      } catch (e) {
-        console.error("Error saving to cloud: ", e);
-      }
-    } else {
-      console.log("No local data found to save.");
-    }
+    // Load saves from Cloud to iPad
+    await syncFromCloud(user.uid);
+    
+    // Start auto-saving from iPad to Cloud every 60s
+    startAutoSave(user.uid);
+  } else {
+    console.log("No user logged in. Stay chill.");
   }
+});
 
-  // FUNCTION: Download Firebase data to Local Storage
-  async function loadSavesFromCloud(userId) {
+// 5. Function: Pull data from Firebase and inject into Browser
+async function syncFromCloud(userId) {
+  try {
     const docRef = doc(db, "saves", userId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const allSaves = docSnap.data();
-      console.log("Loading saves from cloud...");
+      const cloudData = docSnap.data();
+      console.log("Cloud data found! Injecting saves...");
+      
+      for (const [game, storageKey] of Object.entries(gameKeys)) {
+        if (cloudData[game]) {
+          localStorage.setItem(storageKey, cloudData[game]);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to sync from cloud:", err);
+  }
+}
 
-      // Example for Cookie Clicker (The key is usually 'CookieClickerSave')
-      if (allS
+// 6. Function: Push Browser data to Firebase
+function startAutoSave(userId) {
+  setInterval(async () => {
+    const updates = {};
+    let dataToSync = false;
+
+    for (const [game, storageKey] of Object.entries(gameKeys)) {
+      const localValue = localStorage.getItem(storageKey);
+      if (localValue) {
+        updates[game] = localValue;
+        dataToSync = true;
+      }
+    }
+
+    if (dataToSync) {
+      try {
+        await setDoc(doc(db, "saves", userId), updates, { merge: true });
+        console.log("Dungeon cloud sync complete.");
+      } catch (err) {
+        console.error("Auto-save failed:", err);
+      }
+    }
+  }, 600
