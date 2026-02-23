@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. Firebase Config
+// 1. Your Firebase Config (The Crib's Brain)
 const firebaseConfig = {
   apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
   authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
@@ -13,62 +13,44 @@ const firebaseConfig = {
   measurementId: "G-CER9SE96MC"
 };
 
-// 2. Initialize
+// 2. Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// 3. Select UI Elements
 const authSection = document.getElementById('auth-section');
 const statusText = document.getElementById('debug-status');
 
-// Update Bridge Status immediately
-if (statusText) statusText.innerText = "The Bridge is Alive, Alex!";
+// Update Bridge Status immediately so we know the script loaded
+if (statusText) {
+    statusText.innerText = "The Bridge is Alive, Alex!";
+    statusText.style.color = "#0f0"; // Turn it green for the W
+}
 
-// 3. Game Keys
+// 4. Game Keys (The Secret Sauce you found)
 const gameKeys = {
-  ragdollHit: 'ragdoll_hit_data', // Ensure this matches your game's localStorage key!
+  ragdollHit: 'savegame_idbfs_hash',
   cookieClicker: 'CookieClickerGame'
 };
 
-// 4. Auth & Sync Logic
+// 5. Auth & Sync Logic
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // Update UI
+    console.log("User logged in:", user.email);
+    
+    // Update UI to show the user is signed in
     if (authSection) {
-        authSection.innerHTML = `<a href="account/" class="signin-btn" style="background: #555; color: #0f0; border: 1px solid #0f0;">👤 ${user.email}</a>`;
+        authSection.innerHTML = `
+          <a href="account/" class="signin-btn" style="background: #222; color: #0f0; border: 1px solid #0f0;">
+            👤 ${user.email}
+          </a>`;
     }
     
-    // Connection Test
-    await setDoc(doc(db, "saves", user.uid), { status: "Online", owner: "Alex" }, { merge: true });
-    
-    // Sync Game Data
-    syncFromCloud(user.uid);
-    startAutoSave(user.uid);
-  } else {
-    if (authSection) {
-        authSection.innerHTML = `<a href="login/" class="signin-btn">🔑 SIGN IN</a>`;
-    }
-  }
-});
-
-async function syncFromCloud(uid) {
-    const docSnap = await getDoc(doc(db, "saves", uid));
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        for (const [game, key] of Object.entries(gameKeys)) {
-            if (data[game]) localStorage.setItem(key, data[game]);
-        }
-    }
-}
-
-function startAutoSave(uid) {
-    setInterval(async () => {
-        const updates = {};
-        for (const [game, key] of Object.entries(gameKeys)) {
-            const val = localStorage.getItem(key);
-            if (val) updates[game] = val;
-        }
-        if (Object.keys(updates).length > 0) {
-            await setDoc(doc(db, "saves", uid), updates, { merge: true });
-        }
-    }, 30000); // 30 seconds
-}
+    // Test the connection immediately
+    try {
+        await setDoc(doc(db, "saves", user.uid), { 
+            lastOnline: new Date(),
+            owner: "Alex" 
+        }, { merge: true });
+        console
