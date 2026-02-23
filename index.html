@@ -129,14 +129,14 @@
     if (user) {
       // User is logged in! Show their email and link to settings
       authSection.innerHTML = `
-        <a href="settings.html" class="signin-btn" style="background: #555; color: #0f0; border: 1px solid #0f0;">
+        <a href="account/" class="signin-btn" style="background: #555; color: #0f0; border: 1px solid #0f0;">
           👤 ${user.email}
         </a>
       `;
     } else {
       // No one is logged in. Show the default Sign In button
       authSection.innerHTML = `
-        <a href="login.html" class="signin-btn">🔑 SIGN IN</a>
+        <a href="login/" class="signin-btn">🔑 SIGN IN</a>
       `;
     }
   });
