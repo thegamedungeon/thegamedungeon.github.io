@@ -1,9 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-document.getElementById('debug-status').innerText = "The Bridge is Alive, Alex!";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. Your Firebase Configuration
+// 1. Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
   authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
@@ -14,90 +13,62 @@ const firebaseConfig = {
   measurementId: "G-CER9SE96MC"
 };
 
-// 2. Initialize Firebase
+// 2. Initialize
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const authSection = document.getElementById('auth-section');
+const statusText = document.getElementById('debug-status');
 
-// 3. The Magic Keys (MUST match what the games use in LocalStorage)
+// Update Bridge Status immediately
+if (statusText) statusText.innerText = "The Bridge is Alive, Alex!";
+
+// 3. Game Keys
 const gameKeys = {
-  cookieClicker: 'CookieClickerSave',
-  geometryDash: 'GDSaveData',
-  polytrack: 'polytrack_save',
-  basketRandom: 'basket_random_stats',
-  ragdollHit: 'ragdoll_hit_data', // Double check this key in the game files!
-  minecraft: 'minecraft_world',
-  kickTheSod: 'kts_save',
-  proxycrib: 'proxy_settings'
+  ragdollHit: 'ragdoll_hit_data', // Ensure this matches your game's localStorage key!
+  cookieClicker: 'CookieClickerGame'
 };
 
-// 4. The Auth Watcher
+// 4. Auth & Sync Logic
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log("Yo Alex, logged in as:", user.uid);
-
-    // --- CONNECTION TEST: Look for this in Firestore! ---
-    try {
-      await setDoc(doc(db, "saves", user.uid), { 
-        connection_status: "Online",
-        last_login: new Date().toISOString(),
-        owner: "Alex"
-      }, { merge: true });
-    } catch (e) {
-      console.error("Firebase connection failed:", e);
+    // Update UI
+    if (authSection) {
+        authSection.innerHTML = `<a href="account/" class="signin-btn" style="background: #555; color: #0f0; border: 1px solid #0f0;">👤 ${user.email}</a>`;
     }
-
-    // Load saves from Cloud to iPad
-    await syncFromCloud(user.uid);
     
-    // Start auto-saving from iPad to Cloud every 60s
+    // Connection Test
+    await setDoc(doc(db, "saves", user.uid), { status: "Online", owner: "Alex" }, { merge: true });
+    
+    // Sync Game Data
+    syncFromCloud(user.uid);
     startAutoSave(user.uid);
   } else {
-    console.log("No user logged in. Stay chill.");
+    if (authSection) {
+        authSection.innerHTML = `<a href="login/" class="signin-btn">🔑 SIGN IN</a>`;
+    }
   }
 });
 
-// 5. Function: Pull data from Firebase and inject into Browser
-async function syncFromCloud(userId) {
-  try {
-    const docRef = doc(db, "saves", userId);
-    const docSnap = await getDoc(docRef);
-
+async function syncFromCloud(uid) {
+    const docSnap = await getDoc(doc(db, "saves", uid));
     if (docSnap.exists()) {
-      const cloudData = docSnap.data();
-      console.log("Cloud data found! Injecting saves...");
-      
-      for (const [game, storageKey] of Object.entries(gameKeys)) {
-        if (cloudData[game]) {
-          localStorage.setItem(storageKey, cloudData[game]);
+        const data = docSnap.data();
+        for (const [game, key] of Object.entries(gameKeys)) {
+            if (data[game]) localStorage.setItem(key, data[game]);
         }
-      }
     }
-  } catch (err) {
-    console.error("Failed to sync from cloud:", err);
-  }
 }
 
-// 6. Function: Push Browser data to Firebase
-function startAutoSave(userId) {
-  setInterval(async () => {
-    const updates = {};
-    let dataToSync = false;
-
-    for (const [game, storageKey] of Object.entries(gameKeys)) {
-      const localValue = localStorage.getItem(storageKey);
-      if (localValue) {
-        updates[game] = localValue;
-        dataToSync = true;
-      }
-    }
-
-    if (dataToSync) {
-      try {
-        await setDoc(doc(db, "saves", userId), updates, { merge: true });
-        console.log("Dungeon cloud sync complete.");
-      } catch (err) {
-        console.error("Auto-save failed:", err);
-      }
-    }
-  }, 600
+function startAutoSave(uid) {
+    setInterval(async () => {
+        const updates = {};
+        for (const [game, key] of Object.entries(gameKeys)) {
+            const val = localStorage.getItem(key);
+            if (val) updates[game] = val;
+        }
+        if (Object.keys(updates).length > 0) {
+            await setDoc(doc(db, "saves", uid), updates, { merge: true });
+        }
+    }, 30000); // 30 seconds
+}
