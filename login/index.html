@@ -113,7 +113,7 @@
     onAuthStateChanged(auth, (user) => {
         if (user) {
             console.log("Logged in:", user.email);
-            window.location.href = "index.html";
+            window.location.href = "/index.html";
         }
     });
 
@@ -124,7 +124,7 @@
         try {
             const result = await signInWithPopup(auth, provider);
             if (result.user) {
-                window.location.href = "index.html";
+                window.location.href = "/index.html";
             }
         } catch (error) {
             console.error("Login Error:", error);
