@@ -47,6 +47,7 @@
             padding: 0.5rem 1rem;
             border-radius: 5px;
             font-weight: bold;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -75,12 +76,13 @@
     </div>
 
     <div id="gameGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+        
         <a href="cookie-clicker/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
                 <img src="/storage/photos/cc.png" alt="Cookie Clicker">
                 <h2 class="text-2xl font-bold text-white mb-2">Cookie Clicker</h2>
-                <p class="text-gray-400 text-sm text-center">Click 'til your thumb breaks.</p>
-                <div id="time-cookie-clicker" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
+                <p class="text-gray-400 text-sm text-center">Ancient art of numerical ascension.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
@@ -89,7 +91,25 @@
                 <img src="/storage/photos/gd.png" alt="Geometry Dash">
                 <h2 class="text-2xl font-bold text-white mb-2">Geometry Dash</h2>
                 <p class="text-gray-400 text-sm text-center">Rhythm, rage, and reckless squares.</p>
-                <div id="time-geometry-dash" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Start Rolling</div>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Start Rolling</div>
+            </div>
+        </a>
+
+        <a href="polytrack/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
+            <div class="flex flex-col items-center">
+                <img src="/storage/photos/polytrack.png" alt="Polytrack">
+                <h2 class="text-2xl font-bold text-white mb-2">Poly Track</h2>
+                <p class="text-gray-400 text-sm text-center">Low-poly racing action.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Race Time</div>
+            </div>
+        </a>
+
+        <a href="basket-random/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
+            <div class="flex flex-col items-center">
+                <img src="/storage/photos/br.png" alt="Basket Random">
+                <h2 class="text-2xl font-bold text-white mb-2">Basket Random</h2>
+                <p class="text-gray-400 text-sm text-center">Ruining friendships one basket at a time.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Put It Up</div>
             </div>
         </a>
 
@@ -102,14 +122,33 @@
             </div>
         </a>
 
+        <a href="minecraft/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
+            <div class="flex flex-col items-center">
+                <img src="/storage/photos/minecraft.png" alt="Minecraft">
+                <h2 class="text-2xl font-bold text-white mb-2">Minecraft</h2>
+                <p class="text-gray-400 text-sm text-center">Enter the world of blocks.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Oof To It</div>
+            </div>
+        </a>
+
+        <a href="proxicrib/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
+            <div class="flex flex-col items-center">
+                <img src="/storage/photos/proxicrib.png" alt="Proxycrib">
+                <h2 class="text-2xl font-bold text-white mb-2">Proxycrib</h2>
+                <p class="text-gray-400 text-sm text-center">W proxy for the squad.</p>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Unblock Now</div>
+            </div>
+        </a>
+
         <a href="kick-the-sod/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
                 <img src="/storage/photos/kts.png" alt="Kick the Sod">
                 <h2 class="text-2xl font-bold text-white mb-2">Kick The Sod</h2>
                 <p class="text-gray-400 text-sm text-center">Sod-erdine is your punching bag.</p>
-                <div id="time-kick-the-sod" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Kaboom</div>
+                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Kaboom</div>
             </div>
         </a>
+
     </div>
 
     <footer class="mt-12 text-center text-gray-500 text-xs w-full">
@@ -138,7 +177,6 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Change Sign In button to "Welcome, Alex" style
                 document.getElementById('auth-section').innerHTML = `<span class="text-green-400 font-bold">🛡️ CHAMPION LOGGED IN</span>`;
                 
                 const userRef = doc(db, "users", user.uid);
@@ -146,25 +184,20 @@
 
                 if (userSnap.exists()) {
                     const data = userSnap.data();
-                    const games = ['cookie_clicker', 'geometry_dash', 'ragdoll_hit', 'kick_the_sod']; // Add more here
-
-                    games.forEach(game => {
-                        const seconds = data[`playtime_${game}`] || 0;
-                        const mins = Math.floor(seconds / 60);
-                        const hours = (seconds / 3600).toFixed(1);
-                        
-                        const el = document.getElementById(`time-${game.replace(/_/g, '-')}`);
-                        if (el) {
-                            if (hours >= 1) el.innerText = `${hours} Hours Played`;
-                            else if (mins > 0) el.innerText = `${mins} Mins Played`;
-                            else el.innerText = `New Game`;
-                        }
-                    });
+                    const seconds = data[`playtime_ragdoll_hit`] || 0;
+                    const mins = Math.floor(seconds / 60);
+                    const hours = (seconds / 3600).toFixed(1);
+                    
+                    const el = document.getElementById('time-ragdoll-hit');
+                    if (el) {
+                        if (hours >= 1) el.innerText = `${hours} Hours Played`;
+                        else if (mins > 0) el.innerText = `${mins} Mins Played`;
+                    }
                 }
             }
         });
 
-        // Search Filter Logic
+        // Search Filter
         window.filterGames = function() {
             const input = document.getElementById('gameSearch').value.toLowerCase();
             const cards = document.querySelectorAll('.game-card');
