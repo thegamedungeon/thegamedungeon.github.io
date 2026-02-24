@@ -84,34 +84,39 @@
         <iframe id="gameFrame" src="/storage/ragdoll-hit-main/index.html" allowfullscreen></iframe>
     </div>
 
-    <script>
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const gameFrame = document.getElementById('gameFrame');
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { initTracker } from "../../tracker.js";
 
-        fullscreenBtn.addEventListener('click', () => {
-            if (gameFrame.requestFullscreen) {
-                gameFrame.requestFullscreen();
-            } else if (gameFrame.mozRequestFullScreen) { /* Firefox */
-                gameFrame.mozRequestFullScreen();
-            } else if (gameFrame.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
-                gameFrame.webkitRequestFullscreen();
-            } else if (gameFrame.msRequestFullscreen) { /* IE/Edge */
-                gameFrame.msRequestFullscreen();
-            }
-        });
+    // 2. Your Official Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+        projectId: "the-game-dungeon-4d75d",
+        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+        messagingSenderId: "533459716906",
+        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+        measurementId: "G-CER9SE96MC"
+    };
 
-        // Optional: Exit fullscreen when escape is pressed (if iframe doesn't handle it)
-        document.addEventListener('fullscreenchange', (event) => {
-            if (!document.fullscreenElement) {
-                console.log('Exited fullscreen');
-            }
-        });
-        document.addEventListener('webkitfullscreenchange', (event) => { /* Safari */
-            if (!document.webkitFullscreenElement) {
-                console.log('Exited fullscreen');
-            }
-        });
-    </script>
+    // 3. Initialize Firebase & Start Tracking
+    const app = initializeApp(firebaseConfig);
+    initTracker("Ragdoll Hit");
+
+    // 4. Your existing Fullscreen Logic
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const gameFrame = document.getElementById('gameFrame');
+
+    fullscreenBtn.addEventListener('click', () => {
+        if (gameFrame.requestFullscreen) {
+            gameFrame.requestFullscreen();
+        } else if (gameFrame.webkitRequestFullscreen) { /* iPad Safari */
+            gameFrame.webkitRequestFullscreen();
+        } else if (gameFrame.msRequestFullscreen) { 
+            gameFrame.msRequestFullscreen();
+        }
+    });
+</script>
 
 </body>
 </html>
