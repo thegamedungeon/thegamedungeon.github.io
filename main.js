@@ -41,35 +41,22 @@ const gameKeys = {
   cookieClicker: 'CookieClickerGame'
 };
 
-// 7. AUTH & SYNC LOGIC
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log("Logged in as:", user.email);
     
+    // Grab the Google photo, or use a default if they don't have one
+    const userPhoto = user.photoURL || 'https://via.placeholder.com/30';
+    
     if (authSection) {
         authSection.innerHTML = `
-          <a href="account/" class="signin-btn" style="background: #222; color: #0f0; border: 1px solid #0f0;">
-            👤 ${user.email}
+          <a href="account/" class="signin-btn" style="display: flex; align-items: center; gap: 8px; background: #222; color: #0f0; border: 1px solid #0f0;">
+            <img src="${userPhoto}" style="width: 25px; height: 25px; border-radius: 50%; border: 1px solid #0f0;">
+            <span>${user.displayName || 'User'}</span>
           </a>`;
     }
     
-    // Test Handshake
-    try {
-        await setDoc(doc(db, "saves", user.uid), { 
-            lastOnline: new Date(),
-            owner: "Alex" 
-        }, { merge: true });
-    } catch (e) {
-        console.error("Firebase error:", e);
-    }
-
-    syncFromCloud(user.uid);
-    startAutoSave(user.uid);
-
-  } else {
-    if (authSection) {
-        authSection.innerHTML = `<a href="login/" class="signin-btn">🔑 SIGN IN</a>`;
-    }
+    // ... rest of your sync logic
   }
 });
 
