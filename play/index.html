@@ -1,19 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <div class="top-bar" id="auth-section">
-    <a href="/login/" class="signin-btn">🔑 SIGN IN</a>
-</div>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Vault - Game Dungeon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom Dungeon-themed CSS */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1a1a1a; /* Dark stone background */
+            background-color: #1a1a1a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -21,7 +17,7 @@
         }
         .header-glow {
             text-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
-            color: #00ff00; /* Neon green glow */
+            color: #00ff00;
         }
         .game-card {
             transition: transform 0.2s, box-shadow 0.2s;
@@ -29,168 +25,152 @@
         .game-card:hover {
             transform: translateY(-5px) scale(1.02);
             box-shadow: 0 10px 20px rgba(0, 255, 0, 0.3);
-            background-color: #333333; /* Slightly lighter on hover */
+            background-color: #333333;
         }
         .game-card img {
-            width: 120px; /* Adjust size as needed */
-            height: 120px; /* Adjust size as needed */
-            object-fit: contain; /* Ensures the image fits without cropping */
-            border-radius: 10px; /* Slightly rounded corners for the images */
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            border-radius: 10px;
             margin-bottom: 1rem;
-            border: 2px solid rgba(0, 255, 0, 0.4); /* Subtle green border */
+            border: 2px solid rgba(0, 255, 0, 0.4);
+        }
+        .top-bar {
+            width: 100%;
+            padding: 1rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .signin-btn {
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body class="p-4 sm:p-8">
 
-    <!-- Header: The Vault -->
+    <div class="top-bar" id="auth-section">
+        <a href="/login/" class="signin-btn">🔑 SIGN IN</a>
+    </div>
+
     <header class="text-center mb-10 w-full max-w-4xl">
         <h1 class="text-4xl sm:text-6xl font-bold header-glow mb-2">THE VAULT</h1>
         <p class="text-gray-400 text-lg">Choose your loot, champion. These links are battle-tested.</p>
-        <a href="index.html" class="inline-block mt-4 text-green-400 hover:text-green-200 transition duration-150">
+        <a href="../index.html" class="inline-block mt-4 text-green-400 hover:text-green-200 transition duration-150">
             <span class="mr-2">⬅️</span> Back to The Hallway
         </a>
     </header>
 
-    <!-- Client-Side Search Box -->
     <div class="w-full max-w-4xl mx-auto mb-10 bg-gray-800 p-4 rounded-xl border border-green-700/50 shadow-lg shadow-green-900/50">
         <input 
             type="text" 
             id="gameSearch" 
             onkeyup="filterGames()" 
-            placeholder="Search the dungeon for a game (e.g., Geometry Dash)" 
-            class="w-full p-3 bg-gray-700 text-white placeholder-gray-400 border border-green-600 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 transition duration-150"
-            aria-label="Search for games"
+            placeholder="Search the dungeon..." 
+            class="w-full p-3 bg-gray-700 text-white placeholder-gray-400 border border-green-600 rounded-lg focus:ring-2 focus:ring-green-400"
         >
     </div>
 
-
-    <!-- Game Grid -->
     <div id="gameGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
-
-        <!-- Game 1: Cookie Clicker -->
-        <a href="cookie-clicker/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+        <a href="cookie-clicker/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/cc.png" alt="Cookie Clicker Logo">
+                <img src="/storage/photos/cc.png" alt="Cookie Clicker">
                 <h2 class="text-2xl font-bold text-white mb-2">Cookie Clicker</h2>
-                <p class="text-gray-400 text-sm text-center">The ancient and addictive art of numerical ascension. Click 'til your thumb breaks.</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
+                <p class="text-gray-400 text-sm text-center">Click 'til your thumb breaks.</p>
+                <div id="time-cookie-clicker" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
-        <!-- Game 2: Geometry Dash -->
-        <a href="geometry-dash/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+        <a href="geometry-dash/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/gd.png" alt="Geometry Dash Logo">
+                <img src="/storage/photos/gd.png" alt="Geometry Dash">
                 <h2 class="text-2xl font-bold text-white mb-2">Geometry Dash</h2>
-                <p class="text-gray-400 text-sm text-center">Rhythm, rage, and reckless squares. Can you beat the toughest levels?</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Start Rolling</div>
+                <p class="text-gray-400 text-sm text-center">Rhythm, rage, and reckless squares.</p>
+                <div id="time-geometry-dash" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Start Rolling</div>
             </div>
         </a>
 
-        <!-- Game 3: Poly Track -->
-        <a href="polytrack/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+        <a href="ragdoll-hit/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/polytrack.png" alt="Poly Track Logo">
-                <h2 class="text-2xl font-bold text-white mb-2">Poly Track</h2>
-                <p class="text-gray-400 text-sm text-center">Low-poly racing action that flies under the radar. Quick laps, fast fun.</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Race Time</div>
-            </div>
-        </a>
-
-        <!-- Game 4: Basket Random -->
-        <a href="basket-random/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
-            <div class="flex flex-col items-center">
-                <img src="/storage/photos/br.png" alt="Basket Random Logo">
-                <h2 class="text-2xl font-bold text-white mb-2">Basket Random</h2>
-                <p class="text-gray-400 text-sm text-center">Ruining friendships one basket at a time.</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Put It Up</div>
-            </div>
-        </a>
-  
-        <!-- Game 5: Ragdoll Hit -->
-        <a href="ragdoll-hit/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
-            <div class="flex flex-col items-center">
-                <img src="/storage/photos/rh.png" alt="Ragdoll Hit Logo">
+                <img src="/storage/photos/rh.png" alt="Ragdoll Hit">
                 <h2 class="text-2xl font-bold text-white mb-2">Ragdoll Hit</h2>
-                <p class="text-gray-400 text-sm text-center">Jump into pure, unpredictable chaos where the winner is decided by the wackiest ragdoll flops. Grab a friend for an absurd, physics-based fight that takes zero skill and delivers maximum laughs.</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Smack Em</div>
+                <p class="text-gray-400 text-sm text-center">Pure, unpredictable chaos.</p>
+                <div id="time-ragdoll-hit" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Smack Em</div>
             </div>
         </a>
 
-    <!-- Game 6: Minecraft -->
-        <a href="minecraft/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
+        <a href="kick-the-sod/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/minecraft.png" alt="Minecraft Logo">
-                <h2 class="text-2xl font-bold text-white mb-2">Minecraft</h2>
-                <p class="text-gray-400 text-sm text-center">Enter the world where you can do anything </p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Oof To It</div>
-            </div>
-        </a>
-      
-      <!-- Game 7: Proxicrib -->
-        <a href="proxicrib/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
-            <div class="flex flex-col items-center">
-                <img src="/storage/photos/proxicrib.png" alt="Proxicrib Logo">
-                <h2 class="text-2xl font-bold text-white mb-2">Proxicrib</h2>
-                <p class="text-gray-400 text-sm text-center">W proxy for those times when your 2nd favorite games website is blocked</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Unblock Now</div>
-            </div>
-        </a>
-
-                <!-- Game 8: Kick The Sod -->
-        <a href="kick-the-sod/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl shadow-[#00ff001a] transition duration-300 ease-in-out">
-            <div class="flex flex-col items-center">
-                <img src="/storage/photos/kts.png" alt="Basket Random Logo">
+                <img src="/storage/photos/kts.png" alt="Kick the Sod">
                 <h2 class="text-2xl font-bold text-white mb-2">Kick The Sod</h2>
-                <p class="text-gray-400 text-sm text-center">Sod-erdine is your punching bag. Go to town.</p>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Kaboom</div>
+                <p class="text-gray-400 text-sm text-center">Sod-erdine is your punching bag.</p>
+                <div id="time-kick-the-sod" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Kaboom</div>
             </div>
         </a>
     </div>
 
-    <script type="module" src="/main.js?v=12"></script>
-    
-    <!-- Footer -->
     <footer class="mt-12 text-center text-gray-500 text-xs w-full">
         <b>Bro, there are 8 games.</b>
         <p>&copy; The Game Dungeon | Guild Initials: D, A, J.</p>
     </footer>
 
-    <!-- JavaScript for Client-Side Filtering -->
-    <script>
-        /**
-         * Filters the game cards based on the text entered in the search box.
-         * This function is simple, fast, and 100% self-contained in this HTML file.
-         */
-        function filterGames() {
-            // Get the search input value and convert it to lowercase for case-insensitive matching
-            const input = document.getElementById('gameSearch').value.toLowerCase();
-            
-            // Get all elements with the class 'game-card' (all the game links)
-            const gameCards = document.querySelectorAll('.game-card');
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-            // Loop through each game card
-            gameCards.forEach(card => {
-                // Get the text content of the entire card and convert to lowercase
-                const cardText = card.textContent.toLowerCase();
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Change Sign In button to "Welcome, Alex" style
+                document.getElementById('auth-section').innerHTML = `<span class="text-green-400 font-bold">🛡️ CHAMPION LOGGED IN</span>`;
                 
-                // Check if the card's text includes the search input
-                if (cardText.includes(input)) {
-                    // If it matches, show the card (using 'block' display)
-                    card.style.display = 'block';
-                } else {
-                    // If it doesn't match, hide the card
-                    card.style.display = 'none';
-                }
-            });
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
 
-            // Optional: Re-adjust grid layout if needed (Tailwind grid handles this mostly)
-            const gameGrid = document.getElementById('gameGrid');
-            const visibleCards = Array.from(gameCards).filter(card => card.style.display !== 'none');
-            
-            // If no cards are visible, we might want to display a "No games found" message,
-            // but for simplicity, we'll just let the grid look empty.
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    const games = ['cookie_clicker', 'geometry_dash', 'ragdoll_hit', 'kick_the_sod']; // Add more here
+
+                    games.forEach(game => {
+                        const seconds = data[`playtime_${game}`] || 0;
+                        const mins = Math.floor(seconds / 60);
+                        const hours = (seconds / 3600).toFixed(1);
+                        
+                        const el = document.getElementById(`time-${game.replace(/_/g, '-')}`);
+                        if (el) {
+                            if (hours >= 1) el.innerText = `${hours} Hours Played`;
+                            else if (mins > 0) el.innerText = `${mins} Mins Played`;
+                            else el.innerText = `New Game`;
+                        }
+                    });
+                }
+            }
+        });
+
+        // Search Filter Logic
+        window.filterGames = function() {
+            const input = document.getElementById('gameSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.game-card');
+            cards.forEach(card => {
+                card.style.display = card.textContent.toLowerCase().includes(input) ? 'block' : 'none';
+            });
         }
     </script>
 </body>
