@@ -99,4 +99,12 @@ function startAutoSave(uid) {
             }
         }
         if (hasNewData) {
-            await setDoc(doc(db, "saves",
+            try {
+                await setDoc(doc(db, "saves", uid), updates, { merge: true });
+                console.log("Cloud Saved!");
+            } catch (e) {
+                console.error("AutoSave Error:", e);
+            }
+        }
+    }, 30000); 
+}
