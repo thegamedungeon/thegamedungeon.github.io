@@ -45,26 +45,10 @@
         #game-layout {
             display: none; 
             height: 100vh;
-            flex-direction: column;
-        }
-
-        .controls-bar {
-            background-color: #1a1a1a;
-            border-bottom: 2px solid #00ff00;
-            padding: 0.5rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
-        }
-
-        .header-glow {
-            text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
-            color: #00ff00;
+            width: 100vw;
         }
 
         #gameFrame {
-            flex-grow: 1;
             width: 100%;
             height: 100%;
             border: none;
@@ -74,15 +58,10 @@
 <body>
 
     <div id="splash-overlay">
-        <img src="/storage/photos/ragdoll.png" class="launch-logo" id="logo" onerror="this.src='/storage/photos/cc.png'">
+        <img src="/storage/photos/rh.png" class="launch-logo" id="logo" onerror="this.src='/storage/photos/cc.png'">
     </div>
 
     <div id="game-layout">
-        <nav class="controls-bar">
-            <a href="/play/" class="text-gray-400 hover:text-[#00ff00] transition-colors text-sm">⬅️ Back to The Vault</a>
-            <h1 class="text-xl font-bold header-glow">Ragdoll Hit</h1>
-            <div class="w-10"></div> </nav>
-        
         <iframe id="gameFrame" src="about:blank" allowfullscreen></iframe>
     </div>
 
@@ -108,11 +87,12 @@
         const iframe = document.getElementById('gameFrame');
 
         window.onload = () => {
+            // Loading from your storage folder
             iframe.src = "/storage/ragdoll-hit-main/index.html";
 
             setTimeout(() => {
                 splash.style.opacity = '0';
-                layout.style.display = 'flex';
+                layout.style.display = 'block';
                 
                 setTimeout(() => {
                     splash.remove();
