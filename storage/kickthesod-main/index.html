@@ -43,7 +43,6 @@
     <script>
         const { Engine, Render, Runner, World, Bodies, Body, Constraint, MouseConstraint, Mouse, Composite, Vector, Events } = Matter;
 
-        // FIXED: High-speed collision detection to stop floor-clipping
         const engine = Engine.create({ positionIterations: 10, velocityIterations: 10 });
         const world = engine.world;
         const totalScoreEl = document.getElementById('total-score');
@@ -54,7 +53,6 @@
         let gravityState = 1;
         let bloodParticles = [];
         
-        const PROTECTION_DURATION = 500; 
         const MERCY_TIMEOUT = 5000; 
         const MAX_AURA = 500000; 
 
@@ -69,9 +67,7 @@
         Runner.run(runner, engine);
 
         const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight + 25, window.innerWidth*2, 50, { isStatic: true, label: 'ground', render: { fillStyle: '#111' } });
-        const wallLeft = Bodies.rectangle(-100, window.innerHeight/2, 50, window.innerHeight * 4, { isStatic: true });
-        const wallRight = Bodies.rectangle(window.innerWidth + 100, window.innerHeight/2, 50, window.innerHeight * 4, { isStatic: true });
-        World.add(world, [ground, wallLeft, wallRight]);
+        World.add(world, [ground]);
 
         let sodInstances = [];
 
@@ -81,46 +77,28 @@
             const x = Math.random() * (window.innerWidth - 200) + 100;
             const y = window.innerHeight / 2;
             const skinTone = '#f1c40f'; 
-            const pantsColor = '#2c3e50';
-            const shirtColor = '#e74c3c';
 
-            const head = Bodies.circle(x, y - 110, 24, { friction: 0.1, restitution: 0.5, render: { fillStyle: skinTone }, label: 'head', sodId: id });
-            const torso = Bodies.rectangle(x, y - 55, 40, 60, { friction: 0.1, render: { fillStyle: shirtColor }, label: 'chest', sodId: id });
-            const ipad = Bodies.rectangle(x + 50, y - 40, 25, 35, { render: { fillStyle: '#000', strokeStyle: '#3498db', lineWidth: 2 }, label: 'ipad', sodId: id });
-
+            const head = Bodies.circle(x, y - 110, 24, { friction: 0.1, render: { fillStyle: skinTone }, label: 'head', sodId: id });
+            const torso = Bodies.rectangle(x, y - 55, 40, 60, { friction: 0.1, render: { fillStyle: '#e74c3c' }, label: 'chest', sodId: id });
+            
+            // The rest of the limbs...
             const limbs = [
-                Bodies.rectangle(x - 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x - 30, y - 35, 10, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x + 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x + 30, y - 35, 10, 30, { render: { fillStyle: skinTone }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x - 15, y - 10, 16, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x - 15, y + 25, 14, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x + 15, y - 10, 16, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id }),
-                Bodies.rectangle(x + 15, y + 25, 14, 35, { render: { fillStyle: pantsColor }, label: 'limb', sodId: id })
-            ];
-
-            const allBodies = [head, torso, ipad, ...limbs];
-            const joints = [
-                Constraint.create({ bodyA: head, pointB: { x: 0, y: -30 }, bodyB: torso, stiffness: 0.15, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: torso, pointA: { x: -20, y: -25 }, bodyB: limbs[0], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: limbs[0], pointA: { x: 0, y: 15 }, bodyB: limbs[1], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: torso, pointA: { x: 20, y: -25 }, bodyB: limbs[2], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: limbs[2], pointA: { x: 0, y: 15 }, bodyB: limbs[3], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: torso, pointA: { x: -12, y: 30 }, bodyB: limbs[4], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: limbs[4], pointA: { x: 0, y: 15 }, bodyB: limbs[5], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: torso, pointA: { x: 12, y: 30 }, bodyB: limbs[6], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: limbs[6], pointA: { x: 0, y: 15 }, bodyB: limbs[7], pointB: { x: 0, y: -15 }, stiffness: 0.08, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: limbs[3], pointA: { x: 0, y: 15 }, bodyB: ipad, stiffness: 0.03, length: 5, render: {visible: false} })
+                Bodies.rectangle(x - 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, sodId: id }),
+                Bodies.rectangle(x + 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, sodId: id }),
+                Bodies.rectangle(x - 15, y + 10, 16, 35, { render: { fillStyle: '#2c3e50' }, sodId: id }),
+                Bodies.rectangle(x + 15, y + 10, 16, 35, { render: { fillStyle: '#2c3e50' }, sodId: id })
             ];
 
             const group = Composite.create();
-            Composite.add(group, [...allBodies, ...joints]);
-            World.add(world, group);
+            Composite.add(group, [head, torso, ...limbs]);
+            
+            // Simplified Joints for iPad performance
+            Composite.add(group, [
+                Constraint.create({ bodyA: head, pointB: { x: 0, y: -30 }, bodyB: torso, stiffness: 0.2, length: 2, render: {visible: false} })
+            ]);
 
-            const instance = {
-                id: id, composite: group, aura: MAX_AURA, spawnTime: Date.now(), lastHitTime: Date.now(), isDead: false, ui: createSodUI(id)
-            };
-            sodInstances.push(instance);
+            World.add(world, group);
+            sodInstances.push({ id, composite: group, aura: MAX_AURA, lastHitTime: Date.now(), isDead: false, ui: createSodUI(id) });
         }
 
         function createSodUI(id) {
@@ -128,10 +106,7 @@
             div.className = 'stat-card';
             div.id = `ui-${id}`;
             div.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-[11px] text-white font-black uppercase">Immortal Sod</span>
-                    <span id="status-${id}" class="text-[9px] text-green-400 font-bold">Acting Tuff</span>
-                </div>
+                <div class="flex justify-between items-center"><span class="text-[11px] text-white font-black">Immortal Sod</span><span id="status-${id}" class="text-[9px] text-green-400">Acting Tuff</span></div>
                 <div class="aura-bar-container"><div id="aura-${id}" class="aura-fill"></div></div>
                 <div id="hp-text-${id}" class="text-[10px] text-gray-400 font-mono mt-1">HP: 500k / 500k</div>
                 <div id="mercy-${id}" style="display:none; color: #fff; font-size: 10px; margin-top: 4px;">Respawn: <span id="timer-${id}">5.0</span>s</div>
@@ -145,64 +120,98 @@
             instance.aura = Math.max(0, instance.aura - amt);
             totalScore += Math.floor(amt / 100);
             totalScoreEl.innerText = totalScore;
-            instance.lastHitTime = Date.now();
+            instance.lastHitTime = Date.now(); // RESET TIMER WHILE BEING HIT
 
             const auraBar = document.getElementById(`aura-${instance.id}`);
             const hpText = document.getElementById(`hp-text-${instance.id}`);
             if (hpText) hpText.innerText = `HP: ${Math.floor(instance.aura).toLocaleString()} / 500,000`;
+            if (auraBar) auraBar.style.width = (instance.aura / MAX_AURA) * 100 + '%';
 
-            if (auraBar) {
-                const percent = (instance.aura / MAX_AURA) * 100;
-                auraBar.style.width = percent + '%';
-                if (percent < 25) auraBar.style.background = '#ff0000';
-            }
             if (instance.aura <= 0) {
                 instance.isDead = true;
-                const status = document.getElementById(`status-${instance.id}`);
-                if(status) { status.innerText = "FINALLY FOLDED"; status.style.color = "#ff0000"; }
+                instance.lastHitTime = Date.now(); // START FINAL COUNTDOWN
+                document.getElementById(`status-${instance.id}`).innerText = "FINALLY FOLDED";
+                document.getElementById(`status-${instance.id}`).style.color = "#ff0000";
+                document.getElementById(`mercy-${instance.id}`).style.display = "block";
             }
         }
 
-        // FIXED: DAMAGE FROM EVERYTHING (Slamming, Swords, Forks)
+        // UNIVERSAL DAMAGE (The Floor/Belt fix)
         Events.on(engine, 'collisionStart', (event) => {
             event.pairs.forEach(pair => {
                 const bodies = [pair.bodyA, pair.bodyB];
                 const sodPart = bodies.find(b => b.sodId);
-                const otherBody = bodies.find(b => !b.sodId);
-
-                if (sodPart && otherBody) {
+                const other = bodies.find(b => !b.sodId);
+                if (sodPart && other) {
                     const inst = sodInstances.find(s => s.id === sodPart.sodId);
                     if (inst && !inst.isDead) {
-                        const relativeVelocity = Vector.magnitude(Vector.sub(pair.bodyA.velocity, pair.bodyB.velocity));
-                        if (relativeVelocity > 3) {
-                            let multiplier = 50; 
-                            if (otherBody.label === 'sword-item') multiplier = 150;
-                            if (otherBody.label === 'fork') multiplier = 500; // BUFFED FORK TEST
-                            
-                            damageSod(inst, Math.floor(relativeVelocity * multiplier));
-                            spawnBlood(sodPart.position.x, sodPart.position.y, 4);
-                            triggerShake(relativeVelocity / 2);
+                        const vel = Vector.magnitude(Vector.sub(pair.bodyA.velocity, pair.bodyB.velocity));
+                        if (vel > 3) {
+                            let mult = 50;
+                            if (other.label === 'sword-item') mult = 150;
+                            if (other.label === 'fork') mult = 500;
+                            damageSod(inst, Math.floor(vel * mult));
+                            spawnBlood(sodPart.position.x, sodPart.position.y, 3);
                         }
                     }
                 }
             });
         });
 
-        // Spawning logic
-        function spawnPhysicalSword(x, y) {
-            const sword = Bodies.rectangle(x, y, 40, 80, { label: 'sword-item', density: 0.1, render: { visible: false } });
-            World.add(world, sword);
-            showPopup(x, y, "🗡️ DROPPED");
-        }
+        // The Timer Logic
+        Events.on(render, 'afterRender', () => {
+            const context = render.context;
+            const now = Date.now();
 
-        function spawnFork(x, y) {
-            const fork = Bodies.rectangle(x, y, 40, 10, { label: 'fork', render: { fillStyle: '#ccc' } });
-            Body.setVelocity(fork, { x: (Math.random()-0.5)*40, y: -30 });
-            World.add(world, fork);
-            showPopup(x, y, "🍴 FORK TEST");
-        }
+            sodInstances.forEach(inst => {
+                if (inst.isDead) {
+                    const elapsed = now - inst.lastHitTime;
+                    const remaining = Math.max(0, (MERCY_TIMEOUT - elapsed) / 1000);
+                    const timerSpan = document.getElementById(`timer-${inst.id}`);
+                    if (timerSpan) timerSpan.innerText = remaining.toFixed(1);
 
-        // Mouse/Touch Interaction
+                    if (elapsed > MERCY_TIMEOUT) {
+                        Composite.clear(inst.composite, true);
+                        World.remove(world, inst.composite);
+                        inst.ui.remove();
+                        sodInstances = sodInstances.filter(s => s.id !== inst.id);
+                        createSodInstance();
+                    }
+                }
+                
+                // Draw Emojis
+                Composite.allBodies(inst.composite).forEach(body => {
+                    if (body.label === 'head') {
+                        context.font = '24px Arial';
+                        context.fillText(inst.isDead ? '💀' : (inst.aura < 100000 ? '🥴' : '😤'), body.position.x - 12, body.position.y + 8);
+                    }
+                });
+            });
+
+            // Draw Swords
+            Composite.allBodies(world).forEach(body => {
+                if (body.label === 'sword-item') {
+                    context.save(); context.translate(body.position.x, body.position.y); context.rotate(body.angle + Math.PI/4);
+                    context.font = '60px Arial'; context.fillText('🗡️', -30, 30); context.restore();
+                }
+            });
+
+            // Blood Particles
+            bloodParticles.forEach((p, i) => {
+                context.fillStyle = `rgba(180, 0, 0, ${p.opacity})`; context.beginPath();
+                context.arc(p.x, p.y, p.size, 0, Math.PI * 2); context.fill();
+                p.opacity -= 0.02; if (p.opacity <= 0) bloodParticles.splice(i, 1);
+            });
+        });
+
+        function spawnPhysicalSword(x, y) { World.add(world, Bodies.rectangle(x, y, 40, 80, { label: 'sword-item', density: 0.1, render: { visible: false } })); }
+        function spawnFork(x, y) { 
+            const f = Bodies.rectangle(x, y, 40, 10, { label: 'fork', render: { fillStyle: '#ccc' } });
+            Body.setVelocity(f, { x: (Math.random()-0.5)*40, y: -30 });
+            World.add(world, f); 
+        }
+        function spawnBlood(x, y, count) { for (let i = 0; i < count; i++) bloodParticles.push({ x: x + (Math.random()-0.5)*15, y: y + (Math.random()-0.5)*15, size: Math.random()*3+1, opacity: 1 }); }
+
         function triggerAction(clientX, clientY) {
             const rect = render.canvas.getBoundingClientRect();
             const x = clientX - rect.left; const y = clientY - rect.top;
@@ -210,47 +219,37 @@
             if (currentTool === 'fork') spawnFork(x, y);
             if (currentTool === 'slap') {
                 sodInstances.forEach(inst => {
-                    Composite.allBodies(inst.composite).forEach(body => {
-                        const dist = Vector.magnitude(Vector.sub(body.position, {x, y}));
-                        if (dist < 120) {
-                            Body.applyForce(body, body.position, Vector.mult(Vector.normalise(Vector.sub(body.position, {x, y})), 0.5));
+                    Composite.allBodies(inst.composite).forEach(b => {
+                        if (Vector.magnitude(Vector.sub(b.position, {x, y})) < 120) {
+                            Body.applyForce(b, b.position, Vector.mult(Vector.normalise(Vector.sub(b.position, {x, y})), 0.5));
                             damageSod(inst, 2000);
                         }
                     });
                 });
-                showPopup(x, y, "WHACK");
             }
             if (currentTool === 'tnt') {
-                Composite.allBodies(world).forEach(body => {
-                    if (body.isStatic) return;
-                    const dir = Vector.sub(body.position, {x, y});
+                Composite.allBodies(world).forEach(b => {
+                    if (b.isStatic) return;
+                    const dir = Vector.sub(b.position, {x, y});
                     const dist = Vector.magnitude(dir);
                     if (dist < 450) {
-                        Body.applyForce(body, body.position, Vector.mult(Vector.normalise(dir), (450 - dist) * 0.045));
-                        if (body.sodId) damageSod(sodInstances.find(s => s.id === body.sodId), 5000);
+                        Body.applyForce(b, b.position, Vector.mult(Vector.normalise(dir), (450 - dist) * 0.045));
+                        if (b.sodId) damageSod(sodInstances.find(s => s.id === b.sodId), 5000);
                     }
                 });
-                triggerShake(20);
-                showPopup(x, y, "BOOM");
             }
         }
 
         render.canvas.addEventListener('mousedown', (e) => triggerAction(e.clientX, e.clientY));
-        render.canvas.addEventListener('touchstart', (e) => {
-            if (currentTool !== 'grab') e.preventDefault();
-            const t = e.touches[0]; triggerAction(t.clientX, t.clientY);
-        }, { passive: false });
-
-        // Tool Switcher
-        function setTool(tool) {
-            currentTool = tool;
-            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tool + '-tool').classList.add('active');
-            mouseConstraint.enabled = (tool === 'grab');
-        }
+        render.canvas.addEventListener('touchstart', (e) => { if (currentTool !== 'grab') e.preventDefault(); const t = e.touches[0]; triggerAction(t.clientX, t.clientY); }, { passive: false });
 
         const tools = ['grab', 'slap', 'sword', 'fork', 'tnt'];
-        tools.forEach(t => document.getElementById(t + '-tool').addEventListener('mousedown', () => setTool(t)));
+        tools.forEach(t => document.getElementById(t + '-tool').addEventListener('mousedown', () => {
+            currentTool = t;
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(t + '-tool').classList.add('active');
+            mouseConstraint.enabled = (t === 'grab');
+        }));
 
         document.getElementById('gravity-tool').addEventListener('mousedown', () => { gravityState *= -1; world.gravity.y = gravityState; });
         document.getElementById('clear-tool').addEventListener('mousedown', () => {
@@ -259,48 +258,9 @@
         document.getElementById('add-sod-btn').addEventListener('mousedown', createSodInstance);
         document.getElementById('reset-btn').addEventListener('mousedown', () => location.reload());
 
-        // Rendering Extras (Emojis & Blood)
-        Events.on(render, 'afterRender', () => {
-            const context = render.context;
-            Composite.allBodies(world).forEach(body => {
-                if (body.label === 'sword-item') {
-                    context.save(); context.translate(body.position.x, body.position.y); context.rotate(body.angle + Math.PI/4);
-                    context.font = '60px Arial'; context.fillText('🗡️', -30, 30); context.restore();
-                }
-                if (body.sodId && body.label === 'head') {
-                    const inst = sodInstances.find(s => s.id === body.sodId);
-                    context.font = '24px Arial';
-                    context.fillText(inst.isDead ? '💀' : (inst.aura < 100000 ? '🥴' : '😤'), body.position.x - 12, body.position.y + 8);
-                }
-            });
-            bloodParticles.forEach((p, i) => {
-                context.fillStyle = `rgba(180, 0, 0, ${p.opacity})`; context.beginPath();
-                context.arc(p.x, p.y, p.size, 0, Math.PI * 2); context.fill();
-                p.opacity -= 0.02; if (p.opacity <= 0) bloodParticles.splice(i, 1);
-            });
-        });
-
-        function spawnBlood(x, y, count) {
-            for (let i = 0; i < count; i++) bloodParticles.push({ x: x + (Math.random()-0.5)*15, y: y + (Math.random()-0.5)*15, size: Math.random()*3+1, opacity: 1 });
-        }
-
-        function triggerShake(intensity) {
-            let i = Math.min(intensity, 15);
-            let c = 0; let interval = setInterval(() => {
-                document.body.style.transform = `translate(${(Math.random()-0.5)*i}px, ${(Math.random()-0.5)*i}px)`;
-                if (++c > 5) { clearInterval(interval); document.body.style.transform = ''; }
-            }, 30);
-        }
-
-        function showPopup(x, y, text) {
-            const p = document.createElement('div'); p.id = 'damage-popup'; p.style.left = x + 'px'; p.style.top = y + 'px';
-            p.innerText = text; document.body.appendChild(p); setTimeout(() => p.remove(), 800);
-        }
-
         const mouse = Mouse.create(render.canvas);
         const mouseConstraint = MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.15, render: { visible: false } } });
         World.add(world, mouseConstraint);
-
         createSodInstance();
     </script>
 </body>
