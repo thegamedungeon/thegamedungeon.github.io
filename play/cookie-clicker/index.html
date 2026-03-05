@@ -9,191 +9,107 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
         
         body {
-            background-color: #121212; /* Darker, stealthier background */
+            background-color: #000; /* Pitch black for that sleek launch feel */
             color: #e0e0e0;
             font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 0;
+            overflow: hidden; /* Prevent scrolling during launch */
         }
 
-        .header-glow {
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
-            color: #00ff00;
-        }
-
-        /* The main layout grid */
-        .content-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 350px; /* Big game area, 350px sidebar */
-            gap: 20px;
-            max-width: 1400px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        /* Responsive: Stack sidebar on bottom for iPad/Mobile */
-        @media (max-width: 1024px) {
-            .content-wrapper {
-                grid-template-columns: 1fr;
+        /* The Android-style Zoom Animation */
+        @keyframes appLaunch {
+            0% {
+                transform: scale(0.2);
+                opacity: 0;
+            }
+            70% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
             }
         }
 
-        /* The Game "Theater" */
-        .game-theater {
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #333;
+        /* Fade out the logo before game shows */
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
         }
 
-        .iframe-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
+        .launch-logo {
+            animation: appLaunch 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
         }
 
-        .iframe-container iframe {
-            position: absolute;
+        .fade-out {
+            animation: fadeOut 0.4s ease forwards;
+        }
+
+        #game-container {
+            position: fixed;
             top: 0;
             left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none; /* Hidden until launch finishes */
+            z-index: 10;
+        }
+
+        iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        .sidebar-card {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 15px;
-            border: 1px solid #333;
-        }
-
-        .mini-game-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.2s;
-            text-decoration: none;
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        .mini-game-link:hover {
-            background: #2a2a2a;
-            border-left: 4px solid #00ff00;
-        }
-
-        .mini-thumb {
-            width: 80px;
-            height: 50px;
-            background: #333;
-            border-radius: 4px;
+        #splash-overlay {
+            position: fixed;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            background: #121212;
+            z-index: 20;
         }
     </style>
 </head>
 <body>
 
-    <nav class="bg-[#1a1a1a] p-4 border-b-2 border-[#00ff00] flex justify-between items-center sticky top-0 z-50">
-        <a href="/play/" class="text-gray-400 hover:text-[#00ff00] transition-colors">⬅️ Back to The Vault</a>
-        <h1 class="text-xl font-bold header-glow">The Game Dungeon</h1>
-        <div class="w-24"></div> </nav>
-
-    <div class="content-wrapper">
-        <main>
-<div class="game-theater">
-    <div class="iframe-container" id="theaterContainer">
-        <div id="splashScreen" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1a1a1a] bg-opacity-95">
-            <div class="mini-thumb w-32 h-32 text-4xl mb-4 border-2 border-[#00ff00]">⬜</div>
-            <h2 class="text-3xl font-bold mb-6">Cookie Clicker</h2>
-            <button onclick="loadGame()" class="bg-[#00ff00] text-black px-12 py-4 rounded-full font-bold text-xl hover:scale-110 transition-transform shadow-[0_0_20px_rgba(0,255,0,0.4)]">
-                PLAY NOW!
-            </button>
-        </div>
-        
-        <iframe id="gameFrame" src="/storage/cookieclick-main/index.html" allowfullscreen></iframe>
+    <div id="splash-overlay">
+        <img src="/storage/photos/cc.png" alt="Cookie Clicker" class="launch-logo" id="logo">
     </div>
-    
-    <div class="p-4 flex justify-between items-center">
-        <div>
-            <h2 class="text-2xl font-bold">Cookie Clicker</h2>
-            <p class="text-sm text-gray-400">By Orteil (Unblocked via The Crib)</p>
-        </div>
-        <button id="fullscreenBtn" class="bg-[#00ff00] text-black px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform">
-            FULLSCREEN
-        </button>
-    </div>
-</div>
-            <div class="mt-6 p-6 bg-[#1a1a1a] rounded-xl border border-[#333]">
-                <h3 class="font-bold border-b border-[#333] pb-2 mb-4">About this Game</h3>
-                <p class="text-gray-300">The anchient and addictive art of numerical ascension. Click 'till your thumb breaks.</p>
-            </div>
-        </main>
 
-        <aside>
-            <div class="sidebar-card">
-                <h3 class="text-[#00ff00] font-bold mb-4 uppercase tracking-wider">Dungeon Classics</h3>
+    <div id="game-container">
+        <iframe id="gameFrame" src=""></iframe>
+    </div>
+
+    <script>
+        const splash = document.getElementById('splash-overlay');
+        const logo = document.getElementById('logo');
+        const container = document.getElementById('game-container');
+        const iframe = document.getElementById('gameFrame');
+
+        // Start the sequence
+        window.addEventListener('load', () => {
+            // 1. Wait for the "Zoom" animation to almost finish (600ms)
+            setTimeout(() => {
+                // 2. Start fading out the splash screen
+                splash.classList.add('fade-out');
                 
-                <a href="cookieclicker.html" class="mini-game-link">
-                    <div class="mini-thumb">🍪</div>
-                    <div>
-                        <div class="font-bold">Cookie Clicker</div>
-                        <div class="text-xs text-gray-500">Idle / Casual</div>
-                    </div>
-                </a>
+                // 3. Show the game container and set the source
+                container.style.display = 'block';
+                iframe.src = "/storage/cookieclick-main/index.html";
+                
+                // 4. Fully remove splash from DOM after fade finishes to save memory
+                setTimeout(() => {
+                    splash.remove();
+                    document.body.style.overflow = 'auto';
+                }, 400);
 
-                <a href="polytrack.html" class="mini-game-link">
-                    <div class="mini-thumb">🏎️</div>
-                    <div>
-                        <div class="font-bold">Polytrack</div>
-                        <div class="text-xs text-gray-500">Racing</div>
-                    </div>
-                </a>
-
-                <a href="minecraft.html" class="mini-game-link">
-                    <div class="mini-thumb">⛏️</div>
-                    <div>
-                        <div class="font-bold">Minecraft</div>
-                        <div class="text-xs text-gray-500">Open World</div>
-                    </div>
-                </a>
-
-                <a href="basketrandom.html" class="mini-game-link">
-                    <div class="mini-thumb">🏀</div>
-                    <div>
-                        <div class="font-bold">Basket Random</div>
-                        <div class="text-xs text-gray-500">Sports / Physics</div>
-                    </div>
-                </a>
-            </div>
-        </aside>
-    </div>
-
-<script>
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const gameFrame = document.getElementById('gameFrame');
-    const splash = document.getElementById('splashScreen');
-
-    // Function to load the game and hide splash
-    function loadGame() {
-        gameFrame.src = "/gdl-main/index.html"; // Set this specifically for each game
-        splash.style.display = 'none';
-    }
-
-    // Fullscreen logic stays the same
-    fullscreenBtn.addEventListener('click', () => {
-        if (gameFrame.requestFullscreen) {
-            gameFrame.requestFullscreen();
-        } else if (gameFrame.webkitRequestFullscreen) {
-            gameFrame.webkitRequestFullscreen();
-        }
-    });
-</script>
+            }, 1000); // 1 second total "hype" time before game loads
+        });
+    </script>
 </body>
 </html>
