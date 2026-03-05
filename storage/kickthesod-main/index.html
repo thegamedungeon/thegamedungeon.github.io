@@ -3,22 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kick the Sod: Gory Edition - The Game Dungeon</title>
+    <title>Kick the Sod: Gory Edition V2.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #050505; font-family: 'Segoe UI', sans-serif; touch-action: none; -webkit-user-select: none; user-select: none; }
         canvas { display: block; }
         .ui-overlay { position: absolute; top: 100px; left: 20px; z-index: 10; pointer-events: none; }
-        .controls { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: rgba(0,0,0,0.9); padding: 12px; border-radius: 20px; border: 2px solid #e74c3c; pointer-events: auto; box-shadow: 0 0 20px rgba(231, 76, 60, 0.4); }
-        .btn { width: 45px; height: 45px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
-        .btn:active { transform: scale(0.9); }
+        .controls { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: rgba(0,0,0,0.9); padding: 12px; border-radius: 20px; border: 2px solid #e74c3c; pointer-events: auto; }
+        .btn { width: 45px; height: 45px; border-radius: 10px; border: none; background: #1a1a1a; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .btn.active { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
-        #damage-popup { position: absolute; color: #e74c3c; font-weight: 900; text-transform: uppercase; pointer-events: none; font-size: 1.2rem; text-shadow: 2px 2px 0px #000; animation: floatUp 0.8s ease-out forwards; z-index: 100; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 1; } 50% { transform: translateY(-40px) scale(1.2); } 100% { transform: translateY(-100px) scale(1.3); opacity: 0; } }
         .stat-card { background: rgba(20, 20, 20, 0.8); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #e74c3c; min-width: 200px; }
-        .aura-bar-container { width: 100%; height: 12px; background: #111; border-radius: 6px; margin-top: 6px; overflow: hidden; border: 1px solid #333; }
-        .aura-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff00, #2ecc71); transition: width 0.1s linear; }
+        .aura-bar-container { width: 100%; height: 12px; background: #111; border-radius: 6px; margin-top: 6px; overflow: hidden; }
+        .aura-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff00, #2ecc71); transition: width 0.1s; }
     </style>
 </head>
 <body>
@@ -42,32 +39,20 @@
 
     <script>
         const { Engine, Render, Runner, World, Bodies, Body, Constraint, MouseConstraint, Mouse, Composite, Vector, Events } = Matter;
-
         const engine = Engine.create({ positionIterations: 10, velocityIterations: 10 });
         const world = engine.world;
         const totalScoreEl = document.getElementById('total-score');
         const statsContainer = document.getElementById('sod-stats-container');
         
-        let totalScore = 0;
-        let currentTool = 'grab';
-        let gravityState = 1;
-        let bloodParticles = [];
-        
-        const MERCY_TIMEOUT = 5000; 
-        const MAX_AURA = 500000; 
+        let totalScore = 0; let currentTool = 'grab'; let gravityState = 1; let bloodParticles = [];
+        const MERCY_TIMEOUT = 5000; const MAX_AURA = 500000; 
 
-        const render = Render.create({
-            element: document.body,
-            engine: engine,
-            options: { width: window.innerWidth, height: window.innerHeight, wireframes: false, background: '#0a0a0a' }
-        });
-
+        const render = Render.create({ element: document.body, engine: engine, options: { width: window.innerWidth, height: window.innerHeight, wireframes: false, background: '#0a0a0a' } });
         Render.run(render);
-        const runner = Runner.create();
-        Runner.run(runner, engine);
+        Runner.run(Runner.create(), engine);
 
         const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight + 25, window.innerWidth*2, 50, { isStatic: true, label: 'ground', render: { fillStyle: '#111' } });
-        World.add(world, [ground]);
+        World.add(world, ground);
 
         let sodInstances = [];
 
@@ -76,192 +61,23 @@
             const id = Math.random().toString(36).substr(2, 9);
             const x = Math.random() * (window.innerWidth - 200) + 100;
             const y = window.innerHeight / 2;
-            const skinTone = '#f1c40f'; 
 
-            const head = Bodies.circle(x, y - 110, 24, { friction: 0.1, render: { fillStyle: skinTone }, label: 'head', sodId: id });
-            const torso = Bodies.rectangle(x, y - 55, 40, 60, { friction: 0.1, render: { fillStyle: '#e74c3c' }, label: 'chest', sodId: id });
+            const head = Bodies.circle(x, y - 60, 20, { render: { fillStyle: '#f1c40f' }, label: 'head', sodId: id });
+            const torso = Bodies.rectangle(x, y, 35, 50, { render: { fillStyle: '#e74c3c' }, label: 'chest', sodId: id });
             
-            // The rest of the limbs...
-            const limbs = [
-                Bodies.rectangle(x - 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, sodId: id }),
-                Bodies.rectangle(x + 30, y - 65, 12, 30, { render: { fillStyle: skinTone }, sodId: id }),
-                Bodies.rectangle(x - 15, y + 10, 16, 35, { render: { fillStyle: '#2c3e50' }, sodId: id }),
-                Bodies.rectangle(x + 15, y + 10, 16, 35, { render: { fillStyle: '#2c3e50' }, sodId: id })
-            ];
+            // Re-adding the limbs with proper attachment
+            const lArm = Bodies.rectangle(x - 25, y, 10, 30, { render: { fillStyle: '#f1c40f' }, sodId: id });
+            const rArm = Bodies.rectangle(x + 25, y, 10, 30, { render: { fillStyle: '#f1c40f' }, sodId: id });
+            const lLeg = Bodies.rectangle(x - 10, y + 40, 12, 35, { render: { fillStyle: '#2c3e50' }, sodId: id });
+            const rLeg = Bodies.rectangle(x + 10, y + 40, 12, 35, { render: { fillStyle: '#2c3e50' }, sodId: id });
 
             const group = Composite.create();
-            Composite.add(group, [head, torso, ...limbs]);
+            Composite.add(group, [head, torso, lArm, rArm, lLeg, rLeg]);
             
-            // Simplified Joints for iPad performance
-            Composite.add(group, [
-                Constraint.create({ bodyA: head, pointB: { x: 0, y: -30 }, bodyB: torso, stiffness: 0.2, length: 2, render: {visible: false} })
-            ]);
-
-            World.add(world, group);
-            sodInstances.push({ id, composite: group, aura: MAX_AURA, lastHitTime: Date.now(), isDead: false, ui: createSodUI(id) });
-        }
-
-        function createSodUI(id) {
-            const div = document.createElement('div');
-            div.className = 'stat-card';
-            div.id = `ui-${id}`;
-            div.innerHTML = `
-                <div class="flex justify-between items-center"><span class="text-[11px] text-white font-black">Immortal Sod</span><span id="status-${id}" class="text-[9px] text-green-400">Acting Tuff</span></div>
-                <div class="aura-bar-container"><div id="aura-${id}" class="aura-fill"></div></div>
-                <div id="hp-text-${id}" class="text-[10px] text-gray-400 font-mono mt-1">HP: 500k / 500k</div>
-                <div id="mercy-${id}" style="display:none; color: #fff; font-size: 10px; margin-top: 4px;">Respawn: <span id="timer-${id}">5.0</span>s</div>
-            `;
-            statsContainer.appendChild(div);
-            return div;
-        }
-
-        function damageSod(instance, amt) {
-            if (instance.isDead) return;
-            instance.aura = Math.max(0, instance.aura - amt);
-            totalScore += Math.floor(amt / 100);
-            totalScoreEl.innerText = totalScore;
-            instance.lastHitTime = Date.now(); // RESET TIMER WHILE BEING HIT
-
-            const auraBar = document.getElementById(`aura-${instance.id}`);
-            const hpText = document.getElementById(`hp-text-${instance.id}`);
-            if (hpText) hpText.innerText = `HP: ${Math.floor(instance.aura).toLocaleString()} / 500,000`;
-            if (auraBar) auraBar.style.width = (instance.aura / MAX_AURA) * 100 + '%';
-
-            if (instance.aura <= 0) {
-                instance.isDead = true;
-                instance.lastHitTime = Date.now(); // START FINAL COUNTDOWN
-                document.getElementById(`status-${instance.id}`).innerText = "FINALLY FOLDED";
-                document.getElementById(`status-${instance.id}`).style.color = "#ff0000";
-                document.getElementById(`mercy-${instance.id}`).style.display = "block";
-            }
-        }
-
-        // UNIVERSAL DAMAGE (The Floor/Belt fix)
-        Events.on(engine, 'collisionStart', (event) => {
-            event.pairs.forEach(pair => {
-                const bodies = [pair.bodyA, pair.bodyB];
-                const sodPart = bodies.find(b => b.sodId);
-                const other = bodies.find(b => !b.sodId);
-                if (sodPart && other) {
-                    const inst = sodInstances.find(s => s.id === sodPart.sodId);
-                    if (inst && !inst.isDead) {
-                        const vel = Vector.magnitude(Vector.sub(pair.bodyA.velocity, pair.bodyB.velocity));
-                        if (vel > 3) {
-                            let mult = 50;
-                            if (other.label === 'sword-item') mult = 150;
-                            if (other.label === 'fork') mult = 500;
-                            damageSod(inst, Math.floor(vel * mult));
-                            spawnBlood(sodPart.position.x, sodPart.position.y, 3);
-                        }
-                    }
-                }
-            });
-        });
-
-        // The Timer Logic
-        Events.on(render, 'afterRender', () => {
-            const context = render.context;
-            const now = Date.now();
-
-            sodInstances.forEach(inst => {
-                if (inst.isDead) {
-                    const elapsed = now - inst.lastHitTime;
-                    const remaining = Math.max(0, (MERCY_TIMEOUT - elapsed) / 1000);
-                    const timerSpan = document.getElementById(`timer-${inst.id}`);
-                    if (timerSpan) timerSpan.innerText = remaining.toFixed(1);
-
-                    if (elapsed > MERCY_TIMEOUT) {
-                        Composite.clear(inst.composite, true);
-                        World.remove(world, inst.composite);
-                        inst.ui.remove();
-                        sodInstances = sodInstances.filter(s => s.id !== inst.id);
-                        createSodInstance();
-                    }
-                }
-                
-                // Draw Emojis
-                Composite.allBodies(inst.composite).forEach(body => {
-                    if (body.label === 'head') {
-                        context.font = '24px Arial';
-                        context.fillText(inst.isDead ? '💀' : (inst.aura < 100000 ? '🥴' : '😤'), body.position.x - 12, body.position.y + 8);
-                    }
-                });
-            });
-
-            // Draw Swords
-            Composite.allBodies(world).forEach(body => {
-                if (body.label === 'sword-item') {
-                    context.save(); context.translate(body.position.x, body.position.y); context.rotate(body.angle + Math.PI/4);
-                    context.font = '60px Arial'; context.fillText('🗡️', -30, 30); context.restore();
-                }
-            });
-
-            // Blood Particles
-            bloodParticles.forEach((p, i) => {
-                context.fillStyle = `rgba(180, 0, 0, ${p.opacity})`; context.beginPath();
-                context.arc(p.x, p.y, p.size, 0, Math.PI * 2); context.fill();
-                p.opacity -= 0.02; if (p.opacity <= 0) bloodParticles.splice(i, 1);
-            });
-        });
-
-        function spawnPhysicalSword(x, y) { World.add(world, Bodies.rectangle(x, y, 40, 80, { label: 'sword-item', density: 0.1, render: { visible: false } })); }
-        function spawnFork(x, y) { 
-            const f = Bodies.rectangle(x, y, 40, 10, { label: 'fork', render: { fillStyle: '#ccc' } });
-            Body.setVelocity(f, { x: (Math.random()-0.5)*40, y: -30 });
-            World.add(world, f); 
-        }
-        function spawnBlood(x, y, count) { for (let i = 0; i < count; i++) bloodParticles.push({ x: x + (Math.random()-0.5)*15, y: y + (Math.random()-0.5)*15, size: Math.random()*3+1, opacity: 1 }); }
-
-        function triggerAction(clientX, clientY) {
-            const rect = render.canvas.getBoundingClientRect();
-            const x = clientX - rect.left; const y = clientY - rect.top;
-            if (currentTool === 'sword') spawnPhysicalSword(x, y);
-            if (currentTool === 'fork') spawnFork(x, y);
-            if (currentTool === 'slap') {
-                sodInstances.forEach(inst => {
-                    Composite.allBodies(inst.composite).forEach(b => {
-                        if (Vector.magnitude(Vector.sub(b.position, {x, y})) < 120) {
-                            Body.applyForce(b, b.position, Vector.mult(Vector.normalise(Vector.sub(b.position, {x, y})), 0.5));
-                            damageSod(inst, 2000);
-                        }
-                    });
-                });
-            }
-            if (currentTool === 'tnt') {
-                Composite.allBodies(world).forEach(b => {
-                    if (b.isStatic) return;
-                    const dir = Vector.sub(b.position, {x, y});
-                    const dist = Vector.magnitude(dir);
-                    if (dist < 450) {
-                        Body.applyForce(b, b.position, Vector.mult(Vector.normalise(dir), (450 - dist) * 0.045));
-                        if (b.sodId) damageSod(sodInstances.find(s => s.id === b.sodId), 5000);
-                    }
-                });
-            }
-        }
-
-        render.canvas.addEventListener('mousedown', (e) => triggerAction(e.clientX, e.clientY));
-        render.canvas.addEventListener('touchstart', (e) => { if (currentTool !== 'grab') e.preventDefault(); const t = e.touches[0]; triggerAction(t.clientX, t.clientY); }, { passive: false });
-
-        const tools = ['grab', 'slap', 'sword', 'fork', 'tnt'];
-        tools.forEach(t => document.getElementById(t + '-tool').addEventListener('mousedown', () => {
-            currentTool = t;
-            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(t + '-tool').classList.add('active');
-            mouseConstraint.enabled = (t === 'grab');
-        }));
-
-        document.getElementById('gravity-tool').addEventListener('mousedown', () => { gravityState *= -1; world.gravity.y = gravityState; });
-        document.getElementById('clear-tool').addEventListener('mousedown', () => {
-            Composite.allBodies(world).forEach(b => { if (b.label === 'sword-item' || b.label === 'fork') World.remove(world, b); });
-        });
-        document.getElementById('add-sod-btn').addEventListener('mousedown', createSodInstance);
-        document.getElementById('reset-btn').addEventListener('mousedown', () => location.reload());
-
-        const mouse = Mouse.create(render.canvas);
-        const mouseConstraint = MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.15, render: { visible: false } } });
-        World.add(world, mouseConstraint);
-        createSodInstance();
-    </script>
-</body>
-</html>
+            // THE SKELETON (The part that stops the Roblox Oof)
+            const joints = [
+                Constraint.create({ bodyA: head, bodyB: torso, pointA: {x:0, y:20}, pointB: {x:0, y:-25}, stiffness: 0.4, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, bodyB: lArm, pointA: {x:-17, y:-20}, pointB: {x:0, y:-10}, stiffness: 0.4, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, bodyB: rArm, pointA: {x:17, y:-20}, pointB: {x:0, y:-10}, stiffness: 0.4, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, bodyB: lLeg, pointA: {x:-10, y:25}, pointB: {x:0, y:-15}, stiffness: 0.4, length: 2, render: {visible: false} }),
+                Constraint.create({ bodyA: torso, bodyB: rLeg, pointA: {x:1
