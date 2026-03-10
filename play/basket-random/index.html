@@ -3,94 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random | The Game Dungeon</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>THE MAILROOM | THE CRIB</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            background-color: #000; 
-            overflow: hidden; 
-            font-family: 'Inter', sans-serif;
+        body {
+            font-family: sans-serif;
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 100px;
         }
 
-        /* The "CribOS" Status Bar */
-        #pwa-status-bar {
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100; /* Stays above the game frame */
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #0f0;
-            padding: 5px 15px;
-            border-radius: 20px;
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 2px solid #0f0;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
             color: #0f0;
-            font-size: 0.8rem;
+            text-decoration: none;
             font-weight: bold;
-            display: none; /* Hidden until app launches */
-            pointer-events: none; /* Let clicks pass through to the game */
         }
 
-        @keyframes appLaunch {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+        h1 {
+            margin: 0;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #0f0;
         }
 
-        #splash-overlay {
-            position: fixed;
-            inset: 0;
+        .notif-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .thread-group {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .thread-header {
+            background: #444;
+            padding: 10px 15px;
+            border-bottom: 1px solid #0f0;
+            font-weight: bold;
+            color: #0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .message-card {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            position: relative;
+            animation: fadeIn 0.4s ease;
+            border-left: 4px solid #0f0;
+        }
+
+        .message-card:last-child { border-bottom: none; }
+
+        .my-message {
+            border-left: 4px solid #888;
+            background: #2a2a2a;
+        }
+
+        .tag {
+            font-size: 0.65em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .tag-global { background: #0f0; color: #000; }
+        .tag-private { background: #ff00ff; color: #fff; }
+        .tag-sent { background: #444; color: #ccc; border: 1px solid #888; }
+
+        .sender-info {
             display: flex;
             align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .sender-img {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid #0f0;
+        }
+
+        .sender-name { font-weight: bold; font-size: 0.9em; }
+        .body { font-size: 0.9em; color: #ddd; line-height: 1.4; white-space: pre-wrap; }
+        .time { font-size: 0.7em; color: #888; margin-top: 8px; display: block; }
+
+        .action-btns {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            background: #111;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .reply-btn { border-color: #0f0; color: #0f0; }
+        .reply-btn:hover { background: #0f0; color: #000; }
+
+        .delete-btn { border-color: #ff4444; color: #ff4444; }
+        .delete-btn:hover { background: #ff4444; color: #fff; }
+
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #0f0;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
             justify-content: center;
-            background: #121212;
-            z-index: 50;
-            transition: opacity 0.5s ease;
-        }
-
-        .launch-logo {
-            animation: appLaunch 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-        }
-
-        #game-layout {
-            display: none; 
-            height: 100vh;
-            width: 100vw;
-        }
-
-        #gameFrame {
-            width: 100%;
-            height: 100%;
+            align-items: center;
+            font-size: 35px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10;
             border: none;
+            cursor: pointer;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #222;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            border: 2px solid #0f0;
+        }
+
+        input, textarea {
+            width: 100%;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .send-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="pwa-status-bar">
-        <span id="live-timer">Loading Grind Time...</span>
+    <div class="top-bar">
+        <a href="../" class="back-btn">← THE CRIB</a>
+        <h1>MAILROOM</h1>
+        <div id="user-display" style="font-size: 0.8em; color: #0f0; display: flex; align-items: center; gap: 8px;">
+            Connecting...
+        </div>
     </div>
 
-    <div id="splash-overlay">
-        <img src="/storage/photos/br.png" class="launch-logo" id="logo" onerror="this.src='/storage/photos/cc.png'">
+    <div class="notif-container" id="thread-list">
+        <p style="text-align:center; color:#0f0;">Summoning the scrolls...</p>
     </div>
 
-    <div id="game-layout">
-        <iframe id="gameFrame" src="about:blank" allowfullscreen></iframe>
+    <button class="fab" id="open-compose">+</button>
+
+    <div class="modal" id="composeModal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-top:0; color:#0f0;">New Scroll</h2>
+            <input type="text" id="msgRecipient" placeholder="To: (Email, Name, or GLOBAL)">
+            <input type="text" id="msgSubject" placeholder="Subject">
+            <textarea id="msgBody" rows="4" placeholder="Message content..."></textarea>
+            <button class="send-btn" id="final-send">DISPATCH</button>
+            <button style="background:none; border:none; color:#888; margin-top:15px; cursor:pointer; width:100%;" id="close-modal">Cancel</button>
+        </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-        import { initTracker } from "/storage/js/tracker.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -103,45 +238,174 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
-        initTracker("Basket Random");
+        const db = getFirestore(app);
 
-        const splash = document.getElementById('splash-overlay');
-        const layout = document.getElementById('game-layout');
-        const iframe = document.getElementById('gameFrame');
-        const statusBar = document.getElementById('pwa-status-bar');
-        const timerText = document.getElementById('live-timer');
+        let currentUser = null;
 
-        // REAL-TIME LISTENER
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Listen for changes in this user's playtime document
-                onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const seconds = docSnap.data().playtime_basket_random || 0;
-                        if (seconds >= 3600) {
-                            timerText.innerText = `${(seconds / 3600).toFixed(1)} Hours Played`;
-                        } else {
-                            timerText.innerText = `${Math.floor(seconds / 60)} Mins Played`;
-                        }
-                    }
-                });
+                currentUser = user;
+                document.getElementById('user-display').innerHTML = `
+                    <img src="${user.photoURL || ''}" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #0f0;">
+                    <span>${user.displayName || 'Guest'}</span>
+                `;
+                loadThreads();
+            } else {
+                window.location.href = "../login/"; 
             }
         });
 
-        window.onload = () => {
-            iframe.src = "/storage/BasketRandom-main/";
+        window.initReply = function(email, name, subject) {
+            document.getElementById('modal-title').innerText = "Reply to " + name;
+            document.getElementById('msgRecipient').value = email || name;
+            const cleanSub = subject.replace(/^Re:\s+/i, "");
+            document.getElementById('msgSubject').value = "Re: " + cleanSub;
+            document.getElementById('composeModal').style.display = 'flex';
+            document.getElementById('msgBody').focus();
+        };
 
-            setTimeout(() => {
-                splash.style.opacity = '0';
-                layout.style.display = 'block';
-                statusBar.style.display = 'block'; // SHOW THE TIMER AFTER LAUNCH
+        window.deleteMessage = async function(msgId) {
+            if (confirm("Are you sure you wanna burn this scroll? Once it's deleted, it's gone from the dungeon forever.")) {
+                try {
+                    await deleteDoc(doc(db, "messages", msgId));
+                } catch (e) {
+                    alert("Error: The scroll resisted the flames.");
+                }
+            }
+        };
+
+        function loadThreads() {
+            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(200));
+            
+            onSnapshot(q, (snapshot) => {
+                const threadList = document.getElementById('thread-list');
+                threadList.innerHTML = '';
                 
-                setTimeout(() => {
-                    splash.remove();
-                }, 500);
-            }, 1500);
+                const threads = {}; 
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const target = data.recipient.toLowerCase();
+                    const isGlobal = target === 'global';
+                    
+                    const isForMe = isGlobal || 
+                        target === currentUser.displayName?.toLowerCase() || 
+                        target === currentUser.email?.toLowerCase() ||
+                        target === currentUser.uid;
+                    
+                    const isFromMe = data.senderUid === currentUser.uid || 
+                                     data.senderEmail?.toLowerCase() === currentUser.email?.toLowerCase();
+
+                    if (isForMe || isFromMe) {
+                        const baseSubject = data.subject.replace(/^Re:\s+/i, "").trim().toLowerCase();
+                        if (!threads[baseSubject]) threads[baseSubject] = [];
+                        threads[baseSubject].push({ id: doc.id, ...data, isSentByMe: isFromMe, isGlobal: isGlobal });
+                    }
+                });
+
+                const sortedSubjects = Object.keys(threads).sort((a, b) => {
+                    const lastA = threads[a][threads[a].length - 1].timestamp?.seconds || 0;
+                    const lastB = threads[b][threads[b].length - 1].timestamp?.seconds || 0;
+                    return lastB - lastA;
+                });
+
+                sortedSubjects.forEach(sub => {
+                    const msgGroup = threads[sub];
+                    
+                    const hasReplies = msgGroup.length > 1;
+                    const receivedAny = msgGroup.some(m => !m.isSentByMe);
+                    // Updated logic: if YOU sent a GLOBAL message, you want to see it regardless of replies.
+                    const isMyGlobalAnnouncement = msgGroup.some(m => m.isGlobal && m.isSentByMe);
+
+                    if (hasReplies || receivedAny || isMyGlobalAnnouncement) {
+                        const threadContainer = document.createElement('div');
+                        threadContainer.className = 'thread-group';
+                        
+                        const displaySubject = msgGroup[0].subject.replace(/^Re:\s+/i, "");
+                        threadContainer.innerHTML = `<div class="thread-header">
+                            <span>${displaySubject.toUpperCase()}</span>
+                            <span style="font-size: 0.7em; opacity: 0.7;">${msgGroup.length} MESSAGES</span>
+                        </div>`;
+
+                        msgGroup.forEach((msg) => {
+                            const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString([], {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : '...';
+                            const isGlobal = msg.recipient.toLowerCase() === 'global';
+
+                            const card = document.createElement('div');
+                            card.className = `message-card ${msg.isSentByMe ? 'my-message' : ''}`;
+                            
+                            const replyBtn = !msg.isSentByMe ? 
+                                `<button class="btn-small reply-btn" onclick="initReply('${msg.senderEmail || ''}', '${msg.senderName}', '${msg.subject}')">Reply</button>` : '';
+                            
+                            // Let users delete any message that is visible to them (Inbox cleaning)
+                            const deleteBtn = `<button class="btn-small delete-btn" onclick="deleteMessage('${msg.id}')">Delete</button>`;
+
+                            card.innerHTML = `
+                                <span class="tag ${isGlobal ? 'tag-global' : (msg.isSentByMe ? 'tag-sent' : 'tag-private')}">
+                                    ${isGlobal ? 'Global' : (msg.isSentByMe ? 'Sent' : 'Private')}
+                                </span>
+                                <div class="action-btns">
+                                    ${replyBtn}
+                                    ${deleteBtn}
+                                </div>
+                                <div class="sender-info">
+                                    <img src="${msg.senderPhoto || ''}" class="sender-img" onerror="this.src='https://via.placeholder.com/30'">
+                                    <span class="sender-name">${msg.isSentByMe ? 'You' : msg.senderName}</span>
+                                </div>
+                                <div class="body">${msg.body}</div>
+                                <span class="time">${time}</span>
+                            `;
+                            threadContainer.appendChild(card);
+                        });
+                        threadList.appendChild(threadContainer);
+                    }
+                });
+
+                if (threadList.innerHTML === '') {
+                    threadList.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">No scrolls found in your dungeon chamber.</p>';
+                }
+            });
+        }
+
+        const modal = document.getElementById('composeModal');
+        document.getElementById('open-compose').onclick = () => {
+            document.getElementById('modal-title').innerText = "New Scroll";
+            document.getElementById('msgRecipient').value = '';
+            document.getElementById('msgSubject').value = '';
+            document.getElementById('msgBody').value = '';
+            modal.style.display = 'flex';
+        };
+        document.getElementById('close-modal').onclick = () => modal.style.display = 'none';
+
+        document.getElementById('final-send').onclick = async () => {
+            const recipient = document.getElementById('msgRecipient').value.trim();
+            const subject = document.getElementById('msgSubject').value.trim();
+            const body = document.getElementById('msgBody').value.trim();
+
+            if (!recipient || !subject || !body) return alert("Fill the form, bro.");
+
+            const connorBlock = ['connor', 'connor@gmail.com']; 
+            if (connorBlock.includes(recipient.toLowerCase())) {
+                alert("Security System: Connor is blocked from this server. Message rejected.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "messages"), {
+                    senderName: currentUser.displayName || 'Hero',
+                    senderEmail: currentUser.email || '',
+                    senderPhoto: currentUser.photoURL || '', 
+                    senderUid: currentUser.uid,
+                    recipient: recipient, 
+                    subject: subject,
+                    body: body,
+                    timestamp: serverTimestamp()
+                });
+                modal.style.display = 'none';
+            } catch (e) {
+                alert("Database Error: Dispatch failed.");
+            }
         };
     </script>
 </body>
