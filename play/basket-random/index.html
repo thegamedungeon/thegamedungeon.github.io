@@ -8,60 +8,37 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
         
-        body {
-            background-color: #000; /* Pitch black for that sleek launch feel */
-            color: #e0e0e0;
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #000; 
+            overflow: hidden; 
             font-family: 'Inter', sans-serif;
-            margin: 0;
-            overflow: hidden; /* Prevent scrolling during launch */
         }
 
-        /* The Android-style Zoom Animation */
-        @keyframes appLaunch {
-            0% {
-                transform: scale(0.2);
-                opacity: 0;
-            }
-            70% {
-                transform: scale(1.1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        /* Fade out the logo before game shows */
-        @keyframes fadeOut {
-            to { opacity: 0; visibility: hidden; }
-        }
-
-        .launch-logo {
-            animation: appLaunch 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-        }
-
-        .fade-out {
-            animation: fadeOut 0.4s ease forwards;
-        }
-
-        #game-container {
+        /* The "CribOS" Status Bar */
+        #pwa-status-bar {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            display: none; /* Hidden until launch finishes */
-            z-index: 10;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100; /* Stays above the game frame */
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: #0f0;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: none; /* Hidden until app launches */
+            pointer-events: none; /* Let clicks pass through to the game */
         }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        @keyframes appLaunch {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         #splash-overlay {
@@ -71,45 +48,101 @@
             align-items: center;
             justify-content: center;
             background: #121212;
-            z-index: 20;
+            z-index: 50;
+            transition: opacity 0.5s ease;
+        }
+
+        .launch-logo {
+            animation: appLaunch 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        #game-layout {
+            display: none; 
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #gameFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
 <body>
 
+    <div id="pwa-status-bar">
+        <span id="live-timer">Loading Grind Time...</span>
+    </div>
+
     <div id="splash-overlay">
-        <img src="/storage/photos/br.png" alt="Basket Random" class="launch-logo" id="logo">
+        <img src="/storage/photos/br.png" class="launch-logo" id="logo" onerror="this.src='/storage/photos/cc.png'">
     </div>
 
-    <div id="game-container">
-        <iframe id="gameFrame" src="/storage/BasketRandom-main/"></iframe>
+    <div id="game-layout">
+        <iframe id="gameFrame" src="about:blank" allowfullscreen></iframe>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+        import { initTracker } from "/storage/js/tracker.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        initTracker("Ragdoll Hit");
+
         const splash = document.getElementById('splash-overlay');
-        const logo = document.getElementById('logo');
-        const container = document.getElementById('game-container');
+        const layout = document.getElementById('game-layout');
         const iframe = document.getElementById('gameFrame');
+        const statusBar = document.getElementById('pwa-status-bar');
+        const timerText = document.getElementById('live-timer');
 
-        // Start the sequence
-        window.addEventListener('load', () => {
-            // 1. Wait for the "Zoom" animation to almost finish (600ms)
+        // REAL-TIME LISTENER
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Listen for changes in this user's playtime document
+                onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const seconds = docSnap.data().playtime_ragdoll_hit || 0;
+                        if (seconds >= 3600) {
+                            timerText.innerText = `${(seconds / 3600).toFixed(1)} Hours Played`;
+                        } else {
+                            timerText.innerText = `${Math.floor(seconds / 60)} Mins Played`;
+                        }
+                    }
+                });
+            }
+        });
+
+        window.onload = () => {
+            iframe.src = "/storage/BasketRandom-main/index.html";
+
             setTimeout(() => {
-                // 2. Start fading out the splash screen
-                splash.classList.add('fade-out');
+                splash.style.opacity = '0';
+                layout.style.display = 'block';
+                statusBar.style.display = 'block'; // SHOW THE TIMER AFTER LAUNCH
                 
-                // 3. Show the game container and set the source
-                container.style.display = 'block';
-                iframe.src = "/storage/cookieclick-main/index.html";
-                
-                // 4. Fully remove splash from DOM after fade finishes to save memory
                 setTimeout(() => {
                     splash.remove();
-                    document.body.style.overflow = 'auto';
-                }, 400);
-
-            }, 1000); // 1 second total "hype" time before game loads
-        });
+                }, 500);
+            }, 1500);
+        };
     </script>
 </body>
 </html>
