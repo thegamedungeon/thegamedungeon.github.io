@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE CRIB</title>
+    <link rel="manifest" href="/pwa/manifest.json">
     <link rel="stylesheet" href="/css/style.css"> 
     <style>
-        /* Your existing styles */
         body {
             font-family: sans-serif;
             background-color: #333;
@@ -102,10 +102,20 @@
     <p class="secret-roast">Connor is still zesty and won't make it past Crib security.</p>
 
     <footer>
-        <p>&copy; The Crib, formally The Game Dungeon | Built by the Green Belt Master. Guild Initials: D, A, J.</p>
+        <p>&copy; The Crib, formally The Game Dungeon | Built by the Green Belt Master. Guild Initials: D, A, J, E.</p>
     </footer>
 
-        <script type="module" src="storage/js/main.js?v=12"></script>
+    <script>
+        // Check if we are running as a PWA (Standalone)
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        if (isPWA) {
+            // If it IS a PWA, send them straight to the Android-style UI
+            window.location.href = "/pwa/";
+        }
+    </script>
+
+    <script type="module" src="storage/js/main.js?v=12"></script>
     
 </body>
 </html>
