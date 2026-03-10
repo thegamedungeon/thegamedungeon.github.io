@@ -3,175 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE CRIB</title>
-    <link rel="manifest" href="/pwa/manifest.json">
-    <link rel="stylesheet" href="/css/style.css"> 
+    <title>THE MAILROOM | THE CRIB</title>
     <style>
         body {
             font-family: sans-serif;
             background-color: #333;
             color: #fff;
-            text-align: center;
+            margin: 0;
             padding: 20px;
+            padding-bottom: 100px;
         }
 
-        /* TOP BAR - FIXED ALIGNMENT */
         .top-bar {
             display: flex;
-            justify-content: flex-end;
-            align-items: center; 
-            padding: 10px 20px;
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100%;
-            box-sizing: border-box;
-            gap: 15px; 
-            z-index: 100;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 2px solid #0f0;
+            margin-bottom: 20px;
         }
 
-        /* Notification UI */
-        .notif-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            flex-shrink: 0; /* Prevents bell from squishing */
-        }
-        .notif-bell {
-            font-size: 1.5rem;
+        .back-btn {
             color: #0f0;
-            cursor: pointer;
-        }
-        .notif-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #ff0000;
-            color: white;
-            font-size: 0.7rem;
+            text-decoration: none;
             font-weight: bold;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: none; 
-            justify-content: center;
-            align-items: center;
-            border: 2px solid #333;
         }
 
-        /* Auth Section Container */
-        #auth-section {
+        h1 {
+            margin: 0;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #0f0;
+        }
+
+        .notif-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .thread-group {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .thread-header {
+            background: #444;
+            padding: 10px 15px;
+            border-bottom: 1px solid #0f0;
+            font-weight: bold;
+            color: #0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .message-card {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            position: relative;
+            animation: fadeIn 0.4s ease;
+            border-left: 4px solid #0f0;
+        }
+
+        .message-card:last-child { border-bottom: none; }
+
+        .my-message {
+            border-left: 4px solid #888;
+            background: #2a2a2a;
+        }
+
+        .tag {
+            font-size: 0.65em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .tag-global { background: #0f0; color: #000; }
+        .tag-group { background: #0088ff; color: #fff; }
+        .tag-private { background: #ff00ff; color: #fff; }
+        .tag-sent { background: #444; color: #ccc; border: 1px solid #888; }
+
+        .sender-info {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 8px;
         }
 
-        .signin-btn {
-            background-color: #0f0; 
-            color: #000;
-            padding: 8px 16px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 0.9em;
-            transition: 0.3s;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px; /* Keeps the button from getting too long */
+        .sender-img {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid #0f0;
+        }
+
+        .sender-name { font-weight: bold; font-size: 0.9em; }
+        .body { font-size: 0.9em; color: #ddd; line-height: 1.4; white-space: pre-wrap; }
+        .time { font-size: 0.7em; color: #888; margin-top: 8px; display: block; }
+
+        .action-btns {
+            position: absolute;
+            top: 15px;
+            right: 15px;
             display: flex;
-            align-items: center;
             gap: 8px;
         }
 
-        .signin-btn:hover {
-            background-color: #0c0;
-            box-shadow: 0 0 10px #0f0;
+        .btn-small {
+            background: #111;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: 0.2s;
         }
 
-        .main-buttons a {
-            display: block;
-            margin: 15px auto;
-            padding: 15px 30px;
-            text-decoration: none;
-            color: #fff;
-            background-color: #555;
+        .reply-btn { border-color: #0f0; color: #0f0; }
+        .reply-btn:hover { background: #0f0; color: #000; }
+
+        .delete-btn { border-color: #ff4444; color: #ff4444; }
+        .delete-btn:hover { background: #ff4444; color: #fff; }
+
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #0f0;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 35px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            border: none;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #222;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
             border: 2px solid #0f0;
-            border-radius: 8px;
-            font-size: 1.2em;
-            max-width: 300px;
         }
-        .main-buttons a:hover {
-            background-color: #777;
+
+        input, textarea {
+            width: 100%;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-sizing: border-box;
         }
-        .secret-roast {
-            font-size: 0.8em;
-            color: #ff00ff; 
-            margin-top: 50px;
+
+        .send-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
         }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <!-- Notification Bell -->
-    <a href="notifications/" class="notif-wrapper" id="notif-link">
-        <span class="notif-bell">🔔</span>
-        <div class="notif-badge" id="notif-count">0</div>
-    </a>
-    <!-- This div is where main.js injects the profile button -->
-    <div id="auth-section">
-        <a href="login/" class="signin-btn">🔑 SIGN IN</a>
+    <div class="top-bar">
+        <a href="../" class="back-btn">← THE CRIB</a>
+        <h1>MAILROOM</h1>
+        <div id="user-display" style="font-size: 0.8em; color: #0f0; display: flex; align-items: center; gap: 8px;">
+            Connecting...
+        </div>
     </div>
-</div>
 
-    <header style="margin-top: 60px;">
-        <h1>THE CRIB</h1>
-        <p>Enter the Crib. Defeat the Block. Escape the Grind.</p>
-    </header>
+    <div class="notif-container" id="thread-list">
+        <p style="text-align:center; color:#0f0;">Summoning the scrolls...</p>
+    </div>
 
-    <nav class="main-buttons">
-        <a href="play/" class="button primary">
-            <span class="icon">🎮</span> The Vault (Play Games)
-        </a>
+    <button class="fab" id="open-compose">+</button>
 
-        <a href="request/" class="button secondary">
-            <span class="icon">📜</span> The Cartographer's Desk (Request)
-        </a>
+    <div class="modal" id="composeModal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-top:0; color:#0f0;">New Scroll</h2>
+            <input type="text" id="msgRecipient" placeholder="To: (Names/Emails separated by commas, or GLOBAL)">
+            <p style="font-size: 0.7em; color: #888; margin-top: -5px;">Example: Daimyan, Jayden, Abas</p>
+            <input type="text" id="msgSubject" placeholder="Subject">
+            <textarea id="msgBody" rows="4" placeholder="Message content..."></textarea>
+            <button class="send-btn" id="final-send">DISPATCH</button>
+            <button style="background:none; border:none; color:#888; margin-top:15px; cursor:pointer; width:100%;" id="close-modal">Cancel</button>
+        </div>
+    </div>
 
-        <a href="about/" class="button tertiary">
-            <span class="icon">🧑‍🤝‍🧑</span> The Guild Roster (About Us)
-        </a>
-      
-    </nav>
-
-    <section class="info-area">
-        <h2>Crib Status: UNSEALED!</h2>
-        <p>Ready to drop the hottest unblocked links. WE'RE BACK!!!</p>
-    </section>
-    
-    <p class="secret-roast">Connor is still zesty and won't make it past Crib security.</p>
-
-    <footer>
-        <p>&copy; The Crib, formally The Game Dungeon | Built by the Green Belt Master. Guild Initials: D, A, J, E.</p>
-    </footer>
-
-    <script>
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        if (isPWA) {
-            window.location.href = "/pwa/";
-        }
-    </script>
-
-    <!-- Your main script that handles the sign-in swap -->
-    <script type="module" src="storage/js/main.js?v=12"></script>
-
-    <!-- Notification Tracker Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -187,36 +243,173 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        let currentUser = null;
+
         onAuthStateChanged(auth, (user) => {
-            const badge = document.getElementById('notif-count');
             if (user) {
-                const q = query(collection(db, "messages"));
-                onSnapshot(q, (snapshot) => {
-                    let count = 0;
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const target = (data.recipient || "").toLowerCase();
-                        const isForMe = target.includes('global') || 
-                                      target.includes(user.displayName?.toLowerCase()) || 
-                                      target.includes(user.email?.toLowerCase()) ||
-                                      target.includes(user.uid);
-                        
-                        const isFromOthers = data.senderUid !== user.uid;
-
-                        if (isForMe && isFromOthers) count++;
-                    });
-
-                    if (count > 0) {
-                        badge.innerText = count > 99 ? "99+" : count;
-                        badge.style.display = "flex";
-                    } else {
-                        badge.style.display = "none";
-                    }
-                });
+                currentUser = user;
+                document.getElementById('user-display').innerHTML = `
+                    <img src="${user.photoURL || ''}" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #0f0;">
+                    <span>${user.displayName || 'Guest'}</span>
+                `;
+                loadThreads();
             } else {
-                badge.style.display = "none";
+                window.location.href = "../login/"; 
             }
         });
+
+        window.initReply = function(email, name, subject) {
+            document.getElementById('modal-title').innerText = "Reply to Thread";
+            document.getElementById('msgRecipient').value = email || name;
+            const cleanSub = subject.replace(/^Re:\s+/i, "");
+            document.getElementById('msgSubject').value = "Re: " + cleanSub;
+            document.getElementById('composeModal').style.display = 'flex';
+            document.getElementById('msgBody').focus();
+        };
+
+        window.deleteMessage = async function(msgId) {
+            if (confirm("Are you sure you wanna burn this scroll?")) {
+                try {
+                    await deleteDoc(doc(db, "messages", msgId));
+                } catch (e) {
+                    alert("Error deleting scroll.");
+                }
+            }
+        };
+
+        function loadThreads() {
+            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(300));
+            
+            onSnapshot(q, (snapshot) => {
+                const threadList = document.getElementById('thread-list');
+                threadList.innerHTML = '';
+                const threads = {}; 
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const recipients = (data.recipient || "").split(',').map(r => r.trim().toLowerCase());
+                    const isGlobal = recipients.includes('global');
+                    
+                    const isForMe = isGlobal || 
+                        recipients.includes(currentUser.displayName?.toLowerCase()) || 
+                        recipients.includes(currentUser.email?.toLowerCase()) ||
+                        recipients.includes(currentUser.uid);
+                    
+                    const isFromMe = data.senderUid === currentUser.uid || 
+                                     data.senderEmail?.toLowerCase() === currentUser.email?.toLowerCase();
+
+                    if (isForMe || isFromMe) {
+                        const baseSubject = data.subject.replace(/^Re:\s+/i, "").trim().toLowerCase();
+                        if (!threads[baseSubject]) threads[baseSubject] = [];
+                        threads[baseSubject].push({ id: doc.id, ...data, isSentByMe: isFromMe, isGlobal: isGlobal, isGroup: recipients.length > 1 });
+                    }
+                });
+
+                const sortedSubjects = Object.keys(threads).sort((a, b) => {
+                    const lastA = threads[a][threads[a].length - 1].timestamp?.seconds || 0;
+                    const lastB = threads[b][threads[b].length - 1].timestamp?.seconds || 0;
+                    return lastB - lastA;
+                });
+
+                sortedSubjects.forEach(sub => {
+                    const msgGroup = threads[sub];
+                    const hasReplies = msgGroup.length > 1;
+                    const receivedAny = msgGroup.some(m => !m.isSentByMe);
+                    const isGlobalMsg = msgGroup.some(m => m.isGlobal);
+
+                    // LOGIC: Show if it's a global announcement OR there are replies OR you received something.
+                    // If you sent a message and no one replied, it stays hidden (unless it's a "Re:" thread).
+                    const isReplyThread = msgGroup[0].subject.toLowerCase().startsWith('re:');
+                    
+                    if (hasReplies || receivedAny || isGlobalMsg || isReplyThread) {
+                        const threadContainer = document.createElement('div');
+                        threadContainer.className = 'thread-group';
+                        
+                        const displaySubject = msgGroup[0].subject.replace(/^Re:\s+/i, "");
+                        threadContainer.innerHTML = `<div class="thread-header">
+                            <span>${displaySubject.toUpperCase()}</span>
+                            <span style="font-size: 0.7em; opacity: 0.7;">${msgGroup.length} MESSAGES</span>
+                        </div>`;
+
+                        msgGroup.forEach((msg) => {
+                            const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString([], {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : '...';
+                            const card = document.createElement('div');
+                            card.className = `message-card ${msg.isSentByMe ? 'my-message' : ''}`;
+                            
+                            let tagClass = 'tag-private';
+                            let tagText = 'Private';
+                            if(msg.isGlobal) { tagClass = 'tag-global'; tagText = 'Global'; }
+                            else if(msg.isGroup) { tagClass = 'tag-group'; tagText = 'Group Chat'; }
+                            else if(msg.isSentByMe) { tagClass = 'tag-sent'; tagText = 'Sent'; }
+
+                            const replyBtn = !msg.isSentByMe ? 
+                                `<button class="btn-small reply-btn" onclick="initReply('${msg.senderEmail || ''}', '${msg.senderName}', '${msg.subject}')">Reply</button>` : '';
+                            
+                            const deleteBtn = `<button class="btn-small delete-btn" onclick="deleteMessage('${msg.id}')">Delete</button>`;
+
+                            card.innerHTML = `
+                                <span class="tag ${tagClass}">${tagText}</span>
+                                <div class="action-btns">
+                                    ${replyBtn}
+                                    ${deleteBtn}
+                                </div>
+                                <div class="sender-info">
+                                    <img src="${msg.senderPhoto || ''}" class="sender-img" onerror="this.src='https://via.placeholder.com/30'">
+                                    <span class="sender-name">${msg.isSentByMe ? 'You' : msg.senderName}</span>
+                                </div>
+                                <div class="body">${msg.body}</div>
+                                <span class="time">${time}</span>
+                            `;
+                            threadContainer.appendChild(card);
+                        });
+                        threadList.appendChild(threadContainer);
+                    }
+                });
+
+                if (threadList.innerHTML === '') {
+                    threadList.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">No active scrolls in the dungeon.</p>';
+                }
+            });
+        }
+
+        const modal = document.getElementById('composeModal');
+        document.getElementById('open-compose').onclick = () => {
+            document.getElementById('modal-title').innerText = "New Scroll";
+            document.getElementById('msgRecipient').value = '';
+            document.getElementById('msgSubject').value = '';
+            document.getElementById('msgBody').value = '';
+            modal.style.display = 'flex';
+        };
+        document.getElementById('close-modal').onclick = () => modal.style.display = 'none';
+
+        document.getElementById('final-send').onclick = async () => {
+            const recipient = document.getElementById('msgRecipient').value.trim();
+            const subject = document.getElementById('msgSubject').value.trim();
+            const body = document.getElementById('msgBody').value.trim();
+
+            if (!recipient || !subject || !body) return alert("Fill the form, bro.");
+
+            if (recipient.toLowerCase().includes('connor')) {
+                alert("Security System: Sending scrolls to zesty individuals is forbidden.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "messages"), {
+                    senderName: currentUser.displayName || 'Hero',
+                    senderEmail: currentUser.email || '',
+                    senderPhoto: currentUser.photoURL || '', 
+                    senderUid: currentUser.uid,
+                    recipient: recipient, 
+                    subject: subject,
+                    body: body,
+                    timestamp: serverTimestamp()
+                });
+                modal.style.display = 'none';
+            } catch (e) {
+                alert("Database Error: Dispatch failed.");
+            }
+        };
     </script>
 </body>
 </html>
