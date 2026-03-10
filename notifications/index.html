@@ -3,214 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE MAILROOM | THE CRIB</title>
+    <title>THE CRIB</title>
+    <link rel="manifest" href="/pwa/manifest.json">
+    <link rel="stylesheet" href="/css/style.css"> 
     <style>
         body {
             font-family: sans-serif;
             background-color: #333;
             color: #fff;
-            margin: 0;
+            text-align: center;
             padding: 20px;
-            padding-bottom: 100px;
         }
 
+        /* TOP BAR - FIXED ALIGNMENT */
         .top-bar {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 2px solid #0f0;
-            margin-bottom: 20px;
-        }
-
-        .back-btn {
-            color: #0f0;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.5em;
-            text-shadow: 0 0 10px #0f0;
-        }
-
-        .notif-container {
-            max-width: 500px;
-            margin: 0 auto;
-            text-align: left;
-        }
-
-        .message-card {
-            background: #444;
-            border-left: 5px solid #0f0;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            position: relative;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .tag {
-            font-size: 0.7em;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: bold;
-            margin-bottom: 8px;
-            display: inline-block;
-        }
-
-        .tag-global { background: #0f0; color: #000; }
-        .tag-private { background: #ff00ff; color: #fff; }
-
-        .sender-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .sender-img {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 2px solid #0f0;
-            background: #222;
-        }
-
-        .sender-name { font-weight: bold; font-size: 1em; color: #fff; }
-
-        .subject { font-size: 1.1em; margin-bottom: 5px; color: #0f0; font-weight: bold; }
-        .body { font-size: 0.95em; color: #ddd; line-height: 1.4; }
-        .time { font-size: 0.7em; color: #888; margin-top: 10px; display: block; }
-
-        .reply-btn {
+            justify-content: flex-end;
+            align-items: center; 
+            padding: 10px 20px;
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #222;
-            color: #0f0;
-            border: 1px solid #0f0;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .reply-btn:hover {
-            background: #0f0;
-            color: #000;
-        }
-
-        .fab {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background-color: #0f0;
-            color: #000;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 35px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            transition: 0.3s;
-            border: none;
-            cursor: pointer;
-            z-index: 10;
-        }
-
-        .fab:hover { transform: scale(1.1); box-shadow: 0 0 20px #0f0; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            justify-content: center;
-            align-items: center;
+            top: 0;
+            right: 0;
+            width: 100%;
+            box-sizing: border-box;
+            gap: 15px; 
             z-index: 100;
         }
 
-        .modal-content {
-            background: #222;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            border: 2px solid #0f0;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+        /* Notification UI */
+        .notif-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            flex-shrink: 0; /* Prevents bell from squishing */
         }
-
-        input, textarea {
-            width: 100%;
-            background: #111;
-            border: 1px solid #333;
-            color: #fff;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 5px;
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        input:focus, textarea:focus { border-color: #0f0; }
-
-        .send-btn {
-            background: #0f0;
-            color: #000;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            width: 100%;
-            margin-top: 10px;
+        .notif-bell {
+            font-size: 1.5rem;
+            color: #0f0;
             cursor: pointer;
         }
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ff0000;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #333;
+        }
 
-        .loading-text { color: #0f0; font-style: italic; text-align: center; width: 100%; }
+        /* Auth Section Container */
+        #auth-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .signin-btn {
+            background-color: #0f0; 
+            color: #000;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px; /* Keeps the button from getting too long */
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .signin-btn:hover {
+            background-color: #0c0;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .main-buttons a {
+            display: block;
+            margin: 15px auto;
+            padding: 15px 30px;
+            text-decoration: none;
+            color: #fff;
+            background-color: #555;
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            font-size: 1.2em;
+            max-width: 300px;
+        }
+        .main-buttons a:hover {
+            background-color: #777;
+        }
+        .secret-roast {
+            font-size: 0.8em;
+            color: #ff00ff; 
+            margin-top: 50px;
         }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <a href="../" class="back-btn">← THE CRIB</a>
-        <h1>MAILROOM</h1>
-        <div id="user-display" style="font-size: 0.8em; color: #0f0; display: flex; align-items: center; gap: 8px;">
-            Connecting...
-        </div>
+<div class="top-bar">
+    <!-- Notification Bell -->
+    <a href="notifications/" class="notif-wrapper" id="notif-link">
+        <span class="notif-bell">🔔</span>
+        <div class="notif-badge" id="notif-count">0</div>
+    </a>
+    <!-- This div is where main.js injects the profile button -->
+    <div id="auth-section">
+        <a href="login/" class="signin-btn">🔑 SIGN IN</a>
     </div>
+</div>
 
-    <div class="notif-container" id="notif-list">
-        <p class="loading-text">Fetching dungeon scrolls...</p>
-    </div>
+    <header style="margin-top: 60px;">
+        <h1>THE CRIB</h1>
+        <p>Enter the Crib. Defeat the Block. Escape the Grind.</p>
+    </header>
 
-    <button class="fab" id="open-compose">+</button>
+    <nav class="main-buttons">
+        <a href="play/" class="button primary">
+            <span class="icon">🎮</span> The Vault (Play Games)
+        </a>
 
-    <div class="modal" id="composeModal">
-        <div class="modal-content">
-            <h2 id="modal-title" style="margin-top:0; color:#0f0;">Compose Scroll</h2>
-            <input type="text" id="msgRecipient" placeholder="To: (Email, Name, or GLOBAL)">
-            <input type="text" id="msgSubject" placeholder="Subject">
-            <textarea id="msgBody" rows="4" placeholder="Message content..."></textarea>
-            <button class="send-btn" id="final-send">SEND TO THE VOID</button>
-            <button style="background:none; border:none; color:#888; margin-top:15px; cursor:pointer; width:100%;" id="close-modal">Cancel</button>
-        </div>
-    </div>
+        <a href="request/" class="button secondary">
+            <span class="icon">📜</span> The Cartographer's Desk (Request)
+        </a>
 
+        <a href="about/" class="button tertiary">
+            <span class="icon">🧑‍🤝‍🧑</span> The Guild Roster (About Us)
+        </a>
+      
+    </nav>
+
+    <section class="info-area">
+        <h2>Crib Status: UNSEALED!</h2>
+        <p>Ready to drop the hottest unblocked links. WE'RE BACK!!!</p>
+    </section>
+    
+    <p class="secret-roast">Connor is still zesty and won't make it past Crib security.</p>
+
+    <footer>
+        <p>&copy; The Crib, formally The Game Dungeon | Built by the Green Belt Master. Guild Initials: D, A, J, E.</p>
+    </footer>
+
+    <script>
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isPWA) {
+            window.location.href = "/pwa/";
+        }
+    </script>
+
+    <!-- Your main script that handles the sign-in swap -->
+    <script type="module" src="storage/js/main.js?v=12"></script>
+
+    <!-- Notification Tracker Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -226,121 +187,36 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUser = null;
-
         onAuthStateChanged(auth, (user) => {
+            const badge = document.getElementById('notif-count');
             if (user) {
-                currentUser = user;
-                const userPhoto = user.photoURL || 'https://via.placeholder.com/30';
-                document.getElementById('user-display').innerHTML = `
-                    <img src="${userPhoto}" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #0f0;">
-                    <span>${user.displayName || 'Guest'}</span>
-                `;
-                loadMessages();
-            } else {
-                window.location.href = "../login/"; 
-            }
-        });
-
-        // Global function for handling replies
-        window.initReply = function(senderEmail, senderName, subject) {
-            document.getElementById('modal-title').innerText = "Reply to " + senderName;
-            document.getElementById('msgRecipient').value = senderEmail || senderName;
-            document.getElementById('msgSubject').value = "Re: " + subject;
-            document.getElementById('composeModal').style.display = 'flex';
-            document.getElementById('msgBody').focus();
-        };
-
-        function loadMessages() {
-            const q = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(50));
-            
-            onSnapshot(q, (snapshot) => {
-                const container = document.getElementById('notif-list');
-                container.innerHTML = '';
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const target = data.recipient.toLowerCase();
-                    const isGlobal = target === 'global';
-                    
-                    const isForMe = 
-                        isGlobal || 
-                        target === currentUser.displayName?.toLowerCase() || 
-                        target === currentUser.email?.toLowerCase() ||
-                        target === currentUser.uid;
-
-                    if (isForMe) {
-                        const card = document.createElement('div');
-                        card.className = 'message-card';
+                const q = query(collection(db, "messages"));
+                onSnapshot(q, (snapshot) => {
+                    let count = 0;
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const target = (data.recipient || "").toLowerCase();
+                        const isForMe = target.includes('global') || 
+                                      target.includes(user.displayName?.toLowerCase()) || 
+                                      target.includes(user.email?.toLowerCase()) ||
+                                      target.includes(user.uid);
                         
-                        const timeString = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending...';
+                        const isFromOthers = data.senderUid !== user.uid;
 
-                        // Check if sender provided email, otherwise use name
-                        const replyTarget = data.senderEmail || data.senderName;
+                        if (isForMe && isFromOthers) count++;
+                    });
 
-                        card.innerHTML = `
-                            <span class="tag ${isGlobal ? 'tag-global' : 'tag-private'}">${isGlobal ? 'Global' : 'Private'}</span>
-                            <button class="reply-btn" onclick="initReply('${data.senderEmail || ''}', '${data.senderName}', '${data.subject}')">Reply</button>
-                            <div class="sender-info">
-                                <img src="${data.senderPhoto || 'https://via.placeholder.com/30'}" class="sender-img" onerror="this.src='https://via.placeholder.com/30'">
-                                <span class="sender-name">${data.senderName}</span>
-                            </div>
-                            <div class="subject">${data.subject}</div>
-                            <div class="body">${data.body}</div>
-                            <span class="time">${timeString}</span>
-                        `;
-                        container.appendChild(card);
+                    if (count > 0) {
+                        badge.innerText = count > 99 ? "99+" : count;
+                        badge.style.display = "flex";
+                    } else {
+                        badge.style.display = "none";
                     }
                 });
-
-                if (container.innerHTML === '') {
-                    container.innerHTML = '<p style="color:#888; text-align:center;">The scrolls are empty. Start the chat.</p>';
-                }
-            });
-        }
-
-        const modal = document.getElementById('composeModal');
-        document.getElementById('open-compose').onclick = () => {
-            document.getElementById('modal-title').innerText = "Compose Scroll";
-            document.getElementById('msgRecipient').value = '';
-            document.getElementById('msgSubject').value = '';
-            document.getElementById('msgBody').value = '';
-            modal.style.display = 'flex';
-        };
-        
-        document.getElementById('close-modal').onclick = () => modal.style.display = 'none';
-
-        document.getElementById('final-send').onclick = async () => {
-            const recipient = document.getElementById('msgRecipient').value.trim();
-            const subject = document.getElementById('msgSubject').value.trim();
-            const body = document.getElementById('msgBody').value.trim();
-
-            if (!recipient || !subject || !body) return alert("Fill the form, don't be mid.");
-
-            const connorBlock = ['connor', 'connor@gmail.com']; 
-            if (connorBlock.includes(recipient.toLowerCase())) {
-                alert("Security Error: Target 'Connor' is too zesty. Message intercepted and burned.");
-                return;
+            } else {
+                badge.style.display = "none";
             }
-
-            try {
-                await addDoc(collection(db, "messages"), {
-                    senderName: currentUser.displayName || 'Unknown Hero',
-                    senderEmail: currentUser.email || '', // Added this for easier replies
-                    senderPhoto: currentUser.photoURL || '', 
-                    senderUid: currentUser.uid,
-                    recipient: recipient, 
-                    subject: subject,
-                    body: body,
-                    timestamp: serverTimestamp()
-                });
-                
-                modal.style.display = 'none';
-            } catch (e) {
-                console.error("Save failed:", e);
-                alert("The Database rejected your scroll.");
-            }
-        };
+        });
     </script>
 </body>
 </html>
