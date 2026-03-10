@@ -105,7 +105,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        initTracker("Ragdoll Hit");
+        initTracker("Basket Random");
 
         const splash = document.getElementById('splash-overlay');
         const layout = document.getElementById('game-layout');
@@ -119,7 +119,7 @@
                 // Listen for changes in this user's playtime document
                 onSnapshot(doc(db, "users", user.uid), (docSnap) => {
                     if (docSnap.exists()) {
-                        const seconds = docSnap.data().playtime_ragdoll_hit || 0;
+                        const seconds = docSnap.data().playtime_basket_random || 0;
                         if (seconds >= 3600) {
                             timerText.innerText = `${(seconds / 3600).toFixed(1)} Hours Played`;
                         } else {
