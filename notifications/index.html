@@ -180,7 +180,7 @@
     <div class="modal" id="composeModal">
         <div class="modal-content">
             <h2 style="margin-top:0; color:#0f0;">Compose Scroll</h2>
-            <input type="text" id="msgRecipient" placeholder="To: (Username or GLOBAL)">
+            <input type="text" id="msgRecipient" placeholder="To: (Email, Name, or GLOBAL)">
             <input type="text" id="msgSubject" placeholder="Subject">
             <textarea id="msgBody" rows="4" placeholder="Message content..."></textarea>
             <button class="send-btn" id="final-send">SEND TO THE VOID</button>
@@ -224,7 +224,8 @@
         });
 
         function loadMessages() {
-            const q = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(30));
+            // Get last 50 messages to ensure we don't miss anything
+            const q = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(50));
             
             onSnapshot(q, (snapshot) => {
                 const container = document.getElementById('notif-list');
@@ -232,10 +233,17 @@
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    const isGlobal = data.recipient.toUpperCase() === 'GLOBAL';
+                    const target = data.recipient.toLowerCase();
+                    const isGlobal = target === 'global';
                     
-                    // Filter: Only show if Global OR for current user
-                    if (isGlobal || data.recipient === currentUser.displayName || data.recipient === currentUser.uid) {
+                    // Logic to check if you are the intended reader
+                    const isForMe = 
+                        isGlobal || 
+                        target === currentUser.displayName?.toLowerCase() || 
+                        target === currentUser.email?.toLowerCase() ||
+                        target === currentUser.uid;
+
+                    if (isForMe) {
                         const card = document.createElement('div');
                         card.className = 'message-card';
                         
@@ -275,19 +283,19 @@
 
             if (!recipient || !subject || !body) return alert("Fill the form, don't be mid.");
 
-            // Standard Roast Protection
-            if (recipient.toLowerCase() === 'connor') {
-                alert("Security Error: Target 'Connor' is zesty. Message intercepted and burned.");
+            // Standard Roast Protection - Connor is blocked by name and likely email variants
+            const connorBlock = ['connor', 'connor@gmail.com']; 
+            if (connorBlock.includes(recipient.toLowerCase())) {
+                alert("Security Error: Target 'Connor' is too zesty. Message intercepted and burned.");
                 return;
             }
 
             try {
-                // IMPORTANT: Saving the Google Photo URL to the message doc
                 await addDoc(collection(db, "messages"), {
                     senderName: currentUser.displayName || 'Unknown Hero',
                     senderPhoto: currentUser.photoURL || '', 
                     senderUid: currentUser.uid,
-                    recipient: recipient,
+                    recipient: recipient, // Can be Name, Email, or GLOBAL
                     subject: subject,
                     body: body,
                     timestamp: serverTimestamp()
@@ -299,7 +307,7 @@
                 document.getElementById('msgBody').value = '';
             } catch (e) {
                 console.error("Save failed:", e);
-                alert("The Database rejected your scroll. Try again.");
+                alert("The Database rejected your scroll.");
             }
         };
     </script>
