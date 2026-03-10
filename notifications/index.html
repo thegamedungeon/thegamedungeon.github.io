@@ -85,6 +85,25 @@
         .body { font-size: 0.95em; color: #ddd; line-height: 1.4; }
         .time { font-size: 0.7em; color: #888; margin-top: 10px; display: block; }
 
+        .reply-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #222;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .reply-btn:hover {
+            background: #0f0;
+            color: #000;
+        }
+
         .fab {
             position: fixed;
             bottom: 30px;
@@ -179,7 +198,7 @@
 
     <div class="modal" id="composeModal">
         <div class="modal-content">
-            <h2 style="margin-top:0; color:#0f0;">Compose Scroll</h2>
+            <h2 id="modal-title" style="margin-top:0; color:#0f0;">Compose Scroll</h2>
             <input type="text" id="msgRecipient" placeholder="To: (Email, Name, or GLOBAL)">
             <input type="text" id="msgSubject" placeholder="Subject">
             <textarea id="msgBody" rows="4" placeholder="Message content..."></textarea>
@@ -223,8 +242,16 @@
             }
         });
 
+        // Global function for handling replies
+        window.initReply = function(senderEmail, senderName, subject) {
+            document.getElementById('modal-title').innerText = "Reply to " + senderName;
+            document.getElementById('msgRecipient').value = senderEmail || senderName;
+            document.getElementById('msgSubject').value = "Re: " + subject;
+            document.getElementById('composeModal').style.display = 'flex';
+            document.getElementById('msgBody').focus();
+        };
+
         function loadMessages() {
-            // Get last 50 messages to ensure we don't miss anything
             const q = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(50));
             
             onSnapshot(q, (snapshot) => {
@@ -236,7 +263,6 @@
                     const target = data.recipient.toLowerCase();
                     const isGlobal = target === 'global';
                     
-                    // Logic to check if you are the intended reader
                     const isForMe = 
                         isGlobal || 
                         target === currentUser.displayName?.toLowerCase() || 
@@ -249,8 +275,12 @@
                         
                         const timeString = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending...';
 
+                        // Check if sender provided email, otherwise use name
+                        const replyTarget = data.senderEmail || data.senderName;
+
                         card.innerHTML = `
                             <span class="tag ${isGlobal ? 'tag-global' : 'tag-private'}">${isGlobal ? 'Global' : 'Private'}</span>
+                            <button class="reply-btn" onclick="initReply('${data.senderEmail || ''}', '${data.senderName}', '${data.subject}')">Reply</button>
                             <div class="sender-info">
                                 <img src="${data.senderPhoto || 'https://via.placeholder.com/30'}" class="sender-img" onerror="this.src='https://via.placeholder.com/30'">
                                 <span class="sender-name">${data.senderName}</span>
@@ -266,14 +296,18 @@
                 if (container.innerHTML === '') {
                     container.innerHTML = '<p style="color:#888; text-align:center;">The scrolls are empty. Start the chat.</p>';
                 }
-            }, (error) => {
-                console.error("Firebase Snapshot Error:", error);
             });
         }
 
-        // Modal Controls
         const modal = document.getElementById('composeModal');
-        document.getElementById('open-compose').onclick = () => modal.style.display = 'flex';
+        document.getElementById('open-compose').onclick = () => {
+            document.getElementById('modal-title').innerText = "Compose Scroll";
+            document.getElementById('msgRecipient').value = '';
+            document.getElementById('msgSubject').value = '';
+            document.getElementById('msgBody').value = '';
+            modal.style.display = 'flex';
+        };
+        
         document.getElementById('close-modal').onclick = () => modal.style.display = 'none';
 
         document.getElementById('final-send').onclick = async () => {
@@ -283,7 +317,6 @@
 
             if (!recipient || !subject || !body) return alert("Fill the form, don't be mid.");
 
-            // Standard Roast Protection - Connor is blocked by name and likely email variants
             const connorBlock = ['connor', 'connor@gmail.com']; 
             if (connorBlock.includes(recipient.toLowerCase())) {
                 alert("Security Error: Target 'Connor' is too zesty. Message intercepted and burned.");
@@ -293,18 +326,16 @@
             try {
                 await addDoc(collection(db, "messages"), {
                     senderName: currentUser.displayName || 'Unknown Hero',
+                    senderEmail: currentUser.email || '', // Added this for easier replies
                     senderPhoto: currentUser.photoURL || '', 
                     senderUid: currentUser.uid,
-                    recipient: recipient, // Can be Name, Email, or GLOBAL
+                    recipient: recipient, 
                     subject: subject,
                     body: body,
                     timestamp: serverTimestamp()
                 });
                 
                 modal.style.display = 'none';
-                document.getElementById('msgRecipient').value = '';
-                document.getElementById('msgSubject').value = '';
-                document.getElementById('msgBody').value = '';
             } catch (e) {
                 console.error("Save failed:", e);
                 alert("The Database rejected your scroll.");
