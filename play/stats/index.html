@@ -106,6 +106,27 @@
             box-shadow: 0 0 10px #0f0;
         }
 
+        /* Debug Status Console */
+        .status-console {
+            margin-top: 40px;
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            font-size: 10px;
+            text-align: left;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #444;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .status-line {
+            margin: 2px 0;
+            border-bottom: 1px solid #111;
+        }
+
         .roast-footer {
             margin-top: 50px;
             font-size: 0.8em;
@@ -117,7 +138,7 @@
 
     <div class="top-bar">
         <a href="../../" class="back-btn">← RETURN TO VAULT</a>
-        <div id="user-info" style="font-size: 0.9em;">Hero: Loading...</div>
+        <div id="user-info" style="font-size: 0.9em;">Hero: Authenticating...</div>
     </div>
 
     <h1>VAULT CHRONOMETER</h1>
@@ -128,18 +149,23 @@
     </div>
 
     <div class="grid" id="stats-grid">
-        <p style="color: #666;">Synchronizing with the Vault...</p>
+        <p style="color: #666; grid-column: 1/-1;">Opening the Archives...</p>
+    </div>
+
+    <div class="status-console" id="status-console">
+        <div class="status-line">[SYSTEM] Initializing Vault Chronometer...</div>
     </div>
 
     <p class="roast-footer">
-        Connor's total time: 0.0h (Too busy being bot-brained).<br>
-        Dungeon Status: SECURED.
+        Connor's records are missing because he's a noodle-haired bot.<br>
+        Status: Green Belt Protected.
     </p>
 
     <script type="module">
+        // Using 10.7.1 to keep consistency with main site
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -155,48 +181,67 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, (user) => {
+        function updateStatus(msg, color = "#444") {
+            const console = document.getElementById('status-console');
+            const line = document.createElement('div');
+            line.className = 'status-line';
+            line.style.color = color;
+            line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            console.prepend(line);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
+                updateStatus(`ACCESS GRANTED: ${user.uid}`, "#0f0");
                 document.getElementById('user-info').innerText = `Hero: ${user.displayName || 'Warrior'}`;
-                loadStats(user.uid);
+                
+                // Manual check for the document
+                const docRef = doc(db, "playtime", user.uid);
+                try {
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        updateStatus(`Records Found. Fields: ${Object.keys(snap.data()).length}`, "#0f0");
+                        loadStats(user.uid);
+                    } else {
+                        updateStatus("ERROR: No record found at playtime/" + user.uid + ". Tracker hasn't synced yet.", "#f00");
+                        document.getElementById('stats-grid').innerHTML = '<p style="color: #888; grid-column: 1/-1;">The Vault is empty. Play a game for at least 60 seconds to start logging hours.</p>';
+                    }
+                } catch (e) {
+                    updateStatus("CRITICAL ERROR: " + e.message, "#f00");
+                }
             } else {
-                // If not logged in, they can't have stats. Send them to login.
-                window.location.href = "../../login/";
+                updateStatus("No session found. Returning to login...", "#f0f");
+                setTimeout(() => window.location.href = "../../login/", 2000);
             }
         });
 
         function loadStats(uid) {
-            // Path: playtime/{userId}
-            // Ensure your tracker.js is updating fields in this document!
             const statsDoc = doc(db, "playtime", uid);
 
             onSnapshot(statsDoc, (docSnap) => {
                 const grid = document.getElementById('stats-grid');
                 grid.innerHTML = '';
                 
-                if (!docSnap.exists()) {
-                    grid.innerHTML = '<p style="color: #888; grid-column: 1/-1;">No records found in the archives. Start a game to begin tracking.</p>';
-                    document.getElementById('total-dungeon-time').innerText = "0.0h";
-                    return;
-                }
-
-                const data = docSnap.data(); 
+                const data = docSnap.data() || {}; 
                 let totalMinutes = 0;
                 let maxMinutes = 1;
 
-                // First pass: find total and max for scaling
-                const gameEntries = Object.entries(data);
-                gameEntries.forEach(([name, mins]) => {
-                    if (typeof mins === 'number') {
-                        totalMinutes += mins;
-                        if (mins > maxMinutes) maxMinutes = mins;
-                    }
+                const entries = Object.entries(data);
+                
+                if (entries.length === 0) {
+                    grid.innerHTML = '<p style="color: #888; grid-column: 1/-1;">No game data detected in the playtime doc.</p>';
+                    return;
+                }
+
+                // Filter out non-numeric data
+                const validEntries = entries.filter(([_, val]) => typeof val === 'number');
+
+                validEntries.forEach(([_, mins]) => {
+                    totalMinutes += mins;
+                    if (mins > maxMinutes) maxMinutes = mins;
                 });
 
-                // Second pass: build the UI
-                gameEntries.sort((a, b) => b[1] - a[1]).forEach(([gameName, minutes]) => {
-                    if (typeof minutes !== 'number') return;
-
+                validEntries.sort((a, b) => b[1] - a[1]).forEach(([gameName, minutes]) => {
                     const hours = (minutes / 60).toFixed(1);
                     const percentage = (minutes / maxMinutes) * 100;
 
@@ -213,9 +258,7 @@
                 });
 
                 document.getElementById('total-dungeon-time').innerText = (totalMinutes / 60).toFixed(1) + "h";
-            }, (error) => {
-                console.error("Vault Error:", error);
-                grid.innerHTML = '<p style="color: #f00;">Error accessing the archives. Check your connection.</p>';
+                updateStatus(`Display updated: ${validEntries.length} games. Total: ${(totalMinutes/60).toFixed(1)}h`, "#0f0");
             });
         }
     </script>
