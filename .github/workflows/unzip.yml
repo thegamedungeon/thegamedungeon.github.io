@@ -1,63 +1,69 @@
-name: Unzip booty Random
+name: Unzip Basket Random
 on:
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
 
 jobs:
   unzip:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
       - name: Process Zip
         run: |
-          echo "--- STARTING DUNGEON SCAN ---"
-          # This will show us EVERY file in the logs so we can debug the oink oink security
-          ls -R
+          echo "--- CHECKING AUTH STATUS ---"
+          git remote -v
           
-          # 1. AGGRESSIVE SEARCH
-          # We search for any file ending in .zip, ignoring case, anywhere in the repo
-          echo "Searching for the stash..."
+          echo "--- SCANNING REPO ---"
+          # Case-insensitive search for ANY zip file
           ZIP_PATH=$(find . -iname "*.zip" -not -path "*/.*" | head -n 1)
           
           if [ -z "$ZIP_PATH" ]; then
-            echo "Error: The bot is blind. No zip found."
+            echo "Error: No zip found. Showing all files for debug:"
+            ls -R
             exit 1
           fi
           
-          echo "Loot found at: $ZIP_PATH"
-          
-          # 2. SETUP TARGET
+          echo "Dungeon Bot found: $ZIP_PATH"
           TARGET_DIR="storage/basket-random"
           mkdir -p "$TARGET_DIR"
           
-          # 3. UNZIP
+          # Unzip and overwrite
           unzip -o "$ZIP_PATH" -d "$TARGET_DIR"
           
-          # 4. CLEANUP THE MESS
-          # Delete the zip and the folder it was in
-          ORIGINAL_DIR=$(dirname "$ZIP_PATH")
+          # Delete zip after extraction
           rm "$ZIP_PATH"
-          if [ "$ORIGINAL_DIR" != "." ] && [ "$ORIGINAL_DIR" != "./storage" ]; then
-            rm -rf "$ORIGINAL_DIR"
-          fi
           
-          # 5. FIX THE 'FOLDER INSIDE A ZIP' GLITCH
-          # Moves files up if the zip had a subfolder
+          # Fix iPad double-folder glitch
           INNER_DIR=$(ls -d "$TARGET_DIR"/*/ 2>/dev/null | head -n 1)
           if [ -n "$INNER_DIR" ]; then
+             echo "Fixing nested folder..."
              mv "$INNER_DIR"* "$TARGET_DIR/"
              rm -rf "$INNER_DIR"
           fi
 
       - name: Commit and Push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name 'Dungeon-Bot'
           git config --global user.email 'bot@thegamedungeon.io'
+          
+          # Add all files including the new storage folder
           git add .
+          
           if git diff --staged --quiet; then
-            echo "No changes."
+            echo "No changes detected. Something went wrong with the unzip."
+            exit 1
           else
-            git commit -m "Dungeon Bot secured the loot. Connor is a bot."
-            git push
+            git commit -m "Dungeon Bot successfully bypassed oink oink security."
+            # Push using the token to bypass manual permission blocks
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" main
           fi
