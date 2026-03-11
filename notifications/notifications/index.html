@@ -284,7 +284,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -549,32 +549,46 @@ DUNGEON STATUS: SECURED.
             if (recipient.toLowerCase().includes('connor')) return alert("Oink oink—security blocked that zesty bot.");
 
             sendBtn.disabled = true;
-            sendBtn.innerText = "UPLOADING...";
+            sendBtn.innerText = "INITIALIZING...";
 
             let fileUrl = null;
 
             try {
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    // Clean filename for iPad compatibility
                     const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
                     const filePath = `mailroom/${currentUser.uid}/${Date.now()}_${safeName}`;
                     const storageRef = ref(storage, filePath);
                     
-                    try {
-                        // Use a blob conversion which is more stable for iPad uploads
-                        const blob = new Blob([file], { type: file.type });
-                        const uploadResult = await uploadBytes(storageRef, blob);
-                        fileUrl = await getDownloadURL(uploadResult.ref);
-                    } catch (uploadError) {
-                        console.error("iPad Upload snag:", uploadError);
-                        const proceed = confirm("iPad blocked the upload (oink oink). Dispatch scroll WITHOUT the photo?");
-                        if (!proceed) {
-                             sendBtn.disabled = false;
-                             sendBtn.innerText = "DISPATCH";
-                             return;
+                    // Resumable upload is better for tracking hangs on iPad
+                    const uploadTask = uploadBytesResumable(storageRef, file);
+
+                    // 15 second timeout for the upload
+                    const timeout = setTimeout(() => {
+                        const skip = confirm("Upload is taking a while (iPad bottleneck?). Skip photo and send just the text?");
+                        if (skip) {
+                            uploadTask.cancel();
                         }
-                    }
+                    }, 15000);
+
+                    fileUrl = await new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed', 
+                            (snapshot) => {
+                                const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                                sendBtn.innerText = `UPLOADING: ${progress}%`;
+                            }, 
+                            (error) => {
+                                clearTimeout(timeout);
+                                if (error.code === 'storage/canceled') resolve(null); // User skipped
+                                else reject(error);
+                            }, 
+                            async () => {
+                                clearTimeout(timeout);
+                                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                                resolve(url);
+                            }
+                        );
+                    });
                 }
 
                 sendBtn.innerText = "DISPATCHING...";
