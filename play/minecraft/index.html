@@ -6,112 +6,102 @@
     <title>Minecraft | The Game Dungeon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom Dungeon-themed CSS */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body, html {
-            height: 100%;
-            margin: 0;
-            overflow: hidden; /* Hide scrollbars on the main page */
-            background-color: #1a1a1a; /* Dark stone background */
+        
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #000; 
+            overflow: hidden; 
             font-family: 'Inter', sans-serif;
+        }
+
+        /* Android-style Zoom Animation */
+        @keyframes appLaunch {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #splash-overlay {
+            position: fixed;
+            inset: 0;
             display: flex;
-            flex-direction: column;
-            color: #e0e0e0;
+            align-items: center;
+            justify-content: center;
+            background: #121212;
+            z-index: 50;
+            transition: opacity 0.5s ease;
         }
-        .header-glow {
-            text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
-            color: #00ff00; /* Neon green glow */
+
+        .launch-logo {
+            animation: appLaunch 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
         }
-        #gameContainer {
-            flex-grow: 1; /* Allows the container to fill available space */
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
+
+        #game-layout {
+            display: none; 
+            height: 100vh;
+            width: 100vw;
         }
+
         #gameFrame {
             width: 100%;
             height: 100%;
             border: none;
-            background-color: #000; /* Black background for game area */
-        }
-        .controls-bar {
-            background-color: #2a2a2a;
-            border-top: 2px solid #00ff00;
-            padding: 0.5rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0; /* Prevents shrinking */
-        }
-        .fullscreen-button {
-            background-color: #00ff00;
-            color: #1a1a1a;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, transform 0.1s;
-            border: none;
-        }
-        .fullscreen-button:hover {
-            background-color: #00cc00;
-            transform: translateY(-1px);
-        }
-        .back-button {
-            color: #888;
-            font-size: 0.85rem;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .back-button:hover {
-            color: #00ff00;
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Bar with Game Title and Back Button --><div class="controls-bar">
-        <a href="/play/" class="back-button">⬅️ Back to The Vault</a>
-        <h1 class="text-xl font-bold header-glow">Minecraft</h1>
-        <button id="fullscreenBtn" class="fullscreen-button">
-            <span class="mr-1">🚀</span> Fullscreen
-        </button>
+    <div id="splash-overlay">
+        <img src="/storage/photos/minecraft.png" class="launch-logo" id="logo" onerror="this.src='/storage/photos/cc.png'">
     </div>
 
-    <!-- Game Container with Iframe --><div id="gameContainer">
-        <iframe id="gameFrame" src="/storage/minecraft-main/index.html" allowfullscreen></iframe>
+    <div id="game-layout">
+        <iframe id="gameFrame" src="about:blank" allowfullscreen></iframe>
     </div>
 
-    <script>
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const gameFrame = document.getElementById('gameFrame');
+    <script type="module">
+        // FIX: Using 10.7.1 to match stats.html and main site
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // FIX: Pointing to the NEW tracker that writes to the correct 'playtime' collection
+        import { initTracker } from "/storage/js/tracker.js";
 
-        fullscreenBtn.addEventListener('click', () => {
-            if (gameFrame.requestFullscreen) {
-                gameFrame.requestFullscreen();
-            } else if (gameFrame.mozRequestFullScreen) { /* Firefox */
-                gameFrame.mozRequestFullScreen();
-            } else if (gameFrame.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
-                gameFrame.webkitRequestFullscreen();
-            } else if (gameFrame.msRequestFullscreen) { /* IE/Edge */
-                gameFrame.msRequestFullscreen();
-            }
-        });
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
 
-        // Optional: Exit fullscreen when escape is pressed (if iframe doesn't handle it)
-        document.addEventListener('fullscreenchange', (event) => {
-            if (!document.fullscreenElement) {
-                console.log('Exited fullscreen');
-            }
-        });
-        document.addEventListener('webkitfullscreenchange', (event) => { /* Safari */
-            if (!document.webkitFullscreenElement) {
-                console.log('Exited fullscreen');
-            }
-        });
+        const app = initializeApp(firebaseConfig);
+        
+        // This kicks off the minute-by-minute tracking
+        initTracker("Minecraft");
+
+        const splash = document.getElementById('splash-overlay');
+        const layout = document.getElementById('game-layout');
+        const iframe = document.getElementById('gameFrame');
+
+        window.onload = () => {
+            iframe.src = "/storage/minecraft-main/index.html";
+
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                layout.style.display = 'block';
+                
+                setTimeout(() => {
+                    splash.remove();
+                }, 500);
+            }, 1500);
+        };
     </script>
-
 </body>
 </html>
