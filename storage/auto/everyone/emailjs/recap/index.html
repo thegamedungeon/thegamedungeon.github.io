@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RECAP PROTOCOL | THE DUNGEON</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+        body { font-family: 'Courier Prime', monospace; background-color: #050505; color: #00ff00; }
+        .glitch { text-shadow: 0 0 10px #00ff00; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen overflow-hidden">
+
+    <div id="status-box" class="border-2 border-green-500 p-8 rounded-lg bg-black shadow-[0_0_20px_rgba(0,255,0,0.3)] max-w-md w-full">
+        <h1 class="text-2xl font-bold mb-4 glitch">RECAP_PROTOCOL_V1.0</h1>
+        <div id="log" class="text-sm space-y-2 mb-6 h-32 overflow-y-auto">
+            <p>> Waiting for authorization...</p>
+        </div>
+        <div id="progress-container" class="w-full bg-gray-900 h-2 rounded-full overflow-hidden hidden">
+            <div id="progress-bar" class="bg-green-500 h-full w-0 transition-all duration-500"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Initialize EmailJS
+        emailjs.init("YOUR_PUBLIC_KEY"); // GET THIS FROM YOUR EMAILJS DASHBOARD
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const log = document.getElementById('log');
+        const progress = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+
+        function addLog(msg) {
+            const p = document.createElement('p');
+            p.innerText = `> ${msg}`;
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function startRecap() {
+            addLog("Bypassing oink oink security...");
+            progressContainer.classList.remove('hidden');
+            
+            try {
+                // 1. Fetch the user stats
+                const querySnapshot = await getDocs(collection(db, "playtime"));
+                const totalUsers = querySnapshot.size;
+                let processed = 0;
+
+                addLog(`Found ${totalUsers} warriors in the vault.`);
+
+                for (const userDoc of querySnapshot.docs) {
+                    const stats = userDoc.data();
+                    const userId = userDoc.id; // Usually the UID
+                    
+                    // We need a way to link UID to Email. 
+                    // PRO TIP: If you store emails inside the 'playtime' doc, it's easier.
+                    const userEmail = stats.email || "missing@email.com";
+                    const userName = stats.displayName || userId;
+
+                    let topGame = "Unknown";
+                    let topMins = 0;
+                    let totalMins = 0;
+
+                    Object.entries(stats).forEach(([key, val]) => {
+                        if (typeof val === 'number') {
+                            totalMins += val;
+                            if (val > topMins) {
+                                topMins = val;
+                                topGame = key;
+                            }
+                        }
+                    });
+
+                    const totalHours = (totalMins / 60).toFixed(1);
+                    const topHours = (topMins / 60).toFixed(1);
+
+                    if (userEmail !== "missing@email.com") {
+                        addLog(`Blasting report to ${userName}...`);
+                        
+                        await emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+                            to_name: userName,
+                            to_email: userEmail,
+                            top_game: topGame,
+                            top_hours: topHours,
+                            total_hours: totalHours,
+                            roast: "Connor still thinks 404 is a flavor of Gatorade. Oink oink."
+                        });
+                    }
+
+                    processed++;
+                    progress.style.width = `${(processed / totalUsers) * 100}%`;
+                }
+
+                addLog("RECAP COMPLETE. EXITING...");
+                setTimeout(() => {
+                    // This tells the iPad Shortcut "I'm done"
+                    window.close(); 
+                }, 3000);
+
+            } catch (error) {
+                addLog(`CRITICAL ERROR: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // Run as soon as iPad opens the page
+        window.onload = startRecap;
+    </script>
+</body>
+</html>
