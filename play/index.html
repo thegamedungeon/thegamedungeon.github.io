@@ -37,7 +37,6 @@
     </div>
 
     <div id="gameGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
-        
         <!-- 1. Ragdoll Hit -->
         <a href="ragdoll-hit/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
@@ -109,7 +108,6 @@
                 <div id="time-Kick-The-Sod" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
-        
     </div>
 
     <footer class="mt-12 text-center text-gray-500 text-xs w-full">
@@ -162,31 +160,42 @@
                 gameList.forEach(game => {
                     let totalMinutes = 0;
 
-                    // 1. Get legacy time from old 'users' collection (stored as seconds)
+                    // 1. Get legacy seconds from 'users' and convert to minutes
                     if (oldData) {
                         const oldKey = `playtime_${game.replace(/\s+/g, '_').toLowerCase()}`;
                         if (oldData[oldKey]) totalMinutes += (oldData[oldKey] / 60);
                     }
 
-                    // 2. Get new time from 'playtime' collection (stored as minutes)
+                    // 2. Get new minutes from 'playtime'
                     if (newData && newData[game]) {
                         totalMinutes += newData[game];
                     }
 
-                    const el = document.getElementById(`time-${game.replace(/\s+/g, '-')}`);
+                    const elId = `time-${game.replace(/\s+/g, '-')}`;
+                    const el = document.getElementById(elId);
+                    
                     if (el && totalMinutes > 0) {
-                        if (totalMinutes >= 60) el.innerText = `${(totalMinutes / 60).toFixed(1)} Hours Played`;
-                        else el.innerText = `${Math.floor(totalMinutes)} Mins Played`;
+                        if (totalMinutes >= 60) {
+                            el.innerText = `${(totalMinutes / 60).toFixed(1)} Hours Played`;
+                        } else {
+                            el.innerText = `${Math.floor(totalMinutes)} Mins Played`;
+                        }
                     }
                 });
             };
 
-            const [newSnap, oldSnap] = await Promise.all([getDoc(newRef), getDoc(oldRef)]);
-            updateDisplay(newSnap.data(), oldSnap.data());
+            // Fetch both snapshots and update UI
+            try {
+                const [newSnap, oldSnap] = await Promise.all([getDoc(newRef), getDoc(oldRef)]);
+                updateDisplay(newSnap.data(), oldSnap.data());
 
-            onSnapshot(newRef, (snap) => {
-                getDoc(oldRef).then(oldS => updateDisplay(snap.data(), oldS.data()));
-            });
+                // Keep it live for any session updates
+                onSnapshot(newRef, (snap) => {
+                    getDoc(oldRef).then(oldS => updateDisplay(snap.data(), oldS.data()));
+                });
+            } catch (e) {
+                console.error("Vault Access Error:", e);
+            }
         }
 
         window.filterGames = function() {
