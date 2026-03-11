@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxicrib | The Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-glow {
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+            color: #00ff00;
+        }
+
+        .proxy-bar {
+            background: #1a1a1a;
+            padding: 10px 20px;
+            border-bottom: 2px solid #00ff00;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .proxy-input {
+            flex-grow: 1;
+            background: #2a2a2a;
+            border: 1px solid #333;
+            color: #00ff00;
+            padding: 8px 15px;
+            border-radius: 6px;
+            outline: none;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        #proxyFrame {
+            flex-grow: 1;
+            width: 100%;
+            border: none;
+            background: white;
+        }
+
+        .btn-action {
+            background: #2a2a2a;
+            color: #00ff00;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid #00ff00;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .btn-action:hover {
+            background: #00ff00;
+            color: black;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="proxy-bar">
+        <button onclick="location.href='/play/'" class="btn-action">← Back</button>
+        
+        <input type="text" id="urlInput" class="proxy-input" placeholder="URL or Search..." onkeydown="if(event.key === 'Enter') launchProxy()">
+        
+        <button onclick="launchProxy()" class="btn-action">Launch</button>
+    </div>
+
+    <iframe id="proxyFrame" src="about:blank"></iframe>
+
+<script>
+    function launchProxy() {
+        let input = document.getElementById('urlInput').value.trim();
+        const
