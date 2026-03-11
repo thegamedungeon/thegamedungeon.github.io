@@ -12,19 +12,21 @@
         .game-card { transition: transform 0.2s, box-shadow 0.2s; }
         .game-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(0, 255, 0, 0.3); background-color: #333333; }
         .game-card img { width: 120px; height: 120px; object-fit: contain; border-radius: 10px; margin-bottom: 1rem; border: 2px solid rgba(0, 255, 0, 0.4); }
-        .top-bar { width: 100%; padding: 1rem; display: flex; justify-content: flex-end; }
+        .top-bar { width: 100%; padding: 1rem; display: flex; justify-content: flex-end; gap: 10px; }
         .signin-btn { color: #00ff00; border: 1px solid #00ff00; padding: 0.5rem 1rem; border-radius: 5px; font-weight: bold; text-decoration: none; }
+        .stats-link { color: #fff; background: #060; border: 1px solid #0f0; padding: 0.5rem 1rem; border-radius: 5px; font-weight: bold; text-decoration: none; }
     </style>
 </head>
 <body class="p-4 sm:p-8">
 
     <div class="top-bar" id="auth-section">
+        <a href="stats/" class="stats-link">📊 HALL OF RECORDS</a>
         <a href="/login/" class="signin-btn">🔑 SIGN IN</a>
     </div>
 
     <header class="text-center mb-10 w-full max-w-4xl">
         <h1 class="text-4xl sm:text-6xl font-bold header-glow mb-2">THE VAULT</h1>
-        <p class="text-gray-400 text-lg">Choose your loot, champion. These links are battle-tested.</p>
+        <p class="text-gray-400 text-lg">Choose your loot, champion. Connor is still a bot.</p>
         <a href="../index.html" class="inline-block mt-4 text-green-400 hover:text-green-200 transition duration-150">
             <span class="mr-2">⬅️</span> Back to The Hallway
         </a>
@@ -35,80 +37,90 @@
     </div>
 
     <div id="gameGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+        
+        <!-- 1. Ragdoll Hit -->
+        <a href="ragdoll-hit/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
+            <div class="flex flex-col items-center">
+                <img src="/storage/photos/rh.png" alt="Ragdoll Hit" onerror="this.src='/storage/photos/cc.png'">
+                <h2 class="text-2xl font-bold text-white mb-2">Ragdoll Hit</h2>
+                <div id="time-Ragdoll-Hit" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
+            </div>
+        </a>
+
+        <!-- 2. Cookie Clicker -->
         <a href="cookie-clicker/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
                 <img src="/storage/photos/cc.png" alt="Cookie Clicker">
                 <h2 class="text-2xl font-bold text-white mb-2">Cookie Clicker</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
+                <div id="time-Cookie-Clicker" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
+        <!-- 3. Geometry Dash -->
         <a href="geometry-dash/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/gd.png" alt="Geometry Dash">
+                <img src="/storage/photos/gd.png" alt="Geometry Dash" onerror="this.src='/storage/photos/cc.png'">
                 <h2 class="text-2xl font-bold text-white mb-2">Geometry Dash</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Start Rolling</div>
+                <div id="time-Geometry-Dash" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
+        <!-- 4. Polytrack -->
         <a href="polytrack/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/polytrack.png" alt="Poly Track">
-                <h2 class="text-2xl font-bold text-white mb-2">Poly Track</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Race Time</div>
+                <img src="/storage/photos/polytrack.png" alt="Polytrack" onerror="this.src='/storage/photos/cc.png'">
+                <h2 class="text-2xl font-bold text-white mb-2">Polytrack</h2>
+                <div id="time-Polytrack" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
+        <!-- 5. Basket Random -->
         <a href="basket-random/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/br.png" alt="Basket Random">
+                <img src="/storage/photos/br.png" alt="Basket Random" onerror="this.src='/storage/photos/cc.png'">
                 <h2 class="text-2xl font-bold text-white mb-2">Basket Random</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Put It Up</div>
+                <div id="time-Basket-Random" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
-        <a href="ragdoll-hit/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
-            <div class="flex flex-col items-center">
-                <img src="/storage/photos/rh.png" alt="Ragdoll Hit">
-                <h2 class="text-2xl font-bold text-white mb-2">Ragdoll Hit</h2>
-                <div id="time-ragdoll-hit" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Smack Em</div>
-            </div>
-        </a>
-
+        <!-- 6. Minecraft -->
         <a href="minecraft/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/minecraft.png" alt="Minecraft">
+                <img src="/storage/photos/minecraft.png" alt="Minecraft" onerror="this.src='/storage/photos/cc.png'">
                 <h2 class="text-2xl font-bold text-white mb-2">Minecraft</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Oof To It</div>
+                <div id="time-Minecraft" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
+        <!-- 7. Proxycrib -->
         <a href="proxicrib/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/proxicrib.png" alt="Proxycrib">
+                <img src="/storage/photos/proxicrib.png" alt="Proxycrib" onerror="this.src='/storage/photos/cc.png'">
                 <h2 class="text-2xl font-bold text-white mb-2">Proxycrib</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Unblock Now</div>
+                <div id="time-Proxycrib" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
 
+        <!-- 8. Kick the Sod -->
         <a href="kick-the-sod/" class="game-card block bg-[#2a2a2a] p-6 rounded-xl border-2 border-green-700 hover:border-green-400 shadow-xl transition duration-300">
             <div class="flex flex-col items-center">
-                <img src="/storage/photos/kts.png" alt="Kick the Sod">
+                <img src="/storage/photos/kts.png" alt="Kick the Sod" onerror="this.src='/storage/photos/cc.png'">
                 <h2 class="text-2xl font-bold text-white mb-2">Kick The Sod</h2>
-                <div class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Kaboom</div>
+                <div id="time-Kick-The-Sod" class="mt-4 text-sm font-semibold py-1 px-3 bg-green-900/50 rounded-full text-green-300">Play Now</div>
             </div>
         </a>
+        
     </div>
 
     <footer class="mt-12 text-center text-gray-500 text-xs w-full">
-        <b>Bro, there are 8 games.</b>
+        <b>Green Belt Protected.</b>
         <p>&copy; The Game Dungeon | Guild Initials: D, A, J.</p>
     </footer>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -127,25 +139,56 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const authSection = document.getElementById('auth-section');
-                if(authSection) authSection.innerHTML = `<span class="text-green-400 font-bold">🛡️ CHAMPION LOGGED IN</span>`;
+                if(authSection) authSection.innerHTML = `
+                    <a href="stats/" class="stats-link">📊 HALL OF RECORDS</a>
+                    <span class="text-green-400 font-bold self-center">🛡️ CHAMPION LOGGED IN</span>
+                `;
                 
-                try {
-                    const userRef = doc(db, "users", user.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                        const data = userSnap.data();
-                        const seconds = data.playtime_ragdoll_hit || 0;
-                        const el = document.getElementById('time-ragdoll-hit');
-                        if (el && seconds > 0) {
-                            if (seconds >= 3600) el.innerText = `${(seconds / 3600).toFixed(1)} Hours Played`;
-                            else el.innerText = `${Math.floor(seconds / 60)} Mins Played`;
-                        }
-                    }
-                } catch (e) { console.log(e); }
+                loadHybridData(user.uid);
             }
         });
 
-        // Fixed Search Function
+        async function loadHybridData(uid) {
+            const newRef = doc(db, "playtime", uid);
+            const oldRef = doc(db, "users", uid);
+
+            const updateDisplay = (newData, oldData) => {
+                const gameList = [
+                    "Ragdoll Hit", "Cookie Clicker", "Geometry Dash", 
+                    "Polytrack", "Basket Random", "Minecraft", 
+                    "Proxycrib", "Kick The Sod"
+                ];
+                
+                gameList.forEach(game => {
+                    let totalMinutes = 0;
+
+                    // 1. Get legacy time from old 'users' collection (stored as seconds)
+                    if (oldData) {
+                        const oldKey = `playtime_${game.replace(/\s+/g, '_').toLowerCase()}`;
+                        if (oldData[oldKey]) totalMinutes += (oldData[oldKey] / 60);
+                    }
+
+                    // 2. Get new time from 'playtime' collection (stored as minutes)
+                    if (newData && newData[game]) {
+                        totalMinutes += newData[game];
+                    }
+
+                    const el = document.getElementById(`time-${game.replace(/\s+/g, '-')}`);
+                    if (el && totalMinutes > 0) {
+                        if (totalMinutes >= 60) el.innerText = `${(totalMinutes / 60).toFixed(1)} Hours Played`;
+                        else el.innerText = `${Math.floor(totalMinutes)} Mins Played`;
+                    }
+                });
+            };
+
+            const [newSnap, oldSnap] = await Promise.all([getDoc(newRef), getDoc(oldRef)]);
+            updateDisplay(newSnap.data(), oldSnap.data());
+
+            onSnapshot(newRef, (snap) => {
+                getDoc(oldRef).then(oldS => updateDisplay(snap.data(), oldS.data()));
+            });
+        }
+
         window.filterGames = function() {
             const input = document.getElementById('gameSearch').value.toLowerCase();
             const cards = document.querySelectorAll('.game-card');
