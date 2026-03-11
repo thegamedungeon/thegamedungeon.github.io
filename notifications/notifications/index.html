@@ -246,13 +246,12 @@
         const db = getFirestore(app);
 
         let currentUser = null;
-        const apiKey = ""; // Gemini API Key handled by environment
 
         // --- EMAILJS CONFIG ---
         const SERVICE_ID = "service_n2hsxcf";
         const TEMPLATE_ID = "template_lhizhll"; 
         const PUBLIC_KEY = "B27WRyM1IvaQI_Ysy";
-        const MY_NOTIF_EMAIL = "alex@example.com"; // CHANGE THIS TO YOUR ACTUAL EMAIL
+        const MY_NOTIF_EMAIL = "alex@example.com"; // Alex, change this to your real email!
 
         // --- THE DUNGEON COURIER LOGIC ---
         async function notifyViaEmail(recipientName, senderName, scrollSubject, scrollBody) {
@@ -261,15 +260,19 @@
             const isGlobal = recipientName.toLowerCase() === "global";
             const recipientLabel = isGlobal ? "THE ENTIRE GANG" : recipientName;
 
+            // Use the empty string for the API key as per environment rules
+            const apiKey = ""; 
+
             const systemPrompt = `You are the Courier of THE CRIB. 
             Write a short, hype greeting for ${recipientLabel} because ${senderName} sent a scroll.
-            Mention this is a No-Reply automated dispatch.
+            Mention this is a No-Reply automated dispatch from the Vault.
             Roast Connor for being a zesty, bot-brained, noodle-haired iPad kid who probably thinks "No-Reply" is his only friend. 
             Keep it under 3 sentences, pure bro-style, and aggressive.`;
 
             try {
                 let hypeIntro = "A new scroll has been dispatched! (No-Reply)";
                 
+                // Fetch from Gemini for the roast
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -294,8 +297,10 @@
                     reply_to: "noreply@thecrib.com" 
                 };
 
-                await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
-                console.log("Dungeon Courier reached the destination!");
+                const emailRes = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
+                if (emailRes.status === 200) {
+                    console.log("Dungeon Courier reached the destination!");
+                }
             } catch (e) {
                 console.error("Courier failed delivery:", e);
             }
