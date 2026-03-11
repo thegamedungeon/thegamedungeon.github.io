@@ -8,192 +8,100 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
         
-        body {
-            background-color: #121212; /* Darker, stealthier background */
-            color: #e0e0e0;
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #000; 
+            overflow: hidden; 
             font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
         }
 
-        .header-glow {
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
-            color: #00ff00;
+        /* Android-style Zoom Animation */
+        @keyframes appLaunch {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
-        /* The main layout grid */
-        .content-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 350px; /* Big game area, 350px sidebar */
-            gap: 20px;
-            max-width: 1400px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        /* Responsive: Stack sidebar on bottom for iPad/Mobile */
-        @media (max-width: 1024px) {
-            .content-wrapper {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* The Game "Theater" */
-        .game-theater {
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #333;
-        }
-
-        .iframe-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-        }
-
-        .iframe-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .sidebar-card {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 15px;
-            border: 1px solid #333;
-        }
-
-        .mini-game-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.2s;
-            text-decoration: none;
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        .mini-game-link:hover {
-            background: #2a2a2a;
-            border-left: 4px solid #00ff00;
-        }
-
-        .mini-thumb {
-            width: 80px;
-            height: 50px;
-            background: #333;
-            border-radius: 4px;
+        #splash-overlay {
+            position: fixed;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            background: #121212;
+            z-index: 50;
+            transition: opacity 0.5s ease;
+        }
+
+        .launch-logo {
+            animation: appLaunch 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        #game-layout {
+            display: none; 
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #gameFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
 <body>
 
-    <nav class="bg-[#1a1a1a] p-4 border-b-2 border-[#00ff00] flex justify-between items-center sticky top-0 z-50">
-        <a href="/play/" class="text-gray-400 hover:text-[#00ff00] transition-colors">⬅️ Back to The Vault</a>
-        <h1 class="text-xl font-bold header-glow">The Game Dungeon</h1>
-        <div class="w-24"></div> </nav>
+    <div id="splash-overlay">
+        <img src="/storage/photos/rh.png" class="launch-logo" id="logo" onerror="this.src='/storage/photos/cc.png'">
+    </div>
 
-    <div class="content-wrapper">
-        <main>
-<div class="game-theater">
-    <div class="iframe-container" id="theaterContainer">
-        <div id="splashScreen" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1a1a1a] bg-opacity-95">
-            <div class="mini-thumb w-32 h-32 text-4xl mb-4 border-2 border-[#00ff00]">⬜</div>
-            <h2 class="text-3xl font-bold mb-6">Geometry Dash</h2>
-            <button onclick="loadGame()" class="bg-[#00ff00] text-black px-12 py-4 rounded-full font-bold text-xl hover:scale-110 transition-transform shadow-[0_0_20px_rgba(0,255,0,0.4)]">
-                PLAY NOW!
-            </button>
-        </div>
+    <div id="game-layout">
+        <iframe id="gameFrame" src="about:blank" allowfullscreen></iframe>
+    </div>
+
+    <script type="module">
+        // FIX: Using 10.7.1 to match stats.html and main site
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // FIX: Pointing to the NEW tracker that writes to the correct 'playtime' collection
+        import { initTracker } from "/storage/js/tracker.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
         
-        <iframe id="gameFrame" src="/storage/gdl-main/index.html" allowfullscreen></iframe>
-    </div>
-    
-    <div class="p-4 flex justify-between items-center">
-        <div>
-            <h2 class="text-2xl font-bold">Geometry Dash</h2>
-            <p class="text-sm text-gray-400">By Robert Topala (Unblocked via The Crib)</p>
-        </div>
-        <button id="fullscreenBtn" class="bg-[#00ff00] text-black px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform">
-            FULLSCREEN
-        </button>
-    </div>
-</div>
-            <div class="mt-6 p-6 bg-[#1a1a1a] rounded-xl border border-[#333]">
-                <h3 class="font-bold border-b border-[#333] pb-2 mb-4">About this Game</h3>
-                <p class="text-gray-300">Rhythm, rage, and reckless squares. Can you beat the toughest levels?</p>
-            </div>
-        </main>
+        // This kicks off the minute-by-minute tracking
+        initTracker("Geometry Dash");
 
-        <aside>
-            <div class="sidebar-card">
-                <h3 class="text-[#00ff00] font-bold mb-4 uppercase tracking-wider">Dungeon Classics</h3>
+        const splash = document.getElementById('splash-overlay');
+        const layout = document.getElementById('game-layout');
+        const iframe = document.getElementById('gameFrame');
+
+        window.onload = () => {
+            iframe.src = "/storage/gdl-main/index.html";
+
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                layout.style.display = 'block';
                 
-                <a href="cookieclicker.html" class="mini-game-link">
-                    <div class="mini-thumb">🍪</div>
-                    <div>
-                        <div class="font-bold">Cookie Clicker</div>
-                        <div class="text-xs text-gray-500">Idle / Casual</div>
-                    </div>
-                </a>
-
-                <a href="polytrack.html" class="mini-game-link">
-                    <div class="mini-thumb">🏎️</div>
-                    <div>
-                        <div class="font-bold">Polytrack</div>
-                        <div class="text-xs text-gray-500">Racing</div>
-                    </div>
-                </a>
-
-                <a href="minecraft.html" class="mini-game-link">
-                    <div class="mini-thumb">⛏️</div>
-                    <div>
-                        <div class="font-bold">Minecraft</div>
-                        <div class="text-xs text-gray-500">Open World</div>
-                    </div>
-                </a>
-
-                <a href="basketrandom.html" class="mini-game-link">
-                    <div class="mini-thumb">🏀</div>
-                    <div>
-                        <div class="font-bold">Basket Random</div>
-                        <div class="text-xs text-gray-500">Sports / Physics</div>
-                    </div>
-                </a>
-            </div>
-        </aside>
-    </div>
-
-<script>
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const gameFrame = document.getElementById('gameFrame');
-    const splash = document.getElementById('splashScreen');
-
-    // Function to load the game and hide splash
-    function loadGame() {
-        gameFrame.src = "/gdl-main/index.html"; // Set this specifically for each game
-        splash.style.display = 'none';
-    }
-
-    // Fullscreen logic stays the same
-    fullscreenBtn.addEventListener('click', () => {
-        if (gameFrame.requestFullscreen) {
-            gameFrame.requestFullscreen();
-        } else if (gameFrame.webkitRequestFullscreen) {
-            gameFrame.webkitRequestFullscreen();
-        }
-    });
-</script>
+                setTimeout(() => {
+                    splash.remove();
+                }, 500);
+            }, 1500);
+        };
+    </script>
 </body>
 </html>
