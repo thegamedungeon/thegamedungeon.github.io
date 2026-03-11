@@ -217,8 +217,8 @@
     <div class="modal" id="composeModal">
         <div class="modal-content">
             <h2 id="modal-title" style="margin-top:0; color:#0f0;">New Scroll</h2>
-            <input type="text" id="msgRecipient" placeholder="To: (Names/Emails separated by commas, or GLOBAL)">
-            <p style="font-size: 0.7em; color: #888; margin-top: -5px;">Example: Daimyan, Jayden, Abas</p>
+            <input type="text" id="msgRecipient" placeholder="To: (Name, Email, or GLOBAL)">
+            <p style="font-size: 0.7em; color: #888; margin-top: -5px;">GLOBAL alerts EVERYONE who has ever logged in.</p>
             <input type="text" id="msgSubject" placeholder="Subject">
             <textarea id="msgBody" rows="4" placeholder="Message content..."></textarea>
             <button class="send-btn" id="final-send">DISPATCH</button>
@@ -229,8 +229,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
             authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
@@ -245,35 +246,78 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUser = null;
+        // --- THE CRIB SETTINGS ---
+        const MY_ADMIN_EMAIL = "open.it.out.fortnite@gmail.com"; 
 
         // --- EMAILJS CONFIG ---
         const SERVICE_ID = "service_n2hsxcf";
         const TEMPLATE_ID = "template_lhizhll"; 
         const PUBLIC_KEY = "B27WRyM1IvaQI_Ysy";
-        const MY_NOTIF_EMAIL = "alex@example.com"; // Alex, change this to your real email!
+
+        let currentUser = null;
 
         // --- THE DUNGEON COURIER LOGIC ---
-        async function notifyViaEmail(recipientName, senderName, scrollSubject, scrollBody) {
+        async function notifyViaEmail(recipientInput, senderName, scrollSubject, scrollBody) {
             emailjs.init(PUBLIC_KEY);
 
-            const isGlobal = recipientName.toLowerCase() === "global";
-            const recipientLabel = isGlobal ? "THE ENTIRE GANG" : recipientName;
-
-            // Use the empty string for the API key as per environment rules
+            const lowerRecipient = recipientInput.toLowerCase();
+            const isGlobal = lowerRecipient === "global";
             const apiKey = ""; 
 
-            const systemPrompt = `You are the Courier of THE CRIB. 
-            Write a short, hype greeting for ${recipientLabel} because ${senderName} sent a scroll.
-            Mention this is a No-Reply automated dispatch from the Vault.
-            Roast Connor for being a zesty, bot-brained, noodle-haired iPad kid who probably thinks "No-Reply" is his only friend. 
-            Keep it under 3 sentences, pure bro-style, and aggressive.`;
+            let emailsToNotify = [];
 
+            if (isGlobal) {
+                // THE "YOU CAN NEVER LEAVE" LOGIC
+                try {
+                    const q = query(collection(db, "messages"), limit(1000));
+                    const snap = await getDocs(q);
+                    const emailSet = new Set();
+                    emailSet.add(MY_ADMIN_EMAIL); 
+                    
+                    snap.forEach(d => {
+                        const data = d.data();
+                        if (data.senderEmail) emailSet.add(data.senderEmail.toLowerCase());
+                    });
+                    
+                    emailsToNotify = Array.from(emailSet);
+                } catch(e) { 
+                    console.error("Broadcast scan failed", e); 
+                    emailsToNotify = [MY_ADMIN_EMAIL]; 
+                }
+            } else if (recipientInput.includes('@')) {
+                emailsToNotify = [recipientInput];
+            } else {
+                // Name lookup logic
+                try {
+                    const q = query(collection(db, "messages"), limit(200));
+                    const snap = await getDocs(q);
+                    snap.forEach(d => {
+                        const data = d.data();
+                        if (data.senderName?.toLowerCase() === lowerRecipient) {
+                            emailsToNotify = [data.senderEmail];
+                        }
+                    });
+                } catch(e) { console.error("Search failed", e); }
+            }
+
+            if (emailsToNotify.length === 0) {
+                console.log("Courier: No emails found for " + recipientInput);
+                return;
+            }
+
+            const recipientLabel = isGlobal ? "THE ENTIRE GANG" : recipientInput;
+
+            // Generate hype once
+            const systemPrompt = `You are the Courier of THE CRIB. 
+            Write a short, aggressive, hype greeting for ${recipientLabel} because ${senderName} sent a scroll.
+            Mention this is a No-Reply automated dispatch from the Vault.
+            Roast Connor for being a zesty, noodle-haired bot-brained iPad kid.
+            Remind them that since they entered the Dungeon, they can NEVER LEAVE.
+            Keep it under 3 sentences, pure bro-style.`;
+
+            let hypeIntro = `A new scroll has been dispatched to ${recipientLabel}! (No-Reply)`;
             try {
-                let hypeIntro = "A new scroll has been dispatched! (No-Reply)";
-                
-                // Fetch from Gemini for the roast
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -281,28 +325,27 @@
                         systemInstruction: { parts: [{ text: systemPrompt }] }
                     })
                 });
-
-                if (response.ok) {
-                    const result = await response.json();
+                if (geminiRes.ok) {
+                    const result = await geminiRes.json();
                     hypeIntro = result.candidates?.[0]?.content?.parts?.[0]?.text || hypeIntro;
                 }
+            } catch(e) {}
 
-                const finalContent = `${hypeIntro}\n\n--------------------------------------\nSUBJECT: ${scrollSubject}\nBODY: ${scrollBody}\n--------------------------------------\n\n[!] This is an automated No-Reply dispatch. Don't be bot-brained like Connor—replies are ignored.`;
+            const finalContent = `${hypeIntro}\n\n--------------------------------------\nSUBJECT: ${scrollSubject}\nBODY: ${scrollBody}\n--------------------------------------\n\n[!] This is an automated No-Reply dispatch. You are a citizen of the Dungeon now. No account deletions. No escape.`;
 
+            // Sequential dispatch to avoid hitting rate limits too fast
+            const maxBlasts = isGlobal ? 25 : emailsToNotify.length; 
+            for (let i = 0; i < Math.min(emailsToNotify.length, maxBlasts); i++) {
+                const target = emailsToNotify[i];
                 const templateParams = {
                     to_name: recipientLabel,
-                    from_name: "Crib Courier",
-                    to_email: MY_NOTIF_EMAIL, 
+                    from_name: `Crib Courier (${senderName})`,
+                    to_email: target, 
                     message: finalContent,
                     reply_to: "noreply@thecrib.com" 
                 };
-
-                const emailRes = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
-                if (emailRes.status === 200) {
-                    console.log("Dungeon Courier reached the destination!");
-                }
-            } catch (e) {
-                console.error("Courier failed delivery:", e);
+                await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
+                console.log(`Courier delivered to: ${target}`);
             }
         }
 
@@ -329,18 +372,13 @@
         };
 
         window.deleteMessage = async function(msgId) {
-            if (confirm("Are you sure you wanna burn this scroll?")) {
-                try {
-                    await deleteDoc(doc(db, "messages", msgId));
-                } catch (e) {
-                    alert("Error deleting scroll.");
-                }
+            if (confirm("Burn this scroll?")) {
+                try { await deleteDoc(doc(db, "messages", msgId)); } catch (e) {}
             }
         };
 
         function loadThreads() {
             const q = query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(300));
-            
             onSnapshot(q, (snapshot) => {
                 const threadList = document.getElementById('thread-list');
                 threadList.innerHTML = '';
@@ -366,54 +404,49 @@
                     }
                 });
 
-                const sortedSubjects = Object.keys(threads).sort((a, b) => {
+                Object.keys(threads).sort((a, b) => {
                     const lastA = threads[a][threads[a].length - 1].timestamp?.seconds || 0;
                     const lastB = threads[b][threads[b].length - 1].timestamp?.seconds || 0;
                     return lastB - lastA;
-                });
-
-                sortedSubjects.forEach(sub => {
+                }).forEach(sub => {
                     const msgGroup = threads[sub];
-                    if (msgGroup.length > 0) {
-                        const threadContainer = document.createElement('div');
-                        threadContainer.className = 'thread-group';
-                        const displaySubject = msgGroup[0].subject.replace(/^Re:\s+/i, "");
-                        threadContainer.innerHTML = `<div class="thread-header">
-                            <span>${displaySubject.toUpperCase()}</span>
-                            <span style="font-size: 0.7em; opacity: 0.7;">${msgGroup.length} MESSAGES</span>
-                        </div>`;
+                    const threadContainer = document.createElement('div');
+                    threadContainer.className = 'thread-group';
+                    const displaySubject = msgGroup[0].subject.replace(/^Re:\s+/i, "");
+                    threadContainer.innerHTML = `<div class="thread-header">
+                        <span>${displaySubject.toUpperCase()}</span>
+                        <span style="font-size: 0.7em; opacity: 0.7;">${msgGroup.length} MESSAGES</span>
+                    </div>`;
 
-                        msgGroup.forEach((msg) => {
-                            const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString([], {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : '...';
-                            const card = document.createElement('div');
-                            card.className = `message-card ${msg.isSentByMe ? 'my-message' : ''}`;
-                            
-                            let tagClass = 'tag-private'; let tagText = 'Private';
-                            if(msg.isGlobal) { tagClass = 'tag-global'; tagText = 'Global'; }
-                            else if(msg.isGroup) { tagClass = 'tag-group'; tagText = 'Group Chat'; }
-                            else if(msg.isSentByMe) { tagClass = 'tag-sent'; tagText = 'Sent'; }
+                    msgGroup.forEach((msg) => {
+                        const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString([], {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : '...';
+                        const card = document.createElement('div');
+                        card.className = `message-card ${msg.isSentByMe ? 'my-message' : ''}`;
+                        let tagClass = 'tag-private'; let tagText = 'Private';
+                        if(msg.isGlobal) { tagClass = 'tag-global'; tagText = 'Global'; }
+                        else if(msg.isGroup) { tagClass = 'tag-group'; tagText = 'Group Chat'; }
+                        else if(msg.isSentByMe) { tagClass = 'tag-sent'; tagText = 'Sent'; }
 
-                            const replyBtn = !msg.isSentByMe ? `<button class="btn-small reply-btn" onclick="initReply('${msg.senderEmail || ''}', '${msg.senderName}', '${msg.subject}')">Reply</button>` : '';
-                            const deleteBtn = `<button class="btn-small delete-btn" onclick="deleteMessage('${msg.id}')">Delete</button>`;
-
-                            card.innerHTML = `
-                                <span class="tag ${tagClass}">${tagText}</span>
-                                <div class="action-btns">${replyBtn}${deleteBtn}</div>
-                                <div class="sender-info">
-                                    <img src="${msg.senderPhoto || ''}" class="sender-img" onerror="this.src='https://via.placeholder.com/30'">
-                                    <span class="sender-name">${msg.isSentByMe ? 'You' : msg.senderName}</span>
-                                </div>
-                                <div class="body">${msg.body}</div>
-                                <span class="time">${time}</span>
-                            `;
-                            threadContainer.appendChild(card);
-                        });
-                        threadList.appendChild(threadContainer);
-                    }
+                        card.innerHTML = `
+                            <span class="tag ${tagClass}">${tagText}</span>
+                            <div class="action-btns">
+                                ${!msg.isSentByMe ? `<button class="btn-small reply-btn" onclick="initReply('${msg.senderEmail || ''}', '${msg.senderName}', '${msg.subject}')">Reply</button>` : ''}
+                                <button class="btn-small delete-btn" onclick="deleteMessage('${msg.id}')">Delete</button>
+                            </div>
+                            <div class="sender-info">
+                                <img src="${msg.senderPhoto || ''}" class="sender-img" onerror="this.src='https://via.placeholder.com/30'">
+                                <span class="sender-name">${msg.isSentByMe ? 'You' : msg.senderName}</span>
+                            </div>
+                            <div class="body">${msg.body}</div>
+                            <span class="time">${time}</span>
+                        `;
+                        threadContainer.appendChild(card);
+                    });
+                    threadList.appendChild(threadContainer);
                 });
 
                 if (threadList.innerHTML === '') {
-                    threadList.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">No active scrolls in the dungeon.</p>';
+                    threadList.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">The Dungeon silence is loud.</p>';
                 }
             });
         }
@@ -433,12 +466,8 @@
             const subject = document.getElementById('msgSubject').value.trim();
             const body = document.getElementById('msgBody').value.trim();
 
-            if (!recipient || !subject || !body) return alert("Fill the form, bro.");
-
-            if (recipient.toLowerCase().includes('connor')) {
-                alert("Security System: Sending scrolls to zesty individuals is forbidden.");
-                return;
-            }
+            if (!recipient || !subject || !body) return alert("Forms are mandatory, hero.");
+            if (recipient.toLowerCase().includes('connor')) return alert("Oink oink—security blocked that zesty bot.");
 
             try {
                 await addDoc(collection(db, "messages"), {
@@ -452,13 +481,9 @@
                     timestamp: serverTimestamp()
                 });
 
-                // --- TRIGGER THE COURIER ---
                 notifyViaEmail(recipient, currentUser.displayName, subject, body);
-
                 modal.style.display = 'none';
-            } catch (e) {
-                alert("Database Error: Dispatch failed.");
-            }
+            } catch (e) { alert("Dispatch failed."); }
         };
     </script>
 </body>
