@@ -68,6 +68,7 @@
             transition: 0.3s;
             position: relative;
             overflow: hidden;
+            text-align: left;
         }
 
         .game-card:hover {
@@ -76,22 +77,25 @@
         }
 
         .game-name {
-            font-size: 1.2em;
+            font-size: 1.1em;
             margin-bottom: 10px;
             display: block;
             text-transform: uppercase;
+            color: #0f0;
         }
 
         .game-hours {
             font-size: 1.5em;
             color: #fff;
+            font-weight: bold;
         }
 
         .progress-bar {
-            height: 5px;
+            height: 8px;
             background: #444;
             margin-top: 15px;
             border-radius: 10px;
+            overflow: hidden;
         }
 
         .progress-fill {
@@ -112,8 +116,8 @@
 <body>
 
     <div class="top-bar">
-        <a href="../" class="back-btn">← RETURN TO CRIB</a>
-        <div id="user-info">Hero: Loading...</div>
+        <a href="../../" class="back-btn">← RETURN TO VAULT</a>
+        <div id="user-info" style="font-size: 0.9em;">Hero: Loading...</div>
     </div>
 
     <h1>VAULT CHRONOMETER</h1>
@@ -124,18 +128,18 @@
     </div>
 
     <div class="grid" id="stats-grid">
-        <!-- Stats pop in here -->
+        <p style="color: #666;">Synchronizing with the Vault...</p>
     </div>
 
     <p class="roast-footer">
-        Connor has 0 hours recorded because he's too busy being a zesty bot.<br>
-        Dungeon Status: Optimized for the Green Belt.
+        Connor's total time: 0.0h (Too busy being bot-brained).<br>
+        Dungeon Status: SECURED.
     </p>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -156,12 +160,14 @@
                 document.getElementById('user-info').innerText = `Hero: ${user.displayName || 'Warrior'}`;
                 loadStats(user.uid);
             } else {
-                window.location.href = "../login/";
+                // If not logged in, they can't have stats. Send them to login.
+                window.location.href = "../../login/";
             }
         });
 
         function loadStats(uid) {
-            // Listening to the user's specific playtime document
+            // Path: playtime/{userId}
+            // Ensure your tracker.js is updating fields in this document!
             const statsDoc = doc(db, "playtime", uid);
 
             onSnapshot(statsDoc, (docSnap) => {
@@ -169,27 +175,35 @@
                 grid.innerHTML = '';
                 
                 if (!docSnap.exists()) {
-                    grid.innerHTML = '<p>No scrolls found. Go play some games, hero!</p>';
+                    grid.innerHTML = '<p style="color: #888; grid-column: 1/-1;">No records found in the archives. Start a game to begin tracking.</p>';
+                    document.getElementById('total-dungeon-time').innerText = "0.0h";
                     return;
                 }
 
-                const data = docSnap.data(); // Format: { "Cookie Clicker": 120, "Geometry Dash": 45 } (minutes)
+                const data = docSnap.data(); 
                 let totalMinutes = 0;
-                let maxMinutes = 1; // To calculate percentages for bars
+                let maxMinutes = 1;
 
-                // Find max for scaling the bars
-                Object.values(data).forEach(m => { if(m > maxMinutes) maxMinutes = m; });
+                // First pass: find total and max for scaling
+                const gameEntries = Object.entries(data);
+                gameEntries.forEach(([name, mins]) => {
+                    if (typeof mins === 'number') {
+                        totalMinutes += mins;
+                        if (mins > maxMinutes) maxMinutes = mins;
+                    }
+                });
 
-                Object.keys(data).sort().forEach(game => {
-                    const minutes = data[game];
-                    totalMinutes += minutes;
+                // Second pass: build the UI
+                gameEntries.sort((a, b) => b[1] - a[1]).forEach(([gameName, minutes]) => {
+                    if (typeof minutes !== 'number') return;
+
                     const hours = (minutes / 60).toFixed(1);
                     const percentage = (minutes / maxMinutes) * 100;
 
                     const card = document.createElement('div');
                     card.className = 'game-card';
                     card.innerHTML = `
-                        <span class="game-name">${game}</span>
+                        <span class="game-name">${gameName}</span>
                         <span class="game-hours">${hours}h</span>
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${percentage}%"></div>
@@ -199,6 +213,9 @@
                 });
 
                 document.getElementById('total-dungeon-time').innerText = (totalMinutes / 60).toFixed(1) + "h";
+            }, (error) => {
+                console.error("Vault Error:", error);
+                grid.innerHTML = '<p style="color: #f00;">Error accessing the archives. Check your connection.</p>';
             });
         }
     </script>
