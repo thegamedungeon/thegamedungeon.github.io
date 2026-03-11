@@ -201,6 +201,7 @@
 <body>
 
     <div class="top-bar">
+        <!-- Pathing adjusted to exit nested folder back to index -->
         <a href="../../" class="back-btn">← THE CRIB</a>
         <h1>MAILROOM</h1>
         <div id="user-display" style="font-size: 0.8em; color: #0f0; display: flex; align-items: center; gap: 8px;">
@@ -249,103 +250,104 @@
         // --- THE CRIB SETTINGS ---
         const MY_ADMIN_EMAIL = "open.it.out.fortnite@gmail.com"; 
 
-        // --- EMAILJS CONFIG ---
+        // --- EMAILJS CONFIG (LOCKED IN WITH THE UNCHANGING KEYS) ---
         const SERVICE_ID = "service_n2hsxcf";
-        const TEMPLATE_ID = "template_lhizhll"; 
+        const TEMPLATE_ID = "template_rip4cmz"; // Updated Template ID
         const PUBLIC_KEY = "B27WRyM1IvaQI_Ysy";
 
         let currentUser = null;
 
-        // --- THE DUNGEON COURIER LOGIC ---
+        /**
+         * The Dungeon Courier: Handles the actual email blasting.
+         */
         async function notifyViaEmail(recipientInput, senderName, scrollSubject, scrollBody) {
             emailjs.init(PUBLIC_KEY);
 
             const lowerRecipient = recipientInput.toLowerCase();
             const isGlobal = lowerRecipient === "global";
-            const apiKey = ""; 
+            const apiKey = ""; // Provided by env
 
             let emailsToNotify = [];
 
+            // 1. Gather targets
             if (isGlobal) {
-                // THE "YOU CAN NEVER LEAVE" LOGIC
                 try {
-                    const q = query(collection(db, "messages"), limit(1000));
+                    const q = query(collection(db, "messages"), limit(500));
                     const snap = await getDocs(q);
                     const emailSet = new Set();
                     emailSet.add(MY_ADMIN_EMAIL); 
                     
                     snap.forEach(d => {
                         const data = d.data();
-                        if (data.senderEmail) emailSet.add(data.senderEmail.toLowerCase());
+                        if (data.senderEmail && data.senderEmail.includes('@')) {
+                            emailSet.add(data.senderEmail.toLowerCase());
+                        }
                     });
-                    
                     emailsToNotify = Array.from(emailSet);
                 } catch(e) { 
-                    console.error("Broadcast scan failed", e); 
                     emailsToNotify = [MY_ADMIN_EMAIL]; 
                 }
             } else if (recipientInput.includes('@')) {
                 emailsToNotify = [recipientInput];
             } else {
-                // Name lookup logic
                 try {
                     const q = query(collection(db, "messages"), limit(200));
                     const snap = await getDocs(q);
                     snap.forEach(d => {
                         const data = d.data();
                         if (data.senderName?.toLowerCase() === lowerRecipient) {
-                            emailsToNotify = [data.senderEmail];
+                            emailsToNotify.push(data.senderEmail);
                         }
                     });
-                } catch(e) { console.error("Search failed", e); }
+                } catch(e) { console.error("Lookup failed", e); }
             }
 
-            if (emailsToNotify.length === 0) {
-                console.log("Courier: No emails found for " + recipientInput);
-                return;
-            }
+            if (emailsToNotify.length === 0) return;
 
-            const recipientLabel = isGlobal ? "THE ENTIRE GANG" : recipientInput;
-
-            // Generate hype once
+            // 2. Build the Hype via AI
+            const recipientLabel = isGlobal ? "THE ENTIRE DUNGEON" : recipientInput;
             const systemPrompt = `You are the Courier of THE CRIB. 
             Write a short, aggressive, hype greeting for ${recipientLabel} because ${senderName} sent a scroll.
             Mention this is a No-Reply automated dispatch from the Vault.
-            Roast Connor for being a zesty, noodle-haired bot-brained iPad kid.
-            Remind them that since they entered the Dungeon, they can NEVER LEAVE.
+            Roast Connor for being a zesty, noodle-haired bot-brained iPad kid who can't handle security (oink oink).
+            Remind them that once they enter the Dungeon, they can NEVER LEAVE.
             Keep it under 3 sentences, pure bro-style.`;
 
-            let hypeIntro = `A new scroll has been dispatched to ${recipientLabel}! (No-Reply)`;
+            let hypeIntro = `A new scroll has been dispatched to ${recipientLabel} by ${senderName}! (No-Reply)`;
+            
             try {
-                const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Write the no-reply hype intro." }] }],
+                        contents: [{ parts: [{ text: "Write the courier intro." }] }],
                         systemInstruction: { parts: [{ text: systemPrompt }] }
                     })
                 });
-                if (geminiRes.ok) {
-                    const result = await geminiRes.json();
-                    hypeIntro = result.candidates?.[0]?.content?.parts?.[0]?.text || hypeIntro;
+                const result = await response.json();
+                const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText) hypeIntro = aiText;
+            } catch (e) {
+                console.log("Courier AI tweaked, using backup hype.");
+            }
+
+            const finalMessage = `${hypeIntro}\n\n--------------------------------------\nSUBJECT: ${scrollSubject}\nBODY: ${scrollBody}\n--------------------------------------\n\n[!] This is an automated No-Reply dispatch. Account deletion is disabled. Escape is impossible.`;
+
+            // 3. Final Send
+            const dispatchList = [...new Set(emailsToNotify)]; 
+            for (const email of dispatchList) {
+                try {
+                    await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+                        to_name: recipientLabel,
+                        from_name: senderName,
+                        to_email: email,
+                        message: finalMessage,
+                        reply_to: "noreply@thecrib.com"
+                    });
+                    console.log(`Courier success: ${email}`);
+                } catch (err) {
+                    console.error(`Courier failed for ${email}`, err);
                 }
-            } catch(e) {}
-
-            const finalContent = `${hypeIntro}\n\n--------------------------------------\nSUBJECT: ${scrollSubject}\nBODY: ${scrollBody}\n--------------------------------------\n\n[!] This is an automated No-Reply dispatch. You are a citizen of the Dungeon now. No account deletions. No escape.`;
-
-            // Sequential dispatch to avoid hitting rate limits too fast
-            const maxBlasts = isGlobal ? 25 : emailsToNotify.length; 
-            for (let i = 0; i < Math.min(emailsToNotify.length, maxBlasts); i++) {
-                const target = emailsToNotify[i];
-                const templateParams = {
-                    to_name: recipientLabel,
-                    from_name: `Crib Courier (${senderName})`,
-                    to_email: target, 
-                    message: finalContent,
-                    reply_to: "noreply@thecrib.com" 
-                };
-                await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
-                console.log(`Courier delivered to: ${target}`);
             }
         }
 
@@ -354,7 +356,7 @@
                 currentUser = user;
                 document.getElementById('user-display').innerHTML = `
                     <img src="${user.photoURL || ''}" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #0f0;">
-                    <span>${user.displayName || 'Guest'}</span>
+                    <span>${user.displayName || 'Hero'}</span>
                 `;
                 loadThreads();
             } else {
@@ -388,17 +390,14 @@
                     const data = doc.data();
                     const recipients = (data.recipient || "").split(',').map(r => r.trim().toLowerCase());
                     const isGlobal = recipients.includes('global');
-                    
                     const isForMe = isGlobal || 
                         recipients.includes(currentUser.displayName?.toLowerCase()) || 
                         recipients.includes(currentUser.email?.toLowerCase()) ||
                         recipients.includes(currentUser.uid);
-                    
-                    const isFromMe = data.senderUid === currentUser.uid || 
-                                     data.senderEmail?.toLowerCase() === currentUser.email?.toLowerCase();
+                    const isFromMe = data.senderUid === currentUser.uid;
 
                     if (isForMe || isFromMe) {
-                        const baseSubject = data.subject.replace(/^Re:\s+/i, "").trim().toLowerCase();
+                        const baseSubject = (data.subject || "No Subject").replace(/^Re:\s+/i, "").trim().toLowerCase();
                         if (!threads[baseSubject]) threads[baseSubject] = [];
                         threads[baseSubject].push({ id: doc.id, ...data, isSentByMe: isFromMe, isGlobal: isGlobal, isGroup: recipients.length > 1 });
                     }
@@ -419,7 +418,7 @@
                     </div>`;
 
                     msgGroup.forEach((msg) => {
-                        const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString([], {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : '...';
+                        const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString([], {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : 'Sending...';
                         const card = document.createElement('div');
                         card.className = `message-card ${msg.isSentByMe ? 'my-message' : ''}`;
                         let tagClass = 'tag-private'; let tagText = 'Private';
@@ -446,7 +445,7 @@
                 });
 
                 if (threadList.innerHTML === '') {
-                    threadList.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">The Dungeon silence is loud.</p>';
+                    threadList.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">The Mailroom is empty.</p>';
                 }
             });
         }
@@ -481,6 +480,7 @@
                     timestamp: serverTimestamp()
                 });
 
+                // Dispatch to the Courier
                 notifyViaEmail(recipient, currentUser.displayName, subject, body);
                 modal.style.display = 'none';
             } catch (e) { alert("Dispatch failed."); }
