@@ -1,0 +1,25 @@
+name: Unzip Game Files
+on:
+  workflow_dispatch: # This lets you start it manually
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Unzip the files
+        run: |
+          # Go to storage, unzip, and force overwrite everything
+          cd storage
+          unzip -o basket-random.zip -d basket-random
+          rm basket-random.zip # Clean up the zip so it's not wasting space
+
+      - name: Commit changes
+        run: |
+          git config --global user.name 'Dungeon-Bot'
+          git config --global user.email 'bot@thegamedungeon.io'
+          git add .
+          git commit -m "Auto-unzipped Basket Random - Connor is still zesty"
+          git push
