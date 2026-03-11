@@ -11,45 +11,59 @@ jobs:
 
       - name: Process Zip
         run: |
-          # Go to the actual folder where you uploaded the zip
-          cd storage/basket-main
+          # 1. FULL REPO SCAN
+          # We search starting from the root (.) to find any .zip file anywhere
+          echo "Scanning entire repository for the loot..."
+          ZIP_PATH=$(find . -name "*.zip" -not -path "*/.*" | head -n 1)
           
-          # Find the zip file (handles basket-main.zip)
-          ZIP_NAME=$(ls *.zip | head -n 1)
-          
-          if [ -z "$ZIP_NAME" ]; then
-            echo "Error: No zip file found in storage/basket-main/! Check the path."
+          if [ -z "$ZIP_PATH" ]; then
+            echo "Error: No zip file found in the entire repo! Connor must have tossed it."
+            echo "--- REPO STRUCTURE ---"
+            ls -R
             exit 1
           fi
           
-          echo "Dungeon Bot found: $ZIP_NAME"
+          echo "Dungeon Bot found the stash at: $ZIP_PATH"
           
-          # Move back to storage to create the clean folder
-          cd ..
-          TARGET_DIR="basket-random"
+          # 2. SETUP TARGET
+          # We always want the game to end up in storage/basket-random
+          TARGET_DIR="storage/basket-random"
           mkdir -p "$TARGET_DIR"
           
-          # Unzip from the subfolder into our new clean target folder
-          unzip -o "basket-main/$ZIP_NAME" -d "$TARGET_DIR"
+          # 3. UNZIP DIRECTLY INTO TARGET
+          echo "Extracting $ZIP_PATH into $TARGET_DIR..."
+          unzip -o "$ZIP_PATH" -d "$TARGET_DIR"
           
-          # Clean up: Remove the zip and the old nested folder
-          rm "basket-main/$ZIP_NAME"
+          # 4. CLEANUP
+          # Remove the zip file from its original location
+          ORIGINAL_ZIP_DIR=$(dirname "$ZIP_PATH")
+          rm "$ZIP_PATH"
           
-          # Check if the zip had an inner folder (like 'basket-main/') and move files up
+          # If it was in a subfolder (like storage/basket-main), delete that folder if it's empty
+          if [ "$ORIGINAL_ZIP_DIR" != "." ] && [ "$ORIGINAL_ZIP_DIR" != "./storage" ]; then
+            echo "Cleaning up empty stash folder: $ORIGINAL_ZIP_DIR"
+            rm -rf "$ORIGINAL_ZIP_DIR"
+          fi
+          
+          # 5. FIX DOUBLE FOLDER GLITCH
+          # If the zip had a folder inside (e.g. BasketRandom-main/), move files up
+          # We check for the first directory inside our target
           INNER_DIR=$(ls -d "$TARGET_DIR"/*/ 2>/dev/null | head -n 1)
           if [ -n "$INNER_DIR" ]; then
-             echo "Detected inner folder: $INNER_DIR. Yeeting files to root..."
+             echo "Detected inner folder: $INNER_DIR. Yeeting files to $TARGET_DIR root..."
              mv "$INNER_DIR"* "$TARGET_DIR/"
              rm -rf "$INNER_DIR"
           fi
-          
-          # Delete the now empty original upload folder to keep it Daimyan-proof
-          rmdir "basket-main" || echo "Folder not empty yet"
 
       - name: Commit and Push
         run: |
           git config --global user.name 'Dungeon-Bot'
           git config --global user.email 'bot@thegamedungeon.io'
           git add .
-          git commit -m "Dungeon Bot extracted the loot from the basket-main subfolder."
-          git push
+          # Check if there are actually changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit. Is the zip empty?"
+          else
+            git commit -m "Dungeon Bot scanned the whole repo and extracted the loot. No oink oink allowed."
+            git push
+          fi
