@@ -118,7 +118,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -134,7 +134,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, (user) => {
             if (user) {
                 const authSection = document.getElementById('auth-section');
                 if(authSection) authSection.innerHTML = `
@@ -142,61 +142,34 @@
                     <span class="text-green-400 font-bold self-center">🛡️ CHAMPION LOGGED IN</span>
                 `;
                 
-                loadHybridData(user.uid);
+                // Pointing strictly to the new 'playtime' collection
+                const playRef = doc(db, "playtime", user.uid);
+                onSnapshot(playRef, (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const games = [
+                            "Ragdoll Hit", "Cookie Clicker", "Geometry Dash", 
+                            "Polytrack", "Basket Random", "Minecraft", 
+                            "Proxycrib", "Kick The Sod"
+                        ];
+
+                        games.forEach(game => {
+                            const totalMinutes = data[game] || 0;
+                            const elId = `time-${game.replace(/\s+/g, '-')}`;
+                            const el = document.getElementById(elId);
+                            
+                            if (el && totalMinutes > 0) {
+                                if (totalMinutes >= 60) {
+                                    el.innerText = `${(totalMinutes / 60).toFixed(1)} Hours Played`;
+                                } else {
+                                    el.innerText = `${Math.floor(totalMinutes)} Mins Played`;
+                                }
+                            }
+                        });
+                    }
+                });
             }
         });
-
-        async function loadHybridData(uid) {
-            const newRef = doc(db, "playtime", uid);
-            const oldRef = doc(db, "users", uid);
-
-            const updateDisplay = (newData, oldData) => {
-                const gameList = [
-                    "Ragdoll Hit", "Cookie Clicker", "Geometry Dash", 
-                    "Polytrack", "Basket Random", "Minecraft", 
-                    "Proxycrib", "Kick The Sod"
-                ];
-                
-                gameList.forEach(game => {
-                    let totalMinutes = 0;
-
-                    // 1. Get legacy seconds from 'users' and convert to minutes
-                    if (oldData) {
-                        const oldKey = `playtime_${game.replace(/\s+/g, '_').toLowerCase()}`;
-                        if (oldData[oldKey]) totalMinutes += (oldData[oldKey] / 60);
-                    }
-
-                    // 2. Get new minutes from 'playtime'
-                    if (newData && newData[game]) {
-                        totalMinutes += newData[game];
-                    }
-
-                    const elId = `time-${game.replace(/\s+/g, '-')}`;
-                    const el = document.getElementById(elId);
-                    
-                    if (el && totalMinutes > 0) {
-                        if (totalMinutes >= 60) {
-                            el.innerText = `${(totalMinutes / 60).toFixed(1)} Hours Played`;
-                        } else {
-                            el.innerText = `${Math.floor(totalMinutes)} Mins Played`;
-                        }
-                    }
-                });
-            };
-
-            // Fetch both snapshots and update UI
-            try {
-                const [newSnap, oldSnap] = await Promise.all([getDoc(newRef), getDoc(oldRef)]);
-                updateDisplay(newSnap.data(), oldSnap.data());
-
-                // Keep it live for any session updates
-                onSnapshot(newRef, (snap) => {
-                    getDoc(oldRef).then(oldS => updateDisplay(snap.data(), oldS.data()));
-                });
-            } catch (e) {
-                console.error("Vault Access Error:", e);
-            }
-        }
 
         window.filterGames = function() {
             const input = document.getElementById('gameSearch').value.toLowerCase();
