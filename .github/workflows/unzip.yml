@@ -1,6 +1,6 @@
-name: Unzip Game Files
+name: Unzip Basket Random
 on:
-  workflow_dispatch: # This lets you start it manually
+  workflow_dispatch:
 
 jobs:
   unzip:
@@ -9,17 +9,38 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Unzip the files
+      - name: Process Zip
         run: |
-          # Go to storage, unzip, and force overwrite everything
           cd storage
-          unzip -o basket-random.zip -d basket-random
-          rm basket-random.zip # Clean up the zip so it's not wasting space
+          
+          # Use the specific name you provided
+          ZIP_NAME="basket-main.zip"
+          TARGET_DIR="basket-random"
+          
+          if [ ! -f "$ZIP_NAME" ]; then
+            echo "Error: $ZIP_NAME not found in storage folder!"
+            exit 1
+          fi
+          
+          echo "Extracting $ZIP_NAME into $TARGET_DIR..."
+          
+          # Force extract all nested folders
+          unzip -o "$ZIP_NAME" -d "$TARGET_DIR"
+          
+          # Clean up the zip file
+          rm "$ZIP_NAME"
+          
+          # If the zip had a folder inside it, move contents up one level
+          # This keeps the path clean for your Vault link
+          if [ -d "$TARGET_DIR/BasketRandom-main" ]; then
+             cp -r "$TARGET_DIR/BasketRandom-main/"* "$TARGET_DIR/"
+             rm -rf "$TARGET_DIR/BasketRandom-main"
+          fi
 
-      - name: Commit changes
+      - name: Commit and Push
         run: |
           git config --global user.name 'Dungeon-Bot'
           git config --global user.email 'bot@thegamedungeon.io'
           git add .
-          git commit -m "Auto-unzipped Basket Random - Connor is still zesty"
+          git commit -m "Unzipped basket-main.zip - Connor's zesty security defeated"
           git push
