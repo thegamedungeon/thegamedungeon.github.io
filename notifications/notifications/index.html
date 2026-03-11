@@ -556,17 +556,19 @@ DUNGEON STATUS: SECURED.
             try {
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    // Clean filename to avoid issues
+                    // Clean filename for iPad compatibility
                     const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-                    const filePath = `uploads/${currentUser.uid}/${Date.now()}_${safeName}`;
+                    const filePath = `mailroom/${currentUser.uid}/${Date.now()}_${safeName}`;
                     const storageRef = ref(storage, filePath);
                     
                     try {
-                        const uploadResult = await uploadBytes(storageRef, file);
+                        // Use a blob conversion which is more stable for iPad uploads
+                        const blob = new Blob([file], { type: file.type });
+                        const uploadResult = await uploadBytes(storageRef, blob);
                         fileUrl = await getDownloadURL(uploadResult.ref);
                     } catch (uploadError) {
-                        console.error("Upload failed:", uploadError);
-                        const proceed = confirm("File upload failed (Permissions?). Send message anyway without the photo?");
+                        console.error("iPad Upload snag:", uploadError);
+                        const proceed = confirm("iPad blocked the upload (oink oink). Dispatch scroll WITHOUT the photo?");
                         if (!proceed) {
                              sendBtn.disabled = false;
                              sendBtn.innerText = "DISPATCH";
