@@ -54,48 +54,65 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         .game-card {
             background: #2a2a2a;
             border: 1px solid #444;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 15px;
+            border-radius: 12px;
             transition: 0.3s;
-            position: relative;
-            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 15px;
             text-align: left;
         }
 
         .game-card:hover {
             border-color: #0f0;
-            transform: translateY(-5px);
+            transform: translateY(-3px);
+            background: #333;
+        }
+
+        .game-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid #444;
+            background: #111;
+        }
+
+        .game-info {
+            flex-grow: 1;
         }
 
         .game-name {
-            font-size: 1.1em;
-            margin-bottom: 10px;
+            font-size: 0.9em;
             display: block;
             text-transform: uppercase;
             color: #0f0;
+            font-weight: bold;
+            margin-bottom: 4px;
         }
 
         .game-hours {
-            font-size: 1.5em;
+            font-size: 1.4em;
             color: #fff;
             font-weight: bold;
         }
 
         .progress-bar {
-            height: 8px;
-            background: #444;
-            margin-top: 15px;
+            height: 6px;
+            background: #111;
+            margin-top: 8px;
             border-radius: 10px;
             overflow: hidden;
+            width: 100%;
         }
 
         .progress-fill {
@@ -103,7 +120,7 @@
             background: #0f0;
             width: 0%;
             transition: width 1s ease-in-out;
-            box-shadow: 0 0 10px #0f0;
+            box-shadow: 0 0 8px #0f0;
         }
 
         .roast-footer {
@@ -123,17 +140,17 @@
     <h1>VAULT CHRONOMETER</h1>
 
     <div class="total-box">
-        <span style="font-size: 0.9em; color: #888;">FULL GAME DUNGEON TIME</span>
+        <span style="font-size: 0.9em; color: #888;">TOTAL TIME IN THE CRIB</span>
         <span class="total-time" id="total-dungeon-time">0.0h</span>
     </div>
 
     <div class="grid" id="stats-grid">
-        <p style="color: #666; grid-column: 1/-1;">Opening the Archives...</p>
+        <p style="color: #666; grid-column: 1/-1;">Unlocking the archives...</p>
     </div>
 
     <p class="roast-footer">
-        Connor's records are missing because he's a noodle-haired bot.<br>
-        Status: Green Belt Protected.
+        Icon data synced via /storage/photos/pictures.txt<br>
+        Connor is still a bot. Oink oink.
     </p>
 
     <script type="module">
@@ -155,9 +172,32 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // MAP FOR PICTURES
+        let iconMap = {};
+        const MISSING_ICON = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/iOS_iOS_7_icon_grid.svg/1024px-iOS_iOS_7_icon_grid.svg.png";
+
+        // Step 1: Fetch the pictures.txt mapping
+        async function loadIconMap() {
+            try {
+                const response = await fetch('/storage/photos/pictures.txt');
+                const text = await response.text();
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                    if (line.includes('=')) {
+                        const [name, fileName] = line.split('=').map(s => s.trim());
+                        iconMap[name.toLowerCase()] = `/storage/photos/${fileName}`;
+                    }
+                });
+                console.log("Icon Map Loaded:", iconMap);
+            } catch (e) {
+                console.error("Failed to load icon map:", e);
+            }
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('user-info').innerText = `Hero: ${user.displayName || 'Warrior'}`;
+                await loadIconMap(); // Ensure we have the map before loading stats
                 loadStats(user.uid);
             } else {
                 setTimeout(() => window.location.href = "../../login/", 2000);
@@ -171,7 +211,7 @@
                 const grid = document.getElementById('stats-grid');
                 
                 if (!docSnap.exists()) {
-                    grid.innerHTML = '<p style="color: #888; grid-column: 1/-1;">The Vault is empty. Play a game for at least 1 minute to start logging hours.</p>';
+                    grid.innerHTML = '<p style="color: #888; grid-column: 1/-1;">No records found. Grind more.</p>';
                     return;
                 }
 
@@ -180,7 +220,6 @@
                 let totalMinutes = 0;
                 let maxMinutes = 1;
 
-                // Filter keys that are numbers (the actual minute counts)
                 const validEntries = Object.entries(data).filter(([_, val]) => typeof val === 'number');
 
                 validEntries.forEach(([_, mins]) => {
@@ -188,18 +227,28 @@
                     if (mins > maxMinutes) maxMinutes = mins;
                 });
 
-                // Sort by most played
                 validEntries.sort((a, b) => b[1] - a[1]).forEach(([gameName, minutes]) => {
                     const hours = (minutes / 60).toFixed(1);
                     const percentage = (minutes / maxMinutes) * 100;
+                    
+                    // Determine which icon to use
+                    let iconUrl = iconMap[gameName.toLowerCase()] || MISSING_ICON;
+                    
+                    // Specific check for the vaulted Basket Random
+                    if (gameName.toLowerCase().includes("basket random")) {
+                        iconUrl = MISSING_ICON; 
+                    }
 
                     const card = document.createElement('div');
                     card.className = 'game-card';
                     card.innerHTML = `
-                        <span class="game-name">${gameName}</span>
-                        <span class="game-hours">${hours}h</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        <img src="${iconUrl}" class="game-icon" onerror="this.src='${MISSING_ICON}'">
+                        <div class="game-info">
+                            <span class="game-name">${gameName}</span>
+                            <span class="game-hours">${hours}h</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
                         </div>
                     `;
                     grid.appendChild(card);
