@@ -1,4 +1,4 @@
-name: Unzip Basket Random
+name: Unzip booty Random
 on:
   workflow_dispatch:
 
@@ -11,46 +11,41 @@ jobs:
 
       - name: Process Zip
         run: |
-          # 1. FULL REPO SCAN
-          # We search starting from the root (.) to find any .zip file anywhere
-          echo "Scanning entire repository for the loot..."
-          ZIP_PATH=$(find . -name "*.zip" -not -path "*/.*" | head -n 1)
+          echo "--- STARTING DUNGEON SCAN ---"
+          # This will show us EVERY file in the logs so we can debug the oink oink security
+          ls -R
+          
+          # 1. AGGRESSIVE SEARCH
+          # We search for any file ending in .zip, ignoring case, anywhere in the repo
+          echo "Searching for the stash..."
+          ZIP_PATH=$(find . -iname "*.zip" -not -path "*/.*" | head -n 1)
           
           if [ -z "$ZIP_PATH" ]; then
-            echo "Error: No zip file found in the entire repo! Connor must have tossed it."
-            echo "--- REPO STRUCTURE ---"
-            ls -R
+            echo "Error: The bot is blind. No zip found."
             exit 1
           fi
           
-          echo "Dungeon Bot found the stash at: $ZIP_PATH"
+          echo "Loot found at: $ZIP_PATH"
           
           # 2. SETUP TARGET
-          # We always want the game to end up in storage/basket-random
           TARGET_DIR="storage/basket-random"
           mkdir -p "$TARGET_DIR"
           
-          # 3. UNZIP DIRECTLY INTO TARGET
-          echo "Extracting $ZIP_PATH into $TARGET_DIR..."
+          # 3. UNZIP
           unzip -o "$ZIP_PATH" -d "$TARGET_DIR"
           
-          # 4. CLEANUP
-          # Remove the zip file from its original location
-          ORIGINAL_ZIP_DIR=$(dirname "$ZIP_PATH")
+          # 4. CLEANUP THE MESS
+          # Delete the zip and the folder it was in
+          ORIGINAL_DIR=$(dirname "$ZIP_PATH")
           rm "$ZIP_PATH"
-          
-          # If it was in a subfolder (like storage/basket-main), delete that folder if it's empty
-          if [ "$ORIGINAL_ZIP_DIR" != "." ] && [ "$ORIGINAL_ZIP_DIR" != "./storage" ]; then
-            echo "Cleaning up empty stash folder: $ORIGINAL_ZIP_DIR"
-            rm -rf "$ORIGINAL_ZIP_DIR"
+          if [ "$ORIGINAL_DIR" != "." ] && [ "$ORIGINAL_DIR" != "./storage" ]; then
+            rm -rf "$ORIGINAL_DIR"
           fi
           
-          # 5. FIX DOUBLE FOLDER GLITCH
-          # If the zip had a folder inside (e.g. BasketRandom-main/), move files up
-          # We check for the first directory inside our target
+          # 5. FIX THE 'FOLDER INSIDE A ZIP' GLITCH
+          # Moves files up if the zip had a subfolder
           INNER_DIR=$(ls -d "$TARGET_DIR"/*/ 2>/dev/null | head -n 1)
           if [ -n "$INNER_DIR" ]; then
-             echo "Detected inner folder: $INNER_DIR. Yeeting files to $TARGET_DIR root..."
              mv "$INNER_DIR"* "$TARGET_DIR/"
              rm -rf "$INNER_DIR"
           fi
@@ -60,10 +55,9 @@ jobs:
           git config --global user.name 'Dungeon-Bot'
           git config --global user.email 'bot@thegamedungeon.io'
           git add .
-          # Check if there are actually changes to commit
           if git diff --staged --quiet; then
-            echo "No changes to commit. Is the zip empty?"
+            echo "No changes."
           else
-            git commit -m "Dungeon Bot scanned the whole repo and extracted the loot. No oink oink allowed."
+            git commit -m "Dungeon Bot secured the loot. Connor is a bot."
             git push
           fi
