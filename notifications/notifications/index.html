@@ -317,7 +317,6 @@
             let targetEmails = [];
             let threadHistory = "";
 
-            // 1. Fetch History for the Email body
             try {
                 const baseSubject = scrollSubject.replace(/^Re:\s+/i, "").trim().toLowerCase();
                 const q = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(20));
@@ -338,7 +337,6 @@
                 }
             } catch (e) { console.log("History lookup failed."); }
 
-            // 2. Resolve target emails
             if (isGlobal) {
                 try {
                     const q = query(collection(db, "messages"), limit(300));
@@ -370,7 +368,6 @@
 
             if (targetEmails.length === 0) targetEmails = [MY_ADMIN_EMAIL];
 
-            // 3. AI Intro
             const systemPrompt = `You are the Courier of THE CRIB. Hype up ${recipientInput} because ${senderName} sent a scroll. Mention the subject: "${scrollSubject}". ${fileUrl ? "Explicitly mention there is a visual attachment/photo to check out." : ""} Roast Connor for being a zesty iPad kid with zero security (oink oink). Max 2 sentences.`;
 
             let hypeIntro = `New dispatch regarding: ${scrollSubject}`;
@@ -387,7 +384,6 @@
                 hypeIntro = result.candidates?.[0]?.content?.parts?.[0]?.text || hypeIntro;
             } catch (e) {}
 
-            // 4. Final Construct (Includes File URL)
             const finalMessage = `
 SUBJECT: ${scrollSubject.toUpperCase()}
 FROM: ${senderName}
@@ -433,7 +429,6 @@ DUNGEON STATUS: SECURED.
             }
         });
 
-        // Update UI when file selected
         document.getElementById('msgFile').onchange = function() {
             if(this.files[0]) {
                 document.getElementById('fileStatus').innerText = `✅ READY: ${this.files[0].name}`;
@@ -559,17 +554,29 @@ DUNGEON STATUS: SECURED.
             let fileUrl = null;
 
             try {
-                // Upload file to Firebase Storage if selected
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    const storageRef = ref(storage, `mailroom/${currentUser.uid}_${Date.now()}_${file.name}`);
-                    const uploadResult = await uploadBytes(storageRef, file);
-                    fileUrl = await getDownloadURL(uploadResult.ref);
+                    // Clean filename to avoid issues
+                    const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+                    const filePath = `uploads/${currentUser.uid}/${Date.now()}_${safeName}`;
+                    const storageRef = ref(storage, filePath);
+                    
+                    try {
+                        const uploadResult = await uploadBytes(storageRef, file);
+                        fileUrl = await getDownloadURL(uploadResult.ref);
+                    } catch (uploadError) {
+                        console.error("Upload failed:", uploadError);
+                        const proceed = confirm("File upload failed (Permissions?). Send message anyway without the photo?");
+                        if (!proceed) {
+                             sendBtn.disabled = false;
+                             sendBtn.innerText = "DISPATCH";
+                             return;
+                        }
+                    }
                 }
 
                 sendBtn.innerText = "DISPATCHING...";
 
-                // Save to Firestore
                 await addDoc(collection(db, "messages"), {
                     senderName: currentUser.displayName || 'Hero',
                     senderEmail: currentUser.email || '',
@@ -582,13 +589,11 @@ DUNGEON STATUS: SECURED.
                     timestamp: serverTimestamp()
                 });
 
-                // Send external notification via EmailJS
                 await notifyViaEmail(recipient, currentUser.displayName, subject, body, fileUrl);
-                
                 modal.style.display = 'none';
             } catch (e) { 
-                console.error(e);
-                alert("Dispatch failed. Check your connection or file size."); 
+                console.error("General Send Error:", e);
+                alert("Dispatch failed. Error code: " + (e.code || "UNKNOWN")); 
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.innerText = "DISPATCH";
