@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Crib | DungeonBan Admin</title>
+    <link rel="stylesheet" href="style.css"> <script src="/storage/js/allbans.js"></script>
+</head>
+<body style="background-color: black; color: #00FF00; font-family: monospace;">
+
+    <h1>DUNGEON-BAN ADMIN PANEL</h1>
+    <hr>
+
+    <div id="admin-auth">
+        <p>Verifying Admin Credentials...</p>
+    </div>
+
+    <div id="ban-controls" style="display:none;">
+        <h3>Target User Email:</h3>
+        <input type="email" id="targetEmail" style="background:#111; color:#00FF00; border:1px solid #00FF00;">
+        
+        <h3>Ban Duration (Days):</h3>
+        <input type="number" id="banDays" placeholder="0 = Permanent" style="background:#111; color:#00FF00; border:1px solid #00FF00;">
+        
+        <br><br>
+        <button onclick="generateBanEntry()" style="background:#00FF00; color:black; font-weight:bold; cursor:pointer;">
+            DROP THE HAMMER
+        </button>
+
+        <p>New .duntext Entry:</p>
+        <textarea id="output" readonly style="width:100%; height:50px; background:#222; color:#0FF;"></textarea>
+        <p><small>Copy this entry into /storage/dungeonban/allbans.duntext</small></p>
+    </div>
+
+    <script>
+        // Use the emails you provided
+        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+        let user = localStorage.getItem("loggedUser"); // Check login status
+
+        if(admins.includes(user)) {
+            document.getElementById('admin-auth').innerHTML = "ACCESS GRANTED: Hello, Admin.";
+            document.getElementById('ban-controls').style.display = "block";
+        } else {
+            document.getElementById('admin-auth').innerHTML = "OINK OINK! Access Denied. Connor-tier permissions detected.";
+        }
+
+        function generateBanEntry() {
+            const email = document.getElementById('targetEmail').value;
+            const days = document.getElementById('banDays').value;
+            const entry = createDuntextEntry(email, days); // Function from allbans.js
+            document.getElementById('output').value = entry;
+        }
+    </script>
+</body>
+</html>
