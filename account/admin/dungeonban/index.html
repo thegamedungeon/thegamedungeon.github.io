@@ -1,41 +1,69 @@
-// Function to create the custom (email:unlock) format
-function createDuntextEntry(email, days) {
-    let unlock;
-    if (days == 0) {
-        unlock = "NULL";
-    } else {
-        let d = new Date();
-        d.setDate(d.getDate() + parseInt(days));
-        // Formats to YYYY-MM-DD HH:MM:SS
-        unlock = d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
-    }
-    return `(${email}:${unlock})`;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DungeonBan | The Crib Terminal</title>
+    <style>
+        body { background: #050505; color: #00ff00; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .terminal { background: #111; padding: 25px; border: 2px solid #00ff00; border-radius: 10px; box-shadow: 0 0 15px #00ff00; width: 400px; }
+        input { width: 100%; background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { width: 100%; background: #00ff00; color: #000; padding: 12px; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #00cc00; }
+        #output { margin-top: 20px; background: #222; padding: 10px; border: 1px dashed #00ff00; word-break: break-all; font-size: 0.8rem; display: none; }
+    </style>
+</head>
+<body>
 
-// Function to check if a user is currently blicked
-async function checkDungeonStatus(email) {
-    try {
-        const response = await fetch('/storage/dungeonban/allbans.duntext');
-        const data = await response.text();
-        
-        // Search for the specific user in the .duntext file
-        const regex = new RegExp(`\\(${email}:(.*?)\\)`);
-        const match = data.match(regex);
+<div class="terminal" id="main-panel">
+    <h2>DUNGEON-BAN v1.0</h2>
+    <p>Target User Email:</p>
+    <input type="email" id="targetEmail" placeholder="victim@email.com">
+    <p>Days to Blick (0 = Permanent):</p>
+    <input type="number" id="banDays" value="0">
+    <button onclick="generateBan()">EXECUTE BLICK</button>
+    <div id="output"></div>
+</div>
 
-        if (match) {
-            const unlockVal = match[1];
-            if (unlockVal === "NULL") return { banned: true, type: "PERMANENT" };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            const unlockDate = new Date(unlockVal);
-            const now = new Date();
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+        projectId: "the-game-dungeon-4d75d",
+        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+        messagingSenderId: "533459716906",
+        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+    };
 
-            if (now < unlockDate) {
-                return { banned: true, type: "TEMPORARY", date: unlockVal };
-            }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user || !admins.includes(user.email.toLowerCase())) {
+            window.location.href = "/login/"; // Kick non-admins immediately
         }
-        return { banned: false };
-    } catch (e) {
-        console.log("No ban file found or error reading .duntext");
-        return { banned: false };
-    }
-}
+    });
+
+    window.generateBan = () => {
+        const email = document.getElementById('targetEmail').value;
+        const days = parseInt(document.getElementById('banDays').value);
+        let unlockStr = "NULL";
+
+        if (days > 0) {
+            let date = new Date();
+            date.setDate(date.getDate() + days);
+            // Formats to YYYY-MM-DD HH:MM:SS
+            unlockStr = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, '0') + "-" + date.getDate().toString().padStart(2, '0') + " " + date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0') + ":" + date.getSeconds().toString().padStart(2, '0');
+        }
+
+        const finalString = `(${email}:${unlockStr})`;
+        const outBox = document.getElementById('output');
+        outBox.innerText = "Copy to allbans.duntext:\n" + finalString;
+        outBox.style.display = 'block';
+    };
+</script>
+</body>
+</html>
