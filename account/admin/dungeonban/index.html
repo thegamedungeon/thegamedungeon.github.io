@@ -1,54 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>The Crib | DungeonBan Admin</title>
-    <link rel="stylesheet" href="style.css"> <script src="/storage/js/allbans.js"></script>
-</head>
-<body style="background-color: black; color: #00FF00; font-family: monospace;">
+// Function to create the custom (email:unlock) format
+function createDuntextEntry(email, days) {
+    let unlock;
+    if (days == 0) {
+        unlock = "NULL";
+    } else {
+        let d = new Date();
+        d.setDate(d.getDate() + parseInt(days));
+        // Formats to YYYY-MM-DD HH:MM:SS
+        unlock = d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+    }
+    return `(${email}:${unlock})`;
+}
 
-    <h1>DUNGEON-BAN ADMIN PANEL</h1>
-    <hr>
-
-    <div id="admin-auth">
-        <p>Verifying Admin Credentials...</p>
-    </div>
-
-    <div id="ban-controls" style="display:none;">
-        <h3>Target User Email:</h3>
-        <input type="email" id="targetEmail" style="background:#111; color:#00FF00; border:1px solid #00FF00;">
+// Function to check if a user is currently blicked
+async function checkDungeonStatus(email) {
+    try {
+        const response = await fetch('/storage/dungeonban/allbans.duntext');
+        const data = await response.text();
         
-        <h3>Ban Duration (Days):</h3>
-        <input type="number" id="banDays" placeholder="0 = Permanent" style="background:#111; color:#00FF00; border:1px solid #00FF00;">
-        
-        <br><br>
-        <button onclick="generateBanEntry()" style="background:#00FF00; color:black; font-weight:bold; cursor:pointer;">
-            DROP THE HAMMER
-        </button>
+        // Search for the specific user in the .duntext file
+        const regex = new RegExp(`\\(${email}:(.*?)\\)`);
+        const match = data.match(regex);
 
-        <p>New .duntext Entry:</p>
-        <textarea id="output" readonly style="width:100%; height:50px; background:#222; color:#0FF;"></textarea>
-        <p><small>Copy this entry into /storage/dungeonban/allbans.duntext</small></p>
-    </div>
+        if (match) {
+            const unlockVal = match[1];
+            if (unlockVal === "NULL") return { banned: true, type: "PERMANENT" };
 
-    <script>
-        // Use the emails you provided
-        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
-        let user = localStorage.getItem("loggedUser"); // Check login status
+            const unlockDate = new Date(unlockVal);
+            const now = new Date();
 
-        if(admins.includes(user)) {
-            document.getElementById('admin-auth').innerHTML = "ACCESS GRANTED: Hello, Admin.";
-            document.getElementById('ban-controls').style.display = "block";
-        } else {
-            document.getElementById('admin-auth').innerHTML = "OINK OINK! Access Denied. Connor-tier permissions detected.";
+            if (now < unlockDate) {
+                return { banned: true, type: "TEMPORARY", date: unlockVal };
+            }
         }
-
-        function generateBanEntry() {
-            const email = document.getElementById('targetEmail').value;
-            const days = document.getElementById('banDays').value;
-            const entry = createDuntextEntry(email, days); // Function from allbans.js
-            document.getElementById('output').value = entry;
-        }
-    </script>
-</body>
-</html>
+        return { banned: false };
+    } catch (e) {
+        console.log("No ban file found or error reading .duntext");
+        return { banned: false };
+    }
+}
