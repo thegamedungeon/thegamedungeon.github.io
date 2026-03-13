@@ -97,17 +97,22 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // Check if user is actually logged in
+        // THE CHECK
+        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('display-email').innerText = user.email;
+                // If it's one of your three emails, redirect immediately to the admin path
+                if (admins.includes(user.email.toLowerCase())) {
+                    window.location.href = "admin/"; 
+                } else {
+                    document.getElementById('display-email').innerText = user.email;
+                }
             } else {
-                // If some random like Sod-erdine tries to peek, kick them to login
                 window.location.href = "/login/";
             }
         });
 
-        // Logout logic
         window.handleLogout = () => {
             signOut(auth).then(() => {
                 window.location.href = "index.html";
