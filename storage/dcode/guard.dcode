@@ -1,0 +1,21 @@
+start dcode process
+
+receive "device_time" ID 'time'
+translate 'time' into timeZone process ID 'DeviceTimeZone'
+receive "device_time_zone" ID 'InformedZone'
+
+if 'DeviceTimeZone' == 'InformedZone'
+     continue
+otherwise
+     STOP
+     url; open "/blicked/"
+EndIf
+
+If NetworkInfo == (all the blacklisted NetworkInfos in quotation marks)
+     STOP
+     url; open "/blicked/"
+otherwise
+     continue
+EndIf
+
+stop dcode process
