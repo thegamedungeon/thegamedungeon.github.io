@@ -112,7 +112,6 @@
             margin-bottom: 12px;
         }
 
-        /* RECORDS CSS */
         .record-card {
             background: #0a0a0a; border: 1px solid #111; padding: 15px;
             border-radius: 20px; display: flex; align-items: center; gap: 15px; text-align: left;
@@ -121,7 +120,6 @@
         .progress-bar { height: 4px; background: #111; margin-top: 8px; border-radius: 10px; overflow: hidden; width: 100%; }
         .progress-fill { height: 100%; background: var(--green-belt); box-shadow: 0 0 8px var(--green-belt); transition: width 1s ease; }
 
-        /* MAILROOM */
         .thread-group { background: #0a0a0a; border: 1px solid #111; border-radius: 24px; margin-bottom: 24px; overflow: hidden; }
         .thread-header { background: #111; padding: 12px 20px; border-bottom: 1px solid var(--green-belt); font-weight: 900; color: var(--green-belt); display: flex; justify-content: space-between; font-size: 0.8em; }
         .message-card { padding: 20px; border-bottom: 1px solid #111; border-left: 4px solid var(--green-belt); }
@@ -132,16 +130,13 @@
         .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--green-belt); color: black; border-radius: 50%; font-size: 30px; font-weight: 900; border: none; cursor: pointer; z-index: 60; box-shadow: 0 0 20px var(--green-belt); }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: #0a0a0a; border: 2px solid var(--green-belt); padding: 30px; border-radius: 30px; width: 100%; max-width: 450px; }
-        #middleman-worker { display: none; }
     </style>
 </head>
 <body>
 
-    <iframe id="middleman-worker" src="/storage/js/middleman/index.js"></iframe>
-
     <div id="loading-screen">
         <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div id="loading-text" class="text-green-500 font-black tracking-widest text-xs uppercase italic">Syncing...</div>
+        <div class="text-green-500 font-black tracking-widest text-xs uppercase italic">Syncing Protocols...</div>
     </div>
 
     <div class="nav-header">
@@ -149,7 +144,7 @@
         <div class="flex items-center">
             <button class="bell-btn" onclick="showView('notifications')">🔔</button>
             <div id="auth-status">
-                <button class="account-btn" onclick="showView('login')">🔑 LOGIN</button>
+                <button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>
             </div>
         </div>
     </div>
@@ -158,7 +153,7 @@
     <section id="view-home" class="page-view active-view">
         <div class="flex flex-col items-center justify-center min-h-[85vh] text-center px-6">
             <h1 class="text-8xl sm:text-[10rem] font-black crib-logo mb-2 tracking-tighter">THE CRIB</h1>
-            <p class="text-gray-600 uppercase tracking-[0.5em] text-[10px] mb-12 font-bold italic">HPMS HIGH COUNCIL HQ</p>
+            <p class="text-gray-600 uppercase tracking-[0.5em] text-[10px] mb-12 font-bold italic">HPMS HIGH COUNCIL</p>
             <div class="w-72">
                 <button class="vault-btn" onclick="showView('vault')">🎮 OPEN VAULT</button>
             </div>
@@ -179,20 +174,18 @@
         </div>
     </section>
 
-    <!-- VIEW: RECORDS (HALL OF RECORDS) -->
+    <!-- VIEW: RECORDS -->
     <section id="view-records" class="page-view">
-        <div class="max-w-4xl mx-auto px-6 pb-32 text-center">
-            <h2 class="text-4xl font-black crib-logo mb-8 uppercase italic">Vault Chronometer</h2>
-            <div class="bg-[#0a0a0a] border-2 border-green-500 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 mb-12 text-left">
+        <div class="max-w-4xl mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black crib-logo mb-8 uppercase italic text-center">Vault Chronometer</h2>
+            <div class="bg-[#0a0a0a] border-2 border-green-500 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 mb-12 shadow-2xl">
                 <img src="/storage/photos/tgdtc.png" id="main-record-photo" class="w-24 h-24 rounded-2xl border border-green-500/50 object-cover">
                 <div>
-                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Total Dungeon Time</p>
-                    <h3 id="total-time-val" class="text-6xl font-black text-white">0.0h</h3>
+                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mb-1">Total Time in Dungeon</p>
+                    <h3 id="total-time-val" class="text-6xl font-black text-white italic">0.0h</h3>
                 </div>
             </div>
-            <div id="records-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <p class="text-gray-600 text-xs col-span-full">Parsing storage protocols...</p>
-            </div>
+            <div id="records-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
     </section>
 
@@ -213,7 +206,45 @@
                 <input type="email" id="email-in" class="crib-input" placeholder="User ID">
                 <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
                 <button class="vault-btn !py-4 !text-lg !rounded-2xl" onclick="handleLogin()">ENTER</button>
-                <button class="text-[10px] text-gray-500 hover:text-white mt-4" onclick="handleLogout()">LOGOUT</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: ACCOUNTS (PROFILE) -->
+    <section id="view-accounts" class="page-view">
+        <div class="max-w-xl mx-auto px-6 pb-32 text-center">
+            <h2 class="text-4xl font-black crib-logo mb-10 uppercase italic">Hero Identity</h2>
+            <div class="bg-[#0a0a0a] border border-white/5 p-10 rounded-[2.5rem] shadow-2xl mb-8">
+                <div class="w-24 h-24 bg-green-500/10 border border-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-green-500 text-3xl font-black" id="hero-initial">H</span>
+                </div>
+                <h3 id="hero-email" class="text-xl font-bold mb-2">Warrior</h3>
+                <p class="text-gray-500 text-xs uppercase tracking-widest font-black mb-8">Rank: Dungeon Crawler</p>
+                <button class="w-full bg-red-500/10 text-red-500 border border-red-500/20 py-4 rounded-2xl font-black hover:bg-red-500 hover:text-white transition" onclick="handleLogout()">ABANDON SESSION</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: ADMIN (HIGH COUNCIL) -->
+    <section id="view-admin" class="page-view">
+        <div class="max-w-5xl mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black text-red-500 mb-10 uppercase italic tracking-tighter">High Council Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-[#0a0a0a] border-l-4 border-red-500 p-6 rounded-2xl">
+                    <p class="text-[10px] text-gray-500 font-black uppercase mb-2">Status</p>
+                    <p class="text-xl font-black text-white">ADMIN ACTIVE</p>
+                </div>
+                <div class="bg-[#0a0a0a] border-l-4 border-green-500 p-6 rounded-2xl">
+                    <p class="text-[10px] text-gray-500 font-black uppercase mb-2">Target</p>
+                    <p class="text-xl font-black text-white">CONNOR (IQ: 0)</p>
+                </div>
+                <button class="bg-red-600 text-white font-black py-6 rounded-2xl shadow-[0_0_20px_rgba(255,0,0,0.3)]" onclick="handleLogout()">PURGE CACHE & LOGOUT</button>
+            </div>
+            <div class="bg-[#0a0a0a] border border-red-500/20 p-8 rounded-[2.5rem]">
+                <h3 class="text-lg font-black text-red-500 mb-6 uppercase italic">Global Broadcasts</h3>
+                <div id="admin-messages" class="space-y-4">
+                    <p class="text-gray-600 text-xs italic">Loading council feeds...</p>
+                </div>
             </div>
         </div>
     </section>
@@ -221,11 +252,9 @@
     <!-- MODAL: COMPOSE -->
     <div id="composeModal" class="modal"><div class="modal-content">
         <h2 class="text-xl font-black text-green-500 mb-6 uppercase italic">New Scroll</h2>
-        <input type="text" id="msgRecipient" class="crib-input" placeholder="To: (Name, Email, or GLOBAL)">
+        <input type="text" id="msgRecipient" class="crib-input" placeholder="To: (Name, or GLOBAL)">
         <input type="text" id="msgSubject" class="crib-input" placeholder="Subject">
-        <textarea id="msgBody" class="crib-textarea h-32" placeholder="Message content..."></textarea>
-        <input type="file" id="msgFile" class="hidden" accept="image/*">
-        <label for="msgFile" id="fileStatus" class="text-green-500 text-[10px] font-black cursor-pointer block mb-4 uppercase">📁 Attach Photo</label>
+        <textarea id="msgBody" class="crib-textarea h-32" placeholder="Write scroll content..."></textarea>
         <button id="final-send" class="vault-btn !py-4 !rounded-2xl !text-lg" onclick="dispatchMessage()">DISPATCH</button>
         <button class="w-full mt-4 text-gray-600 font-bold text-xs uppercase" onclick="closeCompose()">Cancel</button>
     </div></div>
@@ -239,7 +268,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, collection, addDoc, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        // Initialize EmailJS
+        emailjs.init("VlUq2vj8eL6tN_9V4"); // Your Public Key
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -253,10 +284,67 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app);
 
         let currentUser = null;
         let iconMap = {};
+        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+
+        window.showView = (id) => {
+            document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
+            const target = document.getElementById('view-' + id);
+            if(target) target.classList.add('active-view');
+        };
+
+        window.handleAccountClick = () => {
+            if (!currentUser) {
+                showView('login');
+            } else if (admins.includes(currentUser.email.toLowerCase())) {
+                showView('admin');
+            } else {
+                showView('accounts');
+            }
+        };
+
+        // --- MAILROOM & NOTIFICATIONS ---
+        window.dispatchMessage = async () => {
+            const btn = document.getElementById('final-send');
+            const recipient = document.getElementById('msgRecipient').value.trim();
+            const subject = document.getElementById('msgSubject').value.trim();
+            const body = document.getElementById('msgBody').value.trim();
+
+            if(!body) return;
+
+            btn.disabled = true; btn.innerText = "SENDING SCROLL...";
+
+            try {
+                // 1. Save to Firestore for the UI
+                await addDoc(collection(db, "messages"), {
+                    senderName: currentUser.email.split('@')[0],
+                    senderEmail: currentUser.email,
+                    senderUid: currentUser.uid,
+                    recipient,
+                    subject,
+                    body,
+                    timestamp: serverTimestamp()
+                });
+
+                // 2. Fire EmailJS Notification
+                await emailjs.send("service_x8s8e8r", "template_n6f6u6n", {
+                    to_name: recipient,
+                    from_name: currentUser.email.split('@')[0],
+                    message: body,
+                    subject_line: subject,
+                    reply_to: currentUser.email
+                });
+
+                closeCompose();
+            } catch (e) {
+                console.error(e);
+                alert("Protocol blicked. Check connection.");
+            } finally {
+                btn.disabled = false; btn.innerText = "DISPATCH";
+            }
+        };
 
         async function loadIconMap() {
             try {
@@ -269,7 +357,6 @@
                             iconMap[name] = `/storage/photos/${file}`;
                         }
                     });
-                    if (iconMap['the game dungeon']) document.getElementById('main-record-photo').src = iconMap['the game dungeon'];
                 }
             } catch (e) {}
         }
@@ -284,75 +371,28 @@
             { name: 'Kick The Sod', logo: '/storage/photos/kts.png' }
         ];
 
-        window.showView = (id) => {
-            document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
-            document.getElementById('view-' + id).classList.add('active-view');
-        };
-
-        // --- RECORDS & STATS ---
         function syncStats(uid) {
             onSnapshot(doc(db, "playtime", uid), (snap) => {
                 const grid = document.getElementById('records-grid');
                 if (!snap.exists()) return;
-                
                 const data = snap.data();
                 grid.innerHTML = '';
-                let totalMin = 0;
-                let maxMin = 1;
-
+                let totalMin = 0, maxMin = 1;
                 const entries = Object.entries(data).filter(([_, v]) => typeof v === 'number');
                 entries.forEach(([_, m]) => { totalMin += m; if(m > maxMin) maxMin = m; });
                 document.getElementById('total-time-val').innerText = (totalMin / 60).toFixed(1) + "h";
-
                 entries.sort((a,b) => b[1] - a[1]).forEach(([name, min]) => {
                     const card = document.createElement('div');
                     card.className = 'record-card';
                     const icon = iconMap[name.toLowerCase()] || 'https://placehold.co/50/000/0f0?text=G';
-                    card.innerHTML = `
-                        <img src="${icon}" class="record-icon">
-                        <div class="flex-grow">
-                            <div class="flex justify-between font-black uppercase text-[10px]">
-                                <span>${name}</span><span>${(min/60).toFixed(1)}h</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: ${(min/maxMin)*100}%"></div></div>
-                        </div>
-                    `;
+                    card.innerHTML = `<img src="${icon}" class="record-icon"><div class="flex-grow">
+                        <div class="flex justify-between font-black uppercase text-[10px]"><span>${name}</span><span>${(min/60).toFixed(1)}h</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: ${(min/maxMin)*100}%"></div></div>
+                    </div>`;
                     grid.appendChild(card);
-                    
-                    const statEl = document.getElementById(`stat-${name.replace(/\s+/g, '')}`);
-                    if(statEl) statEl.innerText = min >= 60 ? `${(min/60).toFixed(1)}h Played` : `${Math.floor(min)}m Played`;
                 });
             });
         }
-
-        // --- MAILROOM ---
-        window.openCompose = () => document.getElementById('composeModal').style.display = 'flex';
-        window.closeCompose = () => document.getElementById('composeModal').style.display = 'none';
-
-        window.dispatchMessage = async () => {
-            const btn = document.getElementById('final-send');
-            const recipient = document.getElementById('msgRecipient').value.trim();
-            const subject = document.getElementById('msgSubject').value.trim();
-            const body = document.getElementById('msgBody').value.trim();
-            const fileInput = document.getElementById('msgFile');
-
-            btn.disabled = true; btn.innerText = "SENDING...";
-            let fileUrl = null;
-            try {
-                if (fileInput.files[0]) {
-                    const reader = new FileReader();
-                    const base64 = await new Promise(r => { reader.readAsDataURL(fileInput.files[0]); reader.onload = () => r(reader.result); });
-                    const uploadResult = await uploadString(ref(storage, `mailroom/${currentUser.uid}/${Date.now()}.png`), base64, 'data_url');
-                    fileUrl = await getDownloadURL(uploadResult.ref);
-                }
-                await addDoc(collection(db, "messages"), {
-                    senderName: currentUser.email.split('@')[0], senderEmail: currentUser.email, senderUid: currentUser.uid,
-                    recipient, subject, body, fileUrl, timestamp: serverTimestamp()
-                });
-                closeCompose();
-            } catch (e) { alert("Dispatch error."); }
-            btn.disabled = false; btn.innerText = "DISPATCH";
-        };
 
         function loadMail() {
             onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(100)), (snap) => {
@@ -364,7 +404,7 @@
                     const me = currentUser.email.toLowerCase();
                     const r = m.recipient.toLowerCase();
                     if(r === "global" || r === me || m.senderUid === currentUser.uid) {
-                        const s = m.subject.toLowerCase();
+                        const s = m.subject.toLowerCase() || "no subject";
                         if(!threads[s]) threads[s] = [];
                         threads[s].push(m);
                     }
@@ -375,9 +415,9 @@
                     div.className = 'thread-group';
                     div.innerHTML = `<div class="thread-header"><span>${s.toUpperCase()}</span></div>`;
                     group.forEach(msg => {
-                        div.innerHTML += `<div class="message-card ${msg.senderUid === currentUser.uid ? 'opacity-70' : ''}">
+                        div.innerHTML += `<div class="message-card">
                             <span class="tag ${msg.recipient === 'global' ? 'tag-global' : ''}">${msg.recipient}</span>
-                            <div class="text-[10px] text-green-500 font-bold mb-1">${msg.senderName}</div>
+                            <div class="text-[10px] text-green-500 font-bold mb-1 uppercase">${msg.senderName}</div>
                             <div class="text-sm text-gray-300">${msg.body}</div>
                         </div>`;
                     });
@@ -386,52 +426,52 @@
             });
         }
 
-        // --- AUTH & SETUP ---
         onAuthStateChanged(auth, async (user) => {
             const slot = document.getElementById('auth-status');
             if (user) {
                 currentUser = user;
-                slot.innerHTML = `<button class="account-btn" onclick="showView('login')">👤 ${user.email.split('@')[0]}</button>`;
+                const name = user.email.split('@')[0];
+                const isAdmin = admins.includes(user.email.toLowerCase());
+                slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">${isAdmin ? '🛡️ ADMIN' : '👤 ' + name}</button>`;
+                document.getElementById('hero-email').innerText = user.email;
+                document.getElementById('hero-initial').innerText = name[0].toUpperCase();
                 await loadIconMap();
                 syncStats(user.uid);
                 loadMail();
-            } else { slot.innerHTML = `<button class="account-btn" onclick="showView('login')">🔑 LOGIN</button>`; }
-        });
-
-        window.requestGameFromMiddleman = (name) => {
-            document.getElementById('loading-screen').style.display = 'flex';
-            document.getElementById('middleman-worker').contentWindow.postMessage({ type: 'REQUEST_GAME', title: name.toLowerCase().replace(/\s+/g, '_') }, window.location.origin);
-        };
-
-        window.addEventListener('message', (e) => {
-            if (e.data.type === 'GAME_FOUND') {
-                document.getElementById('game-frame').src = e.data.filePath;
-                document.getElementById('game-layer').style.display = 'block';
-                document.getElementById('loading-screen').style.display = 'none';
+            } else {
+                currentUser = null;
+                slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>`;
             }
         });
 
-        window.exitGame = () => { document.getElementById('game-layer').style.display = 'none'; document.getElementById('game-frame').src = 'about:blank'; };
+        window.handleLogin = () => signInWithEmailAndPassword(auth, document.getElementById('email-in').value, document.getElementById('pass-in').value).then(() => {
+            if(admins.includes(auth.currentUser.email.toLowerCase())) showView('admin');
+            else showView('home');
+        }).catch(e => alert("Access Denied."));
 
-        const grid = document.getElementById('vaultGrid');
+        window.handleLogout = () => signOut(auth).then(() => showView('home'));
+
+        // Initialize Vault
+        const vault = document.getElementById('vaultGrid');
         games.forEach(g => {
             const card = document.createElement('div');
             card.className = 'game-card';
-            card.onclick = () => requestGameFromMiddleman(g.name);
-            card.innerHTML = `
-                <img src="${g.logo}" onerror="this.src='https://placehold.co/100/000/0f0?text=G'" class="w-[90px] h-[90px] object-cover rounded-3xl mx-auto mb-4">
-                <h3 class="font-black text-xs uppercase">${g.name}</h3>
-                <div id="stat-${g.name.replace(/\s+/g, '')}" class="text-green-500 text-[9px] font-bold mt-2 opacity-50">0m Played</div>
-            `;
-            grid.appendChild(card);
+            card.onclick = () => {
+                document.getElementById('game-frame').src = `https://thegamedungeon.github.io/storage/games/${g.name.toLowerCase().replace(/\s+/g, '_')}/`;
+                document.getElementById('game-layer').style.display = 'block';
+            };
+            card.innerHTML = `<img src="${g.logo}" onerror="this.src='https://placehold.co/100/000/0f0?text=G'" class="w-[90px] h-[90px] object-cover rounded-3xl mx-auto mb-4">
+                <h3 class="font-black text-xs uppercase">${g.name}</h3>`;
+            vault.appendChild(card);
         });
 
-        window.handleLogin = () => signInWithEmailAndPassword(auth, document.getElementById('email-in').value, document.getElementById('pass-in').value).then(() => showView('home'));
-        window.handleLogout = () => signOut(auth).then(() => showView('home'));
+        window.exitGame = () => { document.getElementById('game-layer').style.display = 'none'; document.getElementById('game-frame').src = 'about:blank'; };
+        window.openCompose = () => document.getElementById('composeModal').style.display = 'flex';
+        window.closeCompose = () => document.getElementById('composeModal').style.display = 'none';
         window.filterVault = () => {
             const val = document.getElementById('vaultSearch').value.toLowerCase();
             document.querySelectorAll('.game-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(val) ? 'block' : 'none');
         };
     </script>
 </body>
-</html>
+</html>￼Enter
