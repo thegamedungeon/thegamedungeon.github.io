@@ -1,232 +1,285 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
-import { getFirestore, doc, onSnapshot } from "firebase/firestore";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CRIB | HPMS HIGH COUNCIL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        :root {
+            --green-belt: #00ff00;
+            --bg-black: #050505;
+        }
 
-// --- FIREBASE CONFIG ---
-const firebaseConfig = {
-    apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-    authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-    projectId: "the-game-dungeon-4d75d",
-    storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-    messagingSenderId: "533459716906",
-    appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
-    measurementId: "G-CER9SE96MC"
-};
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-black);
+            color: white;
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
+        /* View Switching Logic */
+        .page-view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            padding-top: 80px;
+            overflow-y: auto;
+            position: absolute;
+            top: 0; left: 0;
+            background: var(--bg-black);
+        }
+        .active-view { 
+            display: block !important; 
+            z-index: 50; 
+            animation: appFade 0.3s ease-in-out; 
+        }
 
-// Mock tracker since we can't import local js here
-const initTracker = (name) => console.log(`[TRACKER] Started for: ${name}`);
+        @keyframes appFade {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-export default function App() {
-    const [view, setView] = useState('home'); // home, vault, roster, login, account, playing
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(null);
-    const [playtimes, setPlaytimes] = useState({});
-    const [activeGame, setActiveGame] = useState(null);
-    const [search, setSearch] = useState('');
-    const [launching, setLaunching] = useState(false);
+        /* Header UI */
+        .nav-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 24px; position: fixed; top: 0; width: 100%; height: 70px;
+            background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(20px);
+            z-index: 9000; border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+        }
+        
+        .crib-logo {
+            text-shadow: 0 0 15px var(--green-belt);
+            color: var(--green-belt);
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -1.5px;
+        }
 
-    // THE SEVEN LEGENDS (Basket Random is blicked)
-    const games = [
-        { id: 'Ragdoll-Hit', name: 'Ragdoll Hit', logo: '/storage/photos/rh.png', path: 'edit me' },
-        { id: 'Cookie-Clicker', name: 'Cookie Clicker', logo: '/storage/photos/cc.png', path: 'edit me' },
-        { id: 'Geometry-Dash', name: 'Geometry Dash', logo: '/storage/photos/gd.png', path: 'edit me' },
-        { id: 'Polytrack', name: 'Polytrack', logo: '/storage/photos/polytrack.png', path: 'edit me' },
-        { id: 'Minecraft', name: 'Minecraft', logo: '/storage/photos/minecraft.png', path: 'edit me' },
-        { id: 'Proxycrib', name: 'Proxycrib', logo: '/storage/photos/proxicrib.png', path: 'edit me' },
-        { id: 'Kick-The-Sod', name: 'Kick The Sod', logo: '/storage/photos/kts.png', path: 'edit me' }
-    ];
+        /* The Only Button That Matters */
+        .vault-btn {
+            background: rgba(0, 255, 0, 0.03);
+            border: 2px solid var(--green-belt);
+            color: var(--green-belt);
+            padding: 22px 0;
+            border-radius: 28px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            width: 100%;
+            font-size: 1.2rem;
+        }
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (u) => {
-            setUser(u);
-            setLoading(false);
-            if (u) {
-                onSnapshot(doc(db, "playtime", u.uid), (snap) => {
-                    if (snap.exists()) setPlaytimes(snap.data());
+        .vault-btn:hover {
+            background: var(--green-belt);
+            color: black;
+            box-shadow: 0 0 40px var(--green-belt);
+            transform: scale(1.03);
+        }
+
+        /* Card System */
+        .game-card {
+            background: #0f0f0f;
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 35px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .game-card:hover {
+            border-color: var(--green-belt);
+            background: #151515;
+            transform: translateY(-5px);
+        }
+
+        /* Inputs */
+        .crib-input {
+            width: 100%; padding: 18px; background: #0a0a0a;
+            border: 1px solid #1a1a1a; border-radius: 20px; color: white; font-weight: bold;
+        }
+        .crib-input:focus { border-color: var(--green-belt); outline: none; }
+
+        /* Loader */
+        #loading-screen {
+            position: fixed; inset: 0; display: none;
+            align-items: center; justify-content: center;
+            background: #000; z-index: 10000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Game Launch Loader -->
+    <div id="loading-screen">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
+            <div class="text-green-500 font-black tracking-widest text-xs uppercase">Blicking Ads...</div>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <div class="nav-header">
+        <div class="crib-logo text-2xl cursor-pointer" onclick="showView('home')">THE CRIB</div>
+        <div id="auth-status">
+            <button class="text-[10px] font-black uppercase tracking-widest border border-green-500/40 px-4 py-2 rounded-lg text-green-500 hover:bg-green-500 hover:text-black transition-all" onclick="showView('login')">🔑 LOGIN</button>
+        </div>
+    </div>
+
+    <!-- VIEW: HOME (AUTHENTIC & CLEAN) -->
+    <section id="view-home" class="page-view active-view">
+        <div class="flex flex-col items-center justify-center min-h-[85vh] text-center px-6">
+            <div class="mb-4">
+                <span class="text-green-500 text-[10px] font-black px-4 py-1 rounded-full border border-green-500/20 uppercase">Dungeon v4.0.1</span>
+            </div>
+            <h1 class="text-8xl sm:text-9xl font-black crib-logo mb-2 tracking-tighter">THE CRIB</h1>
+            <p class="text-gray-600 uppercase tracking-[0.5em] text-[10px] mb-12 font-bold italic">High Council HQ | Secure Proxy</p>
+            
+            <div class="w-72">
+                <!-- ZERO OTHER BUTTONS EXIST HERE -->
+                <button class="vault-btn" onclick="showView('vault')">🎮 OPEN VAULT</button>
+            </div>
+
+            <div class="mt-20 opacity-20">
+                <p class="text-[9px] text-fuchsia-800 font-black uppercase italic tracking-widest">Roster Purged. Treason Avoided. Whistle Subsided.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: VAULT (THE DUNGEON) -->
+    <section id="view-vault" class="page-view">
+        <div class="max-w-6xl mx-auto px-6 pb-32">
+            <div class="text-center mb-12">
+                <h2 class="text-5xl font-black crib-logo mb-2 uppercase italic">The Vault</h2>
+                <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold">Encrypted Session Persistence Active</p>
+            </div>
+            <div class="max-w-md mx-auto mb-10">
+                <input type="text" id="vaultSearch" onkeyup="filterVault()" class="crib-input text-center" placeholder="FILTER DUNGEON...">
+            </div>
+            <div id="vaultGrid" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <!-- Data injection -->
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: LOGIN -->
+    <section id="view-login" class="page-view">
+        <div class="flex items-center justify-center min-h-[80vh] px-6">
+            <div class="w-full max-w-sm bg-[#0a0a0a] p-10 rounded-[2.5rem] border border-white/5 text-center shadow-2xl">
+                <h2 class="text-3xl font-black crib-logo mb-8 uppercase italic">Council Gate</h2>
+                <div class="space-y-4">
+                    <input type="email" id="email-in" class="crib-input" placeholder="User ID">
+                    <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
+                    <button class="vault-btn !py-4 !text-lg !rounded-2xl" onclick="handleLogin()">AUTHENTICATE</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Iframe Game Layer -->
+    <div id="game-layer" style="display:none; position:fixed; inset:0; background:black; z-index:20000;">
+        <button onclick="exitGame()" class="fixed top-6 left-6 z-[20001] bg-black/80 text-white w-12 h-12 rounded-full border border-white/10 font-bold hover:bg-green-500 hover:text-black transition-all">✕</button>
+        <iframe id="game-frame" src="about:blank" class="w-full h-full border-none" allowfullscreen></iframe>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const games = [
+            { name: 'Ragdoll Hit', logo: '/storage/photos/rh.png', path: 'rh.html' },
+            { name: 'Cookie Clicker', logo: '/storage/photos/cc.png', path: 'cc.html' },
+            { name: 'Geometry Dash', logo: '/storage/photos/gd.png', path: 'gd.html' },
+            { name: 'Polytrack', logo: '/storage/photos/polytrack.png', path: 'poly.html' },
+            { name: 'Minecraft', logo: '/storage/photos/minecraft.png', path: 'mc.html' },
+            { name: 'Proxycrib', logo: '/storage/photos/proxicrib.png', path: 'proxy.html' },
+            { name: 'Kick The Sod', logo: '/storage/photos/kts.png', path: 'kts.html' }
+        ];
+
+        window.showView = (id) => {
+            document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
+            const target = document.getElementById('view-' + id);
+            if(target) target.classList.add('active-view');
+        };
+
+        window.enterDungeon = (path) => {
+            const loader = document.getElementById('loading-screen');
+            loader.style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('game-frame').src = path;
+                document.getElementById('game-layer').style.display = 'block';
+                loader.style.display = 'none';
+            }, 1200);
+        };
+
+        window.exitGame = () => {
+            document.getElementById('game-layer').style.display = 'none';
+            document.getElementById('game-frame').src = 'about:blank';
+        };
+
+        const grid = document.getElementById('vaultGrid');
+        games.forEach(g => {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.onclick = () => enterDungeon(g.path);
+            card.innerHTML = `
+                <img src="${g.logo}" onerror="this.src='https://placehold.co/100/000/0f0?text=HQ'" class="w-[90px] h-[90px] object-cover rounded-3xl mx-auto mb-4">
+                <h3 class="font-black text-xs uppercase tracking-tight">${g.name}</h3>
+                <div id="stat-${g.name.replace(/\s+/g, '')}" class="text-green-500 text-[9px] font-bold mt-2 opacity-50">UNLOCKED</div>
+            `;
+            grid.appendChild(card);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            const slot = document.getElementById('auth-status');
+            if (user) {
+                slot.innerHTML = `<span class="text-[10px] font-black text-green-500 uppercase tracking-widest">👤 ${user.email.split('@')[0]}</span>`;
+                onSnapshot(doc(db, "playtime", user.uid), (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        games.forEach(g => {
+                            const min = data[g.name] || 0;
+                            const el = document.getElementById(`stat-${g.name.replace(/\s+/g, '')}`);
+                            if (el && min > 0) el.innerText = min >= 60 ? `${(min/60).toFixed(1)}h Played` : `${Math.floor(min)}m Played`;
+                        });
+                    }
                 });
             }
         });
-        return () => unsubscribe();
-    }, []);
 
-    const launchGame = (game) => {
-        setLaunching(true);
-        setActiveGame(game);
-        initTracker(game.name);
-        
-        // Android-style launch delay
-        setTimeout(() => {
-            setView('playing');
-            setLaunching(false);
-        }, 1500);
-    };
+        window.handleLogin = () => {
+            const email = document.getElementById('email-in').value;
+            const pass = document.getElementById('pass-in').value;
+            signInWithEmailAndPassword(auth, email, pass).then(() => showView('home')).catch(err => alert("LACK OF CLEARANCE: " + err.message));
+        };
 
-    const navigate = (v) => {
-        setLoading(true);
-        setTimeout(() => {
-            setView(v);
-            setLoading(false);
-        }, 400);
-    };
-
-    if (loading && !launching) {
-        return (
-            <div className="fixed inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center z-[9999]">
-                <div className="w-12 h-12 border-4 border-[#111] border-t-green-500 rounded-full animate-spin"></div>
-                <p className="mt-4 text-green-500 font-mono text-[10px] tracking-[0.3em]">OINK OINK BYPASS ACTIVE...</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-green-500 selection:text-black">
-            {/* TOP BAR */}
-            {view !== 'playing' && (
-                <nav className="fixed top-0 w-full h-16 flex items-center justify-between px-6 bg-black/80 backdrop-blur-xl border-b border-white/5 z-[100]">
-                    <div className="text-green-500 font-black italic tracking-tighter text-2xl cursor-pointer" onClick={() => navigate('home')}>THE CRIB</div>
-                    <div className="flex gap-4">
-                        {user ? (
-                            <button onClick={() => navigate('account')} className="text-[10px] font-black uppercase tracking-widest border border-green-500 px-4 py-2 rounded-lg text-green-500 hover:bg-green-500 hover:text-black transition">👤 Profile</button>
-                        ) : (
-                            <button onClick={() => navigate('login')} className="text-[10px] font-black uppercase tracking-widest border border-green-500 px-4 py-2 rounded-lg text-green-500 hover:bg-green-500 hover:text-black transition">🔑 Sign In</button>
-                        )}
-                    </div>
-                </nav>
-            )}
-
-            {/* SPLASH OVERLAY */}
-            {launching && (
-                <div className="fixed inset-0 bg-[#121212] flex items-center justify-center z-[1000] animate-in fade-in duration-500">
-                    <img 
-                        src={activeGame?.logo} 
-                        className="w-40 h-40 object-contain rounded-3xl shadow-2xl animate-[appLaunch_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)_forwards]" 
-                        alt="Loading..."
-                    />
-                    <style>{`
-                        @keyframes appLaunch {
-                            0% { transform: scale(0.5); opacity: 0; }
-                            100% { transform: scale(1); opacity: 1; }
-                        }
-                    `}</style>
-                </div>
-            )}
-
-            <main className="pt-20">
-                {view === 'home' && (
-                    <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h1 className="text-8xl font-black text-green-500 italic tracking-tighter mb-2 drop-shadow-[0_0_15px_rgba(0,255,0,0.5)]">THE CRIB</h1>
-                        <p className="text-gray-600 text-[10px] uppercase tracking-[0.5em] mb-12">High Council Headquarters | HPMS</p>
-                        <div className="flex flex-col gap-4 w-72">
-                            <button onClick={() => navigate('vault')} className="bg-green-900/20 border-2 border-green-500 text-green-500 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition-all">🎮 Open Vault</button>
-                            {/* RESTORED GREEN RIM HERE */}
-                            <button onClick={() => navigate('roster')} className="bg-green-900/10 border-2 border-green-500/50 text-green-500/80 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-500 hover:text-black hover:border-green-500 transition-all text-xs">📜 Guild Roster</button>
-                        </div>
-                        <p className="mt-24 text-[9px] text-fuchsia-900 font-bold uppercase italic opacity-30">Connor-Detection: Active. Zesty noodle-hair spotted nearby.</p>
-                    </div>
-                )}
-
-                {view === 'vault' && (
-                    <div className="max-w-6xl mx-auto px-6 pb-24 animate-in fade-in duration-500">
-                        <div className="text-center mb-12">
-                            <h2 className="text-5xl font-black italic uppercase text-green-500 mb-2">The Vault</h2>
-                            <p className="text-gray-500 text-[10px] uppercase tracking-widest">Basket Random is officially blicked.</p>
-                        </div>
-                        <input 
-                            type="text" 
-                            placeholder="SEARCH DUNGEON..." 
-                            className="w-full max-w-md mx-auto block mb-12 bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-green-500 outline-none font-bold"
-                            onChange={(e) => setSearch(e.target.value.toLowerCase())}
-                        />
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            {games.filter(g => g.name.toLowerCase().includes(search)).map(game => (
-                                <div key={game.id} onClick={() => launchGame(game)} className="group bg-[#111] border-2 border-white/5 p-6 rounded-[2.5rem] text-center cursor-pointer hover:border-green-500 hover:-translate-y-2 transition-all">
-                                    <img src={game.logo} className="w-24 h-24 mx-auto mb-4 rounded-2xl group-hover:scale-110 transition-transform" alt={game.name} />
-                                    <h3 className="font-black text-sm mb-2">{game.name}</h3>
-                                    <div className="inline-block bg-green-500/10 text-green-500 text-[9px] font-black px-3 py-1 rounded-full border border-green-500/20">
-                                        {playtimes[game.name] ? (playtimes[game.name] >= 60 ? `${(playtimes[game.name]/60).toFixed(1)}h` : `${Math.floor(playtimes[game.name])}m`) : 'Play Now'}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {view === 'roster' && (
-                    <div className="flex flex-col items-center p-6 animate-in zoom-in-95 duration-300">
-                        <div className="w-full max-w-md bg-[#111] p-10 rounded-[3rem] border border-green-500 shadow-[0_0_30px_rgba(0,255,0,0.05)]">
-                            <h2 className="text-3xl font-black text-green-500 mb-8 uppercase text-center italic">The High Council</h2>
-                            <div className="space-y-6">
-                                {[
-                                    {name: 'Daimyan', role: 'THE THIEF / LEADER'},
-                                    {name: 'Alex', role: 'LINK MAKER'},
-                                    {name: 'Jayden', role: 'FREAKY JESTER'},
-                                    {name: 'Abas', role: 'CHILL GUY'},
-                                    {name: 'Evaan', role: 'MORAL COMPASS'}
-                                ].map(member => (
-                                    <div key={member.name} className="flex justify-between items-center border-b border-white/5 pb-2">
-                                        <span className="font-black text-lg">{member.name}</span>
-                                        <span className="text-[9px] text-green-500 font-black tracking-tighter opacity-70">{member.role}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <button onClick={() => navigate('home')} className="mt-8 text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-green-500 transition">← Back to Hallway</button>
-                    </div>
-                )}
-
-                {view === 'playing' && (
-                    <div className="fixed inset-0 bg-black z-[2000] animate-in fade-in duration-700">
-                        <button 
-                            onClick={() => navigate('vault')} 
-                            className="fixed top-4 left-4 z-[2001] bg-black/50 hover:bg-green-500 text-white hover:text-black w-10 h-10 rounded-full flex items-center justify-center border border-white/10 transition-all font-bold"
-                        >
-                            ✕
-                        </button>
-                        <iframe 
-                            src={activeGame?.path} 
-                            className="w-full h-full border-none" 
-                            allowFullScreen
-                        />
-                    </div>
-                )}
-
-                {view === 'login' && (
-                    <div className="flex items-center justify-center min-h-[70vh] px-4 animate-in fade-in">
-                        <div className="w-full max-w-sm bg-[#111] p-10 rounded-[3rem] border border-white/5 text-center">
-                            <h2 className="text-3xl font-black text-green-500 mb-8 uppercase italic">Dungeon Access</h2>
-                            <div className="space-y-4">
-                                <input type="email" placeholder="Email" className="w-full p-4 bg-black border border-white/10 rounded-2xl outline-none focus:border-green-500" />
-                                <input type="password" placeholder="Passcode" className="w-full p-4 bg-black border border-white/10 rounded-2xl outline-none focus:border-green-500" />
-                                <button className="w-full bg-green-500 text-black font-black py-4 rounded-2xl uppercase tracking-widest hover:scale-105 transition-transform">Enter</button>
-                            </div>
-                            <div className="mt-6 pt-6 border-t border-white/5">
-                                <button onClick={() => signInWithPopup(auth, googleProvider).then(() => navigate('home'))} className="w-full bg-white text-black font-black py-3 rounded-2xl flex items-center justify-center gap-3">
-                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G" /> Google FastPass
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {view === 'account' && (
-                    <div className="flex items-center justify-center min-h-[70vh] px-4 animate-in zoom-in-95">
-                        <div className="w-full max-w-sm bg-[#111] p-10 rounded-[3rem] border border-green-500/30">
-                            <h2 className="text-2xl font-black text-green-500 mb-6 uppercase">Champion Info</h2>
-                            <div className="bg-black/50 p-4 rounded-2xl border-l-4 border-green-500 mb-8">
-                                <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Authenticated ID</p>
-                                <p className="text-sm font-mono text-green-400 truncate">{user?.email}</p>
-                            </div>
-                            <button onClick={() => signOut(auth).then(() => navigate('home'))} className="w-full py-4 border border-red-900/50 text-red-500 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-red-900 hover:text-white transition-all">Terminate Session</button>
-                        </div>
-                    </div>
-                )}
-            </main>
-        </div>
-    );
-}
+        window.filterVault = () => {
+            const val = document.getElementById('vaultSearch').value.toLowerCase();
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(val) ? 'block' : 'none';
+            });
+        };
+    </script>
+</body>
+    </html>
