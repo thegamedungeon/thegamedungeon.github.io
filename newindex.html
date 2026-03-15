@@ -1,0 +1,232 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
+import { getFirestore, doc, onSnapshot } from "firebase/firestore";
+
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+    apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+    authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+    projectId: "the-game-dungeon-4d75d",
+    storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+    messagingSenderId: "533459716906",
+    appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+    measurementId: "G-CER9SE96MC"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+// Mock tracker since we can't import local js here
+const initTracker = (name) => console.log(`[TRACKER] Started for: ${name}`);
+
+export default function App() {
+    const [view, setView] = useState('home'); // home, vault, roster, login, account, playing
+    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
+    const [playtimes, setPlaytimes] = useState({});
+    const [activeGame, setActiveGame] = useState(null);
+    const [search, setSearch] = useState('');
+    const [launching, setLaunching] = useState(false);
+
+    // THE SEVEN LEGENDS (Basket Random is blicked)
+    const games = [
+        { id: 'Ragdoll-Hit', name: 'Ragdoll Hit', logo: '/storage/photos/rh.png', path: 'edit me' },
+        { id: 'Cookie-Clicker', name: 'Cookie Clicker', logo: '/storage/photos/cc.png', path: 'edit me' },
+        { id: 'Geometry-Dash', name: 'Geometry Dash', logo: '/storage/photos/gd.png', path: 'edit me' },
+        { id: 'Polytrack', name: 'Polytrack', logo: '/storage/photos/polytrack.png', path: 'edit me' },
+        { id: 'Minecraft', name: 'Minecraft', logo: '/storage/photos/minecraft.png', path: 'edit me' },
+        { id: 'Proxycrib', name: 'Proxycrib', logo: '/storage/photos/proxicrib.png', path: 'edit me' },
+        { id: 'Kick-The-Sod', name: 'Kick The Sod', logo: '/storage/photos/kts.png', path: 'edit me' }
+    ];
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
+            setUser(u);
+            setLoading(false);
+            if (u) {
+                onSnapshot(doc(db, "playtime", u.uid), (snap) => {
+                    if (snap.exists()) setPlaytimes(snap.data());
+                });
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const launchGame = (game) => {
+        setLaunching(true);
+        setActiveGame(game);
+        initTracker(game.name);
+        
+        // Android-style launch delay
+        setTimeout(() => {
+            setView('playing');
+            setLaunching(false);
+        }, 1500);
+    };
+
+    const navigate = (v) => {
+        setLoading(true);
+        setTimeout(() => {
+            setView(v);
+            setLoading(false);
+        }, 400);
+    };
+
+    if (loading && !launching) {
+        return (
+            <div className="fixed inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center z-[9999]">
+                <div className="w-12 h-12 border-4 border-[#111] border-t-green-500 rounded-full animate-spin"></div>
+                <p className="mt-4 text-green-500 font-mono text-[10px] tracking-[0.3em]">OINK OINK BYPASS ACTIVE...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-green-500 selection:text-black">
+            {/* TOP BAR */}
+            {view !== 'playing' && (
+                <nav className="fixed top-0 w-full h-16 flex items-center justify-between px-6 bg-black/80 backdrop-blur-xl border-b border-white/5 z-[100]">
+                    <div className="text-green-500 font-black italic tracking-tighter text-2xl cursor-pointer" onClick={() => navigate('home')}>THE CRIB</div>
+                    <div className="flex gap-4">
+                        {user ? (
+                            <button onClick={() => navigate('account')} className="text-[10px] font-black uppercase tracking-widest border border-green-500 px-4 py-2 rounded-lg text-green-500 hover:bg-green-500 hover:text-black transition">👤 Profile</button>
+                        ) : (
+                            <button onClick={() => navigate('login')} className="text-[10px] font-black uppercase tracking-widest border border-green-500 px-4 py-2 rounded-lg text-green-500 hover:bg-green-500 hover:text-black transition">🔑 Sign In</button>
+                        )}
+                    </div>
+                </nav>
+            )}
+
+            {/* SPLASH OVERLAY */}
+            {launching && (
+                <div className="fixed inset-0 bg-[#121212] flex items-center justify-center z-[1000] animate-in fade-in duration-500">
+                    <img 
+                        src={activeGame?.logo} 
+                        className="w-40 h-40 object-contain rounded-3xl shadow-2xl animate-[appLaunch_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)_forwards]" 
+                        alt="Loading..."
+                    />
+                    <style>{`
+                        @keyframes appLaunch {
+                            0% { transform: scale(0.5); opacity: 0; }
+                            100% { transform: scale(1); opacity: 1; }
+                        }
+                    `}</style>
+                </div>
+            )}
+
+            <main className="pt-20">
+                {view === 'home' && (
+                    <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <h1 className="text-8xl font-black text-green-500 italic tracking-tighter mb-2 drop-shadow-[0_0_15px_rgba(0,255,0,0.5)]">THE CRIB</h1>
+                        <p className="text-gray-600 text-[10px] uppercase tracking-[0.5em] mb-12">High Council Headquarters | HPMS</p>
+                        <div className="flex flex-col gap-4 w-72">
+                            <button onClick={() => navigate('vault')} className="bg-green-900/20 border-2 border-green-500 text-green-500 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition-all">🎮 Open Vault</button>
+                            {/* RESTORED GREEN RIM HERE */}
+                            <button onClick={() => navigate('roster')} className="bg-green-900/10 border-2 border-green-500/50 text-green-500/80 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-500 hover:text-black hover:border-green-500 transition-all text-xs">📜 Guild Roster</button>
+                        </div>
+                        <p className="mt-24 text-[9px] text-fuchsia-900 font-bold uppercase italic opacity-30">Connor-Detection: Active. Zesty noodle-hair spotted nearby.</p>
+                    </div>
+                )}
+
+                {view === 'vault' && (
+                    <div className="max-w-6xl mx-auto px-6 pb-24 animate-in fade-in duration-500">
+                        <div className="text-center mb-12">
+                            <h2 className="text-5xl font-black italic uppercase text-green-500 mb-2">The Vault</h2>
+                            <p className="text-gray-500 text-[10px] uppercase tracking-widest">Basket Random is officially blicked.</p>
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="SEARCH DUNGEON..." 
+                            className="w-full max-w-md mx-auto block mb-12 bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-green-500 outline-none font-bold"
+                            onChange={(e) => setSearch(e.target.value.toLowerCase())}
+                        />
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {games.filter(g => g.name.toLowerCase().includes(search)).map(game => (
+                                <div key={game.id} onClick={() => launchGame(game)} className="group bg-[#111] border-2 border-white/5 p-6 rounded-[2.5rem] text-center cursor-pointer hover:border-green-500 hover:-translate-y-2 transition-all">
+                                    <img src={game.logo} className="w-24 h-24 mx-auto mb-4 rounded-2xl group-hover:scale-110 transition-transform" alt={game.name} />
+                                    <h3 className="font-black text-sm mb-2">{game.name}</h3>
+                                    <div className="inline-block bg-green-500/10 text-green-500 text-[9px] font-black px-3 py-1 rounded-full border border-green-500/20">
+                                        {playtimes[game.name] ? (playtimes[game.name] >= 60 ? `${(playtimes[game.name]/60).toFixed(1)}h` : `${Math.floor(playtimes[game.name])}m`) : 'Play Now'}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {view === 'roster' && (
+                    <div className="flex flex-col items-center p-6 animate-in zoom-in-95 duration-300">
+                        <div className="w-full max-w-md bg-[#111] p-10 rounded-[3rem] border border-green-500 shadow-[0_0_30px_rgba(0,255,0,0.05)]">
+                            <h2 className="text-3xl font-black text-green-500 mb-8 uppercase text-center italic">The High Council</h2>
+                            <div className="space-y-6">
+                                {[
+                                    {name: 'Daimyan', role: 'THE THIEF / LEADER'},
+                                    {name: 'Alex', role: 'LINK MAKER'},
+                                    {name: 'Jayden', role: 'FREAKY JESTER'},
+                                    {name: 'Abas', role: 'CHILL GUY'},
+                                    {name: 'Evaan', role: 'MORAL COMPASS'}
+                                ].map(member => (
+                                    <div key={member.name} className="flex justify-between items-center border-b border-white/5 pb-2">
+                                        <span className="font-black text-lg">{member.name}</span>
+                                        <span className="text-[9px] text-green-500 font-black tracking-tighter opacity-70">{member.role}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <button onClick={() => navigate('home')} className="mt-8 text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-green-500 transition">← Back to Hallway</button>
+                    </div>
+                )}
+
+                {view === 'playing' && (
+                    <div className="fixed inset-0 bg-black z-[2000] animate-in fade-in duration-700">
+                        <button 
+                            onClick={() => navigate('vault')} 
+                            className="fixed top-4 left-4 z-[2001] bg-black/50 hover:bg-green-500 text-white hover:text-black w-10 h-10 rounded-full flex items-center justify-center border border-white/10 transition-all font-bold"
+                        >
+                            ✕
+                        </button>
+                        <iframe 
+                            src={activeGame?.path} 
+                            className="w-full h-full border-none" 
+                            allowFullScreen
+                        />
+                    </div>
+                )}
+
+                {view === 'login' && (
+                    <div className="flex items-center justify-center min-h-[70vh] px-4 animate-in fade-in">
+                        <div className="w-full max-w-sm bg-[#111] p-10 rounded-[3rem] border border-white/5 text-center">
+                            <h2 className="text-3xl font-black text-green-500 mb-8 uppercase italic">Dungeon Access</h2>
+                            <div className="space-y-4">
+                                <input type="email" placeholder="Email" className="w-full p-4 bg-black border border-white/10 rounded-2xl outline-none focus:border-green-500" />
+                                <input type="password" placeholder="Passcode" className="w-full p-4 bg-black border border-white/10 rounded-2xl outline-none focus:border-green-500" />
+                                <button className="w-full bg-green-500 text-black font-black py-4 rounded-2xl uppercase tracking-widest hover:scale-105 transition-transform">Enter</button>
+                            </div>
+                            <div className="mt-6 pt-6 border-t border-white/5">
+                                <button onClick={() => signInWithPopup(auth, googleProvider).then(() => navigate('home'))} className="w-full bg-white text-black font-black py-3 rounded-2xl flex items-center justify-center gap-3">
+                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G" /> Google FastPass
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {view === 'account' && (
+                    <div className="flex items-center justify-center min-h-[70vh] px-4 animate-in zoom-in-95">
+                        <div className="w-full max-w-sm bg-[#111] p-10 rounded-[3rem] border border-green-500/30">
+                            <h2 className="text-2xl font-black text-green-500 mb-6 uppercase">Champion Info</h2>
+                            <div className="bg-black/50 p-4 rounded-2xl border-l-4 border-green-500 mb-8">
+                                <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Authenticated ID</p>
+                                <p className="text-sm font-mono text-green-400 truncate">{user?.email}</p>
+                            </div>
+                            <button onClick={() => signOut(auth).then(() => navigate('home'))} className="w-full py-4 border border-red-900/50 text-red-500 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-red-900 hover:text-white transition-all">Terminate Session</button>
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+}
