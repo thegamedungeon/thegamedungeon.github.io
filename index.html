@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE CRIB | HPMS HIGH COUNCIL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
@@ -106,6 +105,16 @@
             padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 10px;
         }
+
+        .disclaimer-text {
+            font-size: 9px;
+            color: #444;
+            margin-top: 20px;
+            line-height: 1.4;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
@@ -147,13 +156,21 @@
         <div class="flex items-center justify-center min-h-[80vh] px-6">
             <div class="w-full max-w-sm bg-[#0a0a0a] p-10 rounded-[2.5rem] border border-white/5 text-center shadow-2xl">
                 <h2 class="text-3xl font-black crib-logo mb-8 uppercase italic">Gatekeeper</h2>
-                <input type="email" id="email-in" class="crib-input" placeholder="User ID">
-                <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
+                <div class="mb-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">Identification Required</div>
+                
+                <input type="email" id="email-in" class="crib-input" placeholder="Hero ID (Email)" autocomplete="email">
+                <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key" autocomplete="new-password">
+                
                 <button class="vault-btn !py-4 !text-lg !rounded-2xl mb-4" onclick="handleLogin()">ENTER</button>
+                
                 <div class="flex gap-2">
-                    <button class="w-1/2 bg-white/5 text-[10px] py-3 rounded-xl font-black" onclick="handleCreateAccount()">CREATE</button>
+                    <button class="w-1/2 bg-white/5 text-[10px] py-3 rounded-xl font-black" onclick="handleCreateAccount()">REGISTER</button>
                     <button class="w-1/2 bg-white text-black text-[10px] py-3 rounded-xl font-black" onclick="handleGoogleLogin()">GOOGLE</button>
                 </div>
+
+                <p class="disclaimer-text">
+                    Progress is saved via Firebase Auth. No personal info is tracked or stored.
+                </p>
             </div>
         </div>
     </section>
@@ -165,12 +182,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-red-500/20 text-center">
                     <h3 class="font-black mb-4">Security Protocols</h3>
-                    <button class="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg mb-4" onclick="showView('bans')">🚫 MANAGE BAN LIST</button>
+                    <button class="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg mb-4" onclick="showView('bans')">🚫 MANAGE BLICK LIST</button>
                     <button class="w-full bg-white/5 text-gray-400 font-black py-4 rounded-2xl" onclick="handleLogout()">TERMINATE SESSION</button>
                 </div>
                 <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-green-500/20">
-                    <h3 class="font-black mb-4 text-green-500 uppercase">Council Watch</h3>
-                    <p class="text-xs text-gray-500 italic">Connor IQ: Error 404. Sod-erdine is still acting tuff. Leo is being Leo.</p>
+                    <h3 class="font-black mb-4 text-green-500 uppercase">Status</h3>
+                    <p class="text-xs text-gray-500 italic">Connor is still zesty. Sod-erdine is still trying to be tuff. Jack is actually tuff. Daimyan is lurking.</p>
                 </div>
             </div>
         </div>
@@ -184,10 +201,10 @@
                 <button onclick="showView('admin')" class="text-[10px] font-black text-gray-500">BACK</button>
             </div>
             <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-red-500/20 mb-8">
-                <input type="email" id="ban-email-in" class="crib-input" placeholder="User ID to blick...">
-                <input type="text" id="ban-reason-in" class="crib-input" placeholder="Reason (The Roast)">
-                <input type="number" id="ban-hours-in" class="crib-input" placeholder="Hours (Empty = Perma-Blick)">
-                <button class="w-full bg-red-600 py-3 rounded-xl font-black" onclick="dispatchBan()">EXECUTE BAN</button>
+                <input type="email" id="ban-email-in" class="crib-input" placeholder="Email to blick...">
+                <input type="text" id="ban-reason-in" class="crib-input" placeholder="Reason">
+                <input type="number" id="ban-hours-in" class="crib-input" placeholder="Hours (Blank = Perma)">
+                <button class="w-full bg-red-600 py-3 rounded-xl font-black" onclick="dispatchBan()">EXECUTE</button>
             </div>
             <div id="ban-list-container" class="space-y-4"></div>
         </div>
@@ -221,47 +238,39 @@
         let currentUser = null;
         const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
 
-        // --- GLOBAL BAN MONITORING & REDIRECT ---
+        // --- THE VOID REDIRECTOR ---
         function startGlobalBanWatch() {
             const banCol = collection(db, 'artifacts', appId, 'public', 'data', 'banned_users');
             onSnapshot(banCol, (snap) => {
                 const now = Date.now();
-                let amIBanned = false;
-
+                let blickedList = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    const email = d.id;
                     const expiry = data.expiresAt || Infinity;
-
-                    if (now < expiry) {
-                        if (currentUser && currentUser.email?.toLowerCase() === email) {
-                            amIBanned = true;
-                        }
-                    }
+                    if (now < expiry) blickedList.push(d.id.toLowerCase());
                 });
 
-                if (amIBanned) {
-                    // ACTUALLY REDIRECT to the void
+                // Immediate ejection if current email is blicked
+                if (currentUser && blickedList.includes(currentUser.email?.toLowerCase())) {
                     window.location.replace("https://thegamedungeon.github.io/blicked/");
                 }
 
+                // Admin UI update
                 const listContainer = document.getElementById('ban-list-container');
                 if (listContainer) {
                     listContainer.innerHTML = '';
                     snap.forEach(d => {
                         const data = d.data();
-                        const isPerma = !data.expiresAt;
-                        const returnTime = isPerma ? "NEVER (PERMA)" : new Date(data.expiresAt).toLocaleString();
-                        
+                        const time = !data.expiresAt ? "PERMANENT" : new Date(data.expiresAt).toLocaleString();
                         const card = document.createElement('div');
                         card.className = 'ban-card';
                         card.innerHTML = `
                             <div class="text-left">
                                 <div class="text-xs font-black text-red-500">${d.id}</div>
-                                <div class="text-[10px] text-gray-400 font-bold uppercase">${data.reason || 'Council Order'}</div>
-                                <div class="text-[8px] text-gray-600 mt-1">LOG BACK IN: ${returnTime}</div>
+                                <div class="text-[9px] text-gray-400 font-bold uppercase">${data.reason}</div>
+                                <div class="text-[7px] text-gray-600">UNBLICK: ${time}</div>
                             </div>
-                            <button onclick="unbanUser('${d.id}')" class="text-[10px] text-green-500 font-black hover:underline">UNBLICK</button>
+                            <button onclick="unbanUser('${d.id}')" class="text-[10px] text-green-500 font-black">RESTORE</button>
                         `;
                         listContainer.appendChild(card);
                     });
@@ -281,15 +290,31 @@
         };
 
         window.handleLogin = () => {
-            const e = document.getElementById('email-in').value;
+            const e = document.getElementById('email-in').value.trim();
             const p = document.getElementById('pass-in').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => alert("GATEKEEPER REJECTED: " + err.message));
+            signInWithEmailAndPassword(auth, e, p).catch(err => {
+                alert("Gatekeeper: " + err.message);
+            });
         };
 
-        window.handleCreateAccount = () => {
-            const e = document.getElementById('email-in').value;
+        window.handleCreateAccount = async () => {
+            const e = document.getElementById('email-in').value.trim();
             const p = document.getElementById('pass-in').value;
-            createUserWithEmailAndPassword(auth, e, p).catch(err => alert("ERROR: " + err.message));
+            if(!e || !p) return alert("Fill in the identity nodes, bro.");
+
+            // Force a sign out of the current anonymous session before creating
+            await signOut(auth);
+
+            createUserWithEmailAndPassword(auth, e, p)
+                .then(() => alert("Identity Registered."))
+                .catch(err => {
+                    console.error(err.code);
+                    if (err.code === 'auth/email-already-in-use') {
+                        alert("That identity is already active in the Crib database.");
+                    } else {
+                        alert("Auth Error: " + err.message);
+                    }
+                });
         };
 
         window.handleGoogleLogin = () => signInWithPopup(auth, provider);
@@ -299,21 +324,14 @@
             const email = document.getElementById('ban-email-in').value.trim().toLowerCase();
             const reason = document.getElementById('ban-reason-in').value.trim();
             const hours = document.getElementById('ban-hours-in').value;
-            
             if(!email) return;
-
             const expiresAt = hours ? Date.now() + (parseInt(hours) * 60 * 60 * 1000) : null;
-            
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', email), {
-                banned: true,
-                reason: reason || "Oink Oink Level Threat",
+                reason: reason || "High Council Order",
                 expiresAt: expiresAt,
                 timestamp: Date.now()
             });
-
             document.getElementById('ban-email-in').value = '';
-            document.getElementById('ban-reason-in').value = '';
-            document.getElementById('ban-hours-in').value = '';
         };
 
         window.unbanUser = async (id) => {
@@ -330,13 +348,14 @@
             } else {
                 currentUser = null;
                 slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>`;
-                signInAnonymously(auth).catch(() => {}); 
+                // Keep anonymous session for DB listening
+                signInAnonymously(auth).catch(() => {});
             }
         });
 
         // Init
         startGlobalBanWatch();
-        const games = ['Ragdoll Hit', 'Cookie Clicker', 'Geometry Dash', 'Polytrack', 'Minecraft', 'Proxycrib', 'Kick The Sod'];
+        const games = ['Ragdoll Hit', 'Cookie Clicker', 'Geometry Dash', 'Polytrack', 'Minecraft', 'Proxycrib', 'Kick The Sod', 'Basket Random'];
         const grid = document.getElementById('vaultGrid');
         games.forEach(g => {
             const card = document.createElement('div');
