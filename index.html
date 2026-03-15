@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CRIB | HPMS HIGH COUNCIL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        :root {
+            --green-belt: #00ff00;
+            --bg-black: #050505;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-black);
+            color: white;
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .page-view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            padding-top: 80px;
+            overflow-y: auto;
+            position: absolute;
+            top: 0; left: 0;
+            background: var(--bg-black);
+        }
+        .active-view { 
+            display: block !important; 
+            z-index: 50; 
+            animation: appFade 0.3s ease-in-out; 
+        }
+
+        @keyframes appFade {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 24px; position: fixed; top: 0; width: 100%; height: 70px;
+            background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(20px);
+            z-index: 9000; border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+        }
+        
+        .crib-logo {
+            text-shadow: 0 0 15px var(--green-belt);
+            color: var(--green-belt);
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -1.5px;
+        }
+
+        .vault-btn {
+            background: rgba(0, 255, 0, 0.03);
+            border: 2px solid var(--green-belt);
+            color: var(--green-belt);
+            padding: 22px 0;
+            border-radius: 28px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            width: 100%;
+            font-size: 1.2rem;
+        }
+
+        .vault-btn:hover {
+            background: var(--green-belt);
+            color: black;
+            box-shadow: 0 0 40px var(--green-belt);
+            transform: scale(1.03);
+        }
+
+        .account-btn {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: var(--green-belt);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .bell-btn {
+            background: none; border: none; color: var(--green-belt);
+            font-size: 20px; cursor: pointer; margin-right: 15px;
+            transition: 0.3s;
+        }
+
+        .game-card {
+            background: #0f0f0f; border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 35px; padding: 20px; text-align: center;
+            cursor: pointer; transition: 0.3s;
+        }
+        .game-card:hover { border-color: var(--green-belt); background: #151515; transform: translateY(-5px); }
+
+        .crib-input, .crib-textarea {
+            width: 100%; padding: 18px; background: #0a0a0a;
+            border: 1px solid #1a1a1a; border-radius: 20px; color: white; font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        /* RECORDS CSS */
+        .record-card {
+            background: #0a0a0a; border: 1px solid #111; padding: 15px;
+            border-radius: 20px; display: flex; align-items: center; gap: 15px; text-align: left;
+        }
+        .record-icon { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; background: #000; border: 1px solid #222; }
+        .progress-bar { height: 4px; background: #111; margin-top: 8px; border-radius: 10px; overflow: hidden; width: 100%; }
+        .progress-fill { height: 100%; background: var(--green-belt); box-shadow: 0 0 8px var(--green-belt); transition: width 1s ease; }
+
+        /* MAILROOM */
+        .thread-group { background: #0a0a0a; border: 1px solid #111; border-radius: 24px; margin-bottom: 24px; overflow: hidden; }
+        .thread-header { background: #111; padding: 12px 20px; border-bottom: 1px solid var(--green-belt); font-weight: 900; color: var(--green-belt); display: flex; justify-content: space-between; font-size: 0.8em; }
+        .message-card { padding: 20px; border-bottom: 1px solid #111; border-left: 4px solid var(--green-belt); }
+        .tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 900; margin-bottom: 10px; display: inline-block; }
+        .tag-global { background: var(--green-belt); color: black; }
+
+        #loading-screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: #000; z-index: 30000; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--green-belt); color: black; border-radius: 50%; font-size: 30px; font-weight: 900; border: none; cursor: pointer; z-index: 60; box-shadow: 0 0 20px var(--green-belt); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #0a0a0a; border: 2px solid var(--green-belt); padding: 30px; border-radius: 30px; width: 100%; max-width: 450px; }
+        #middleman-worker { display: none; }
+    </style>
+</head>
+<body>
+
+    <iframe id="middleman-worker" src="/storage/js/middleman/index.js"></iframe>
+
+    <div id="loading-screen">
+        <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div id="loading-text" class="text-green-500 font-black tracking-widest text-xs uppercase italic">Syncing...</div>
+    </div>
+
+    <div class="nav-header">
+        <div class="crib-logo text-2xl cursor-pointer" onclick="showView('home')">THE CRIB</div>
+        <div class="flex items-center">
+            <button class="bell-btn" onclick="showView('notifications')">🔔</button>
+            <div id="auth-status">
+                <button class="account-btn" onclick="showView('login')">🔑 LOGIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: HOME -->
+    <section id="view-home" class="page-view active-view">
+        <div class="flex flex-col items-center justify-center min-h-[85vh] text-center px-6">
+            <h1 class="text-8xl sm:text-[10rem] font-black crib-logo mb-2 tracking-tighter">THE CRIB</h1>
+            <p class="text-gray-600 uppercase tracking-[0.5em] text-[10px] mb-12 font-bold italic">HPMS HIGH COUNCIL HQ</p>
+            <div class="w-72">
+                <button class="vault-btn" onclick="showView('vault')">🎮 OPEN VAULT</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: VAULT -->
+    <section id="view-vault" class="page-view">
+        <div class="max-w-6xl mx-auto px-6 pb-32 text-center">
+            <div class="flex justify-between items-end mb-12">
+                <h2 class="text-5xl font-black crib-logo uppercase italic">The Vault</h2>
+                <button onclick="showView('records')" class="text-[10px] border border-green-500/30 text-green-500 px-4 py-2 rounded-full font-black hover:bg-green-500 hover:text-black transition">📜 RECORDS</button>
+            </div>
+            <div class="max-w-md mx-auto mb-10">
+                <input type="text" id="vaultSearch" onkeyup="filterVault()" class="crib-input text-center" placeholder="FILTER DUNGEON...">
+            </div>
+            <div id="vaultGrid" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+        </div>
+    </section>
+
+    <!-- VIEW: RECORDS (HALL OF RECORDS) -->
+    <section id="view-records" class="page-view">
+        <div class="max-w-4xl mx-auto px-6 pb-32 text-center">
+            <h2 class="text-4xl font-black crib-logo mb-8 uppercase italic">Vault Chronometer</h2>
+            <div class="bg-[#0a0a0a] border-2 border-green-500 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 mb-12 text-left">
+                <img src="/storage/photos/tgdtc.png" id="main-record-photo" class="w-24 h-24 rounded-2xl border border-green-500/50 object-cover">
+                <div>
+                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Total Dungeon Time</p>
+                    <h3 id="total-time-val" class="text-6xl font-black text-white">0.0h</h3>
+                </div>
+            </div>
+            <div id="records-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <p class="text-gray-600 text-xs col-span-full">Parsing storage protocols...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: NOTIFICATIONS (MAILROOM) -->
+    <section id="view-notifications" class="page-view">
+        <div class="max-w-2xl mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black crib-logo mb-10 uppercase italic">Mailroom</h2>
+            <div id="thread-list" class="space-y-6"></div>
+        </div>
+        <button class="fab" onclick="openCompose()">+</button>
+    </section>
+
+    <!-- VIEW: LOGIN -->
+    <section id="view-login" class="page-view">
+        <div class="flex items-center justify-center min-h-[80vh] px-6">
+            <div class="w-full max-w-sm bg-[#0a0a0a] p-10 rounded-[2.5rem] border border-white/5 text-center shadow-2xl">
+                <h2 class="text-3xl font-black crib-logo mb-8 uppercase italic">Gatekeeper</h2>
+                <input type="email" id="email-in" class="crib-input" placeholder="User ID">
+                <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
+                <button class="vault-btn !py-4 !text-lg !rounded-2xl" onclick="handleLogin()">ENTER</button>
+                <button class="text-[10px] text-gray-500 hover:text-white mt-4" onclick="handleLogout()">LOGOUT</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL: COMPOSE -->
+    <div id="composeModal" class="modal"><div class="modal-content">
+        <h2 class="text-xl font-black text-green-500 mb-6 uppercase italic">New Scroll</h2>
+        <input type="text" id="msgRecipient" class="crib-input" placeholder="To: (Name, Email, or GLOBAL)">
+        <input type="text" id="msgSubject" class="crib-input" placeholder="Subject">
+        <textarea id="msgBody" class="crib-textarea h-32" placeholder="Message content..."></textarea>
+        <input type="file" id="msgFile" class="hidden" accept="image/*">
+        <label for="msgFile" id="fileStatus" class="text-green-500 text-[10px] font-black cursor-pointer block mb-4 uppercase">📁 Attach Photo</label>
+        <button id="final-send" class="vault-btn !py-4 !rounded-2xl !text-lg" onclick="dispatchMessage()">DISPATCH</button>
+        <button class="w-full mt-4 text-gray-600 font-bold text-xs uppercase" onclick="closeCompose()">Cancel</button>
+    </div></div>
+
+    <div id="game-layer" style="display:none; position:fixed; inset:0; background:black; z-index:20000;">
+        <button onclick="exitGame()" class="fixed top-6 left-6 z-[20001] bg-black/80 text-white w-12 h-12 rounded-full border border-white/10 font-bold hover:bg-green-500">✕</button>
+        <iframe id="game-frame" src="about:blank" class="w-full h-full border-none" allowfullscreen></iframe>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, addDoc, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let currentUser = null;
+        let iconMap = {};
+
+        async function loadIconMap() {
+            try {
+                const res = await fetch('/storage/photos/pictures.txt?v=' + Date.now());
+                if (res.ok) {
+                    const text = await res.text();
+                    text.split('\n').forEach(line => {
+                        if (line.includes('=')) {
+                            const [name, file] = line.split('=').map(s => s.trim().toLowerCase());
+                            iconMap[name] = `/storage/photos/${file}`;
+                        }
+                    });
+                    if (iconMap['the game dungeon']) document.getElementById('main-record-photo').src = iconMap['the game dungeon'];
+                }
+            } catch (e) {}
+        }
+
+        const games = [
+            { name: 'Ragdoll Hit', logo: '/storage/photos/rh.png' },
+            { name: 'Cookie Clicker', logo: '/storage/photos/cc.png' },
+            { name: 'Geometry Dash', logo: '/storage/photos/gd.png' },
+            { name: 'Polytrack', logo: '/storage/photos/polytrack.png' },
+            { name: 'Minecraft', logo: '/storage/photos/minecraft.png' },
+            { name: 'Proxycrib', logo: '/storage/photos/proxicrib.png' },
+            { name: 'Kick The Sod', logo: '/storage/photos/kts.png' }
+        ];
+
+        window.showView = (id) => {
+            document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
+            document.getElementById('view-' + id).classList.add('active-view');
+        };
+
+        // --- RECORDS & STATS ---
+        function syncStats(uid) {
+            onSnapshot(doc(db, "playtime", uid), (snap) => {
+                const grid = document.getElementById('records-grid');
+                if (!snap.exists()) return;
+                
+                const data = snap.data();
+                grid.innerHTML = '';
+                let totalMin = 0;
+                let maxMin = 1;
+
+                const entries = Object.entries(data).filter(([_, v]) => typeof v === 'number');
+                entries.forEach(([_, m]) => { totalMin += m; if(m > maxMin) maxMin = m; });
+                document.getElementById('total-time-val').innerText = (totalMin / 60).toFixed(1) + "h";
+
+                entries.sort((a,b) => b[1] - a[1]).forEach(([name, min]) => {
+                    const card = document.createElement('div');
+                    card.className = 'record-card';
+                    const icon = iconMap[name.toLowerCase()] || 'https://placehold.co/50/000/0f0?text=G';
+                    card.innerHTML = `
+                        <img src="${icon}" class="record-icon">
+                        <div class="flex-grow">
+                            <div class="flex justify-between font-black uppercase text-[10px]">
+                                <span>${name}</span><span>${(min/60).toFixed(1)}h</span>
+                            </div>
+                            <div class="progress-bar"><div class="progress-fill" style="width: ${(min/maxMin)*100}%"></div></div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                    
+                    const statEl = document.getElementById(`stat-${name.replace(/\s+/g, '')}`);
+                    if(statEl) statEl.innerText = min >= 60 ? `${(min/60).toFixed(1)}h Played` : `${Math.floor(min)}m Played`;
+                });
+            });
+        }
+
+        // --- MAILROOM ---
+        window.openCompose = () => document.getElementById('composeModal').style.display = 'flex';
+        window.closeCompose = () => document.getElementById('composeModal').style.display = 'none';
+
+        window.dispatchMessage = async () => {
+            const btn = document.getElementById('final-send');
+            const recipient = document.getElementById('msgRecipient').value.trim();
+            const subject = document.getElementById('msgSubject').value.trim();
+            const body = document.getElementById('msgBody').value.trim();
+            const fileInput = document.getElementById('msgFile');
+
+            btn.disabled = true; btn.innerText = "SENDING...";
+            let fileUrl = null;
+            try {
+                if (fileInput.files[0]) {
+                    const reader = new FileReader();
+                    const base64 = await new Promise(r => { reader.readAsDataURL(fileInput.files[0]); reader.onload = () => r(reader.result); });
+                    const uploadResult = await uploadString(ref(storage, `mailroom/${currentUser.uid}/${Date.now()}.png`), base64, 'data_url');
+                    fileUrl = await getDownloadURL(uploadResult.ref);
+                }
+                await addDoc(collection(db, "messages"), {
+                    senderName: currentUser.email.split('@')[0], senderEmail: currentUser.email, senderUid: currentUser.uid,
+                    recipient, subject, body, fileUrl, timestamp: serverTimestamp()
+                });
+                closeCompose();
+            } catch (e) { alert("Dispatch error."); }
+            btn.disabled = false; btn.innerText = "DISPATCH";
+        };
+
+        function loadMail() {
+            onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(100)), (snap) => {
+                const list = document.getElementById('thread-list');
+                list.innerHTML = '';
+                const threads = {};
+                snap.forEach(d => {
+                    const m = d.data();
+                    const me = currentUser.email.toLowerCase();
+                    const r = m.recipient.toLowerCase();
+                    if(r === "global" || r === me || m.senderUid === currentUser.uid) {
+                        const s = m.subject.toLowerCase();
+                        if(!threads[s]) threads[s] = [];
+                        threads[s].push(m);
+                    }
+                });
+                Object.keys(threads).reverse().forEach(s => {
+                    const group = threads[s];
+                    const div = document.createElement('div');
+                    div.className = 'thread-group';
+                    div.innerHTML = `<div class="thread-header"><span>${s.toUpperCase()}</span></div>`;
+                    group.forEach(msg => {
+                        div.innerHTML += `<div class="message-card ${msg.senderUid === currentUser.uid ? 'opacity-70' : ''}">
+                            <span class="tag ${msg.recipient === 'global' ? 'tag-global' : ''}">${msg.recipient}</span>
+                            <div class="text-[10px] text-green-500 font-bold mb-1">${msg.senderName}</div>
+                            <div class="text-sm text-gray-300">${msg.body}</div>
+                        </div>`;
+                    });
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        // --- AUTH & SETUP ---
+        onAuthStateChanged(auth, async (user) => {
+            const slot = document.getElementById('auth-status');
+            if (user) {
+                currentUser = user;
+                slot.innerHTML = `<button class="account-btn" onclick="showView('login')">👤 ${user.email.split('@')[0]}</button>`;
+                await loadIconMap();
+                syncStats(user.uid);
+                loadMail();
+            } else { slot.innerHTML = `<button class="account-btn" onclick="showView('login')">🔑 LOGIN</button>`; }
+        });
+
+        window.requestGameFromMiddleman = (name) => {
+            document.getElementById('loading-screen').style.display = 'flex';
+            document.getElementById('middleman-worker').contentWindow.postMessage({ type: 'REQUEST_GAME', title: name.toLowerCase().replace(/\s+/g, '_') }, window.location.origin);
+        };
+
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'GAME_FOUND') {
+                document.getElementById('game-frame').src = e.data.filePath;
+                document.getElementById('game-layer').style.display = 'block';
+                document.getElementById('loading-screen').style.display = 'none';
+            }
+        });
+
+        window.exitGame = () => { document.getElementById('game-layer').style.display = 'none'; document.getElementById('game-frame').src = 'about:blank'; };
+
+        const grid = document.getElementById('vaultGrid');
+        games.forEach(g => {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.onclick = () => requestGameFromMiddleman(g.name);
+            card.innerHTML = `
+                <img src="${g.logo}" onerror="this.src='https://placehold.co/100/000/0f0?text=G'" class="w-[90px] h-[90px] object-cover rounded-3xl mx-auto mb-4">
+                <h3 class="font-black text-xs uppercase">${g.name}</h3>
+                <div id="stat-${g.name.replace(/\s+/g, '')}" class="text-green-500 text-[9px] font-bold mt-2 opacity-50">0m Played</div>
+            `;
+            grid.appendChild(card);
+        });
+
+        window.handleLogin = () => signInWithEmailAndPassword(auth, document.getElementById('email-in').value, document.getElementById('pass-in').value).then(() => showView('home'));
+        window.handleLogout = () => signOut(auth).then(() => showView('home'));
+        window.filterVault = () => {
+            const val = document.getElementById('vaultSearch').value.toLowerCase();
+            document.querySelectorAll('.game-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(val) ? 'block' : 'none');
+        };
+    </script>
+</body>
+</html>
