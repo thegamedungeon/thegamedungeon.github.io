@@ -12,6 +12,7 @@
         :root {
             --green-belt: #00ff00;
             --bg-black: #050505;
+            --admin-red: #ff0033;
         }
 
         body {
@@ -72,6 +73,7 @@
             letter-spacing: 5px;
             width: 100%;
             font-size: 1.2rem;
+            text-align: center;
         }
 
         .vault-btn:hover {
@@ -93,56 +95,25 @@
             cursor: pointer;
         }
 
-        .bell-btn {
-            background: none; border: none; color: var(--green-belt);
-            font-size: 20px; cursor: pointer; margin-right: 15px;
-            transition: 0.3s;
-        }
-
-        .game-card {
-            background: #0f0f0f; border: 1px solid rgba(255,255,255,0.03);
-            border-radius: 35px; padding: 20px; text-align: center;
-            cursor: pointer; transition: 0.3s;
-        }
-        .game-card:hover { border-color: var(--green-belt); background: #151515; transform: translateY(-5px); }
-
-        .crib-input, .crib-textarea {
+        .crib-input {
             width: 100%; padding: 18px; background: #0a0a0a;
             border: 1px solid #1a1a1a; border-radius: 20px; color: white; font-weight: bold;
             margin-bottom: 12px;
         }
 
-        .record-card {
-            background: #0a0a0a; border: 1px solid #111; padding: 15px;
-            border-radius: 20px; display: flex; align-items: center; gap: 15px; text-align: left;
+        .ban-card {
+            background: #110000; border: 1px solid var(--admin-red);
+            padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px;
         }
-        .record-icon { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; background: #000; border: 1px solid #222; }
-        .progress-bar { height: 4px; background: #111; margin-top: 8px; border-radius: 10px; overflow: hidden; width: 100%; }
-        .progress-fill { height: 100%; background: var(--green-belt); box-shadow: 0 0 8px var(--green-belt); transition: width 1s ease; }
-
-        .thread-group { background: #0a0a0a; border: 1px solid #111; border-radius: 24px; margin-bottom: 24px; overflow: hidden; }
-        .thread-header { background: #111; padding: 12px 20px; border-bottom: 1px solid var(--green-belt); font-weight: 900; color: var(--green-belt); display: flex; justify-content: space-between; font-size: 0.8em; }
-        .message-card { padding: 20px; border-bottom: 1px solid #111; border-left: 4px solid var(--green-belt); }
-        .tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 900; margin-bottom: 10px; display: inline-block; }
-        .tag-global { background: var(--green-belt); color: black; }
-
-        #loading-screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: #000; z-index: 30000; }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--green-belt); color: black; border-radius: 50%; font-size: 30px; font-weight: 900; border: none; cursor: pointer; z-index: 60; box-shadow: 0 0 20px var(--green-belt); }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #0a0a0a; border: 2px solid var(--green-belt); padding: 30px; border-radius: 30px; width: 100%; max-width: 450px; }
     </style>
 </head>
 <body>
 
-    <div id="loading-screen">
-        <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div class="text-green-500 font-black tracking-widest text-xs uppercase italic">Syncing Protocols...</div>
-    </div>
-
     <div class="nav-header">
         <div class="crib-logo text-2xl cursor-pointer" onclick="showView('home')">THE CRIB</div>
         <div class="flex items-center">
-            <button class="bell-btn" onclick="showView('notifications')">🔔</button>
+            <button class="bell-btn mr-4" onclick="showView('notifications')">🔔</button>
             <div id="auth-status">
                 <button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>
             </div>
@@ -165,37 +136,10 @@
         <div class="max-w-6xl mx-auto px-6 pb-32 text-center">
             <div class="flex justify-between items-end mb-12">
                 <h2 class="text-5xl font-black crib-logo uppercase italic">The Vault</h2>
-                <button onclick="showView('records')" class="text-[10px] border border-green-500/30 text-green-500 px-4 py-2 rounded-full font-black hover:bg-green-500 hover:text-black transition">📜 RECORDS</button>
-            </div>
-            <div class="max-w-md mx-auto mb-10">
-                <input type="text" id="vaultSearch" onkeyup="filterVault()" class="crib-input text-center" placeholder="FILTER DUNGEON...">
+                <button onclick="showView('records')" class="text-[10px] border border-green-500/30 text-green-500 px-4 py-2 rounded-full font-black">📜 RECORDS</button>
             </div>
             <div id="vaultGrid" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
         </div>
-    </section>
-
-    <!-- VIEW: RECORDS -->
-    <section id="view-records" class="page-view">
-        <div class="max-w-4xl mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black crib-logo mb-8 uppercase italic text-center">Vault Chronometer</h2>
-            <div class="bg-[#0a0a0a] border-2 border-green-500 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 mb-12 shadow-2xl">
-                <img src="/storage/photos/tgdtc.png" id="main-record-photo" class="w-24 h-24 rounded-2xl border border-green-500/50 object-cover">
-                <div>
-                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mb-1">Total Time in Dungeon</p>
-                    <h3 id="total-time-val" class="text-6xl font-black text-white italic">0.0h</h3>
-                </div>
-            </div>
-            <div id="records-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </div>
-    </section>
-
-    <!-- VIEW: NOTIFICATIONS (MAILROOM) -->
-    <section id="view-notifications" class="page-view">
-        <div class="max-w-2xl mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black crib-logo mb-10 uppercase italic">Mailroom</h2>
-            <div id="thread-list" class="space-y-6"></div>
-        </div>
-        <button class="fab" onclick="openCompose()">+</button>
     </section>
 
     <!-- VIEW: LOGIN -->
@@ -205,72 +149,59 @@
                 <h2 class="text-3xl font-black crib-logo mb-8 uppercase italic">Gatekeeper</h2>
                 <input type="email" id="email-in" class="crib-input" placeholder="User ID">
                 <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
-                <button class="vault-btn !py-4 !text-lg !rounded-2xl" onclick="handleLogin()">ENTER</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- VIEW: ACCOUNTS (PROFILE) -->
-    <section id="view-accounts" class="page-view">
-        <div class="max-w-xl mx-auto px-6 pb-32 text-center">
-            <h2 class="text-4xl font-black crib-logo mb-10 uppercase italic">Hero Identity</h2>
-            <div class="bg-[#0a0a0a] border border-white/5 p-10 rounded-[2.5rem] shadow-2xl mb-8">
-                <div class="w-24 h-24 bg-green-500/10 border border-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span class="text-green-500 text-3xl font-black" id="hero-initial">H</span>
+                <button class="vault-btn !py-4 !text-lg !rounded-2xl mb-4" onclick="handleLogin()">ENTER</button>
+                <div class="flex gap-2">
+                    <button class="w-1/2 bg-white/5 text-[10px] py-3 rounded-xl font-black" onclick="handleCreateAccount()">CREATE</button>
+                    <button class="w-1/2 bg-white text-black text-[10px] py-3 rounded-xl font-black" onclick="handleGoogleLogin()">GOOGLE</button>
                 </div>
-                <h3 id="hero-email" class="text-xl font-bold mb-2">Warrior</h3>
-                <p class="text-gray-500 text-xs uppercase tracking-widest font-black mb-8">Rank: Dungeon Crawler</p>
-                <button class="w-full bg-red-500/10 text-red-500 border border-red-500/20 py-4 rounded-2xl font-black hover:bg-red-500 hover:text-white transition" onclick="handleLogout()">ABANDON SESSION</button>
             </div>
         </div>
     </section>
 
-    <!-- VIEW: ADMIN (HIGH COUNCIL) -->
+    <!-- VIEW: ADMIN DASHBOARD -->
     <section id="view-admin" class="page-view">
-        <div class="max-w-5xl mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black text-red-500 mb-10 uppercase italic tracking-tighter">High Council Dashboard</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div class="bg-[#0a0a0a] border-l-4 border-red-500 p-6 rounded-2xl">
-                    <p class="text-[10px] text-gray-500 font-black uppercase mb-2">Status</p>
-                    <p class="text-xl font-black text-white">ADMIN ACTIVE</p>
+        <div class="max-w-4xl mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black text-red-500 mb-10 uppercase italic">Council Settings</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-red-500/20 text-center">
+                    <h3 class="font-black mb-4">Security Protocols</h3>
+                    <button class="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg mb-4" onclick="showView('bans')">🚫 MANAGE BAN LIST</button>
+                    <button class="w-full bg-white/5 text-gray-400 font-black py-4 rounded-2xl" onclick="handleLogout()">TERMINATE SESSION</button>
                 </div>
-                <div class="bg-[#0a0a0a] border-l-4 border-green-500 p-6 rounded-2xl">
-                    <p class="text-[10px] text-gray-500 font-black uppercase mb-2">Target</p>
-                    <p class="text-xl font-black text-white">CONNOR (IQ: 0)</p>
-                </div>
-                <button class="bg-red-600 text-white font-black py-6 rounded-2xl shadow-[0_0_20px_rgba(255,0,0,0.3)]" onclick="handleLogout()">PURGE CACHE & LOGOUT</button>
-            </div>
-            <div class="bg-[#0a0a0a] border border-red-500/20 p-8 rounded-[2.5rem]">
-                <h3 class="text-lg font-black text-red-500 mb-6 uppercase italic">Global Broadcasts</h3>
-                <div id="admin-messages" class="space-y-4">
-                    <p class="text-gray-600 text-xs italic">Loading council feeds...</p>
+                <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-green-500/20">
+                    <h3 class="font-black mb-4 text-green-500 uppercase">Council Watch</h3>
+                    <p class="text-xs text-gray-500 italic">Connor IQ: Error 404. Sod-erdine is still acting tuff. Leo is being Leo.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- MODAL: COMPOSE -->
-    <div id="composeModal" class="modal"><div class="modal-content">
-        <h2 class="text-xl font-black text-green-500 mb-6 uppercase italic">New Scroll</h2>
-        <input type="text" id="msgRecipient" class="crib-input" placeholder="To: (Name, or GLOBAL)">
-        <input type="text" id="msgSubject" class="crib-input" placeholder="Subject">
-        <textarea id="msgBody" class="crib-textarea h-32" placeholder="Write scroll content..."></textarea>
-        <button id="final-send" class="vault-btn !py-4 !rounded-2xl !text-lg" onclick="dispatchMessage()">DISPATCH</button>
-        <button class="w-full mt-4 text-gray-600 font-bold text-xs uppercase" onclick="closeCompose()">Cancel</button>
-    </div></div>
+    <!-- VIEW: BAN PAGE -->
+    <section id="view-bans" class="page-view">
+        <div class="max-w-2xl mx-auto px-6 pb-32">
+            <div class="flex justify-between items-center mb-10">
+                <h2 class="text-4xl font-black text-red-500 uppercase italic">Blicked List</h2>
+                <button onclick="showView('admin')" class="text-[10px] font-black text-gray-500">BACK</button>
+            </div>
+            <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-red-500/20 mb-8">
+                <input type="email" id="ban-email-in" class="crib-input" placeholder="User ID to blick...">
+                <input type="text" id="ban-reason-in" class="crib-input" placeholder="Reason (The Roast)">
+                <input type="number" id="ban-hours-in" class="crib-input" placeholder="Hours (Empty = Perma-Blick)">
+                <button class="w-full bg-red-600 py-3 rounded-xl font-black" onclick="dispatchBan()">EXECUTE BAN</button>
+            </div>
+            <div id="ban-list-container" class="space-y-4"></div>
+        </div>
+    </section>
 
     <div id="game-layer" style="display:none; position:fixed; inset:0; background:black; z-index:20000;">
-        <button onclick="exitGame()" class="fixed top-6 left-6 z-[20001] bg-black/80 text-white w-12 h-12 rounded-full border border-white/10 font-bold hover:bg-green-500">✕</button>
+        <button onclick="exitGame()" class="fixed top-6 left-6 z-[20001] bg-black/80 text-white w-12 h-12 rounded-full border border-white/10 font-bold">✕</button>
         <iframe id="game-frame" src="about:blank" class="w-full h-full border-none" allowfullscreen></iframe>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, collection, addDoc, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // Initialize EmailJS
-        emailjs.init("VlUq2vj8eL6tN_9V4"); // Your Public Key
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -284,194 +215,141 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        const appId = 'the-game-dungeon-4d75d';
 
         let currentUser = null;
-        let iconMap = {};
         const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+
+        // --- GLOBAL BAN MONITORING & REDIRECT ---
+        function startGlobalBanWatch() {
+            const banCol = collection(db, 'artifacts', appId, 'public', 'data', 'banned_users');
+            onSnapshot(banCol, (snap) => {
+                const now = Date.now();
+                let amIBanned = false;
+
+                snap.forEach(d => {
+                    const data = d.data();
+                    const email = d.id;
+                    const expiry = data.expiresAt || Infinity;
+
+                    if (now < expiry) {
+                        if (currentUser && currentUser.email?.toLowerCase() === email) {
+                            amIBanned = true;
+                        }
+                    }
+                });
+
+                if (amIBanned) {
+                    // ACTUALLY REDIRECT to the void
+                    window.location.replace("https://thegamedungeon.github.io/blicked/");
+                }
+
+                const listContainer = document.getElementById('ban-list-container');
+                if (listContainer) {
+                    listContainer.innerHTML = '';
+                    snap.forEach(d => {
+                        const data = d.data();
+                        const isPerma = !data.expiresAt;
+                        const returnTime = isPerma ? "NEVER (PERMA)" : new Date(data.expiresAt).toLocaleString();
+                        
+                        const card = document.createElement('div');
+                        card.className = 'ban-card';
+                        card.innerHTML = `
+                            <div class="text-left">
+                                <div class="text-xs font-black text-red-500">${d.id}</div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase">${data.reason || 'Council Order'}</div>
+                                <div class="text-[8px] text-gray-600 mt-1">LOG BACK IN: ${returnTime}</div>
+                            </div>
+                            <button onclick="unbanUser('${d.id}')" class="text-[10px] text-green-500 font-black hover:underline">UNBLICK</button>
+                        `;
+                        listContainer.appendChild(card);
+                    });
+                }
+            });
+        }
 
         window.showView = (id) => {
             document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
-            const target = document.getElementById('view-' + id);
-            if(target) target.classList.add('active-view');
+            document.getElementById('view-' + id).classList.add('active-view');
         };
 
         window.handleAccountClick = () => {
-            if (!currentUser) {
-                showView('login');
-            } else if (admins.includes(currentUser.email.toLowerCase())) {
-                showView('admin');
-            } else {
-                showView('accounts');
-            }
+            if (!currentUser) showView('login');
+            else if (admins.includes(currentUser.email.toLowerCase())) showView('admin');
+            else showView('home');
         };
 
-        // --- MAILROOM & NOTIFICATIONS ---
-        window.dispatchMessage = async () => {
-            const btn = document.getElementById('final-send');
-            const recipient = document.getElementById('msgRecipient').value.trim();
-            const subject = document.getElementById('msgSubject').value.trim();
-            const body = document.getElementById('msgBody').value.trim();
-
-            if(!body) return;
-
-            btn.disabled = true; btn.innerText = "SENDING SCROLL...";
-
-            try {
-                // 1. Save to Firestore for the UI
-                await addDoc(collection(db, "messages"), {
-                    senderName: currentUser.email.split('@')[0],
-                    senderEmail: currentUser.email,
-                    senderUid: currentUser.uid,
-                    recipient,
-                    subject,
-                    body,
-                    timestamp: serverTimestamp()
-                });
-
-                // 2. Fire EmailJS Notification
-                await emailjs.send("service_x8s8e8r", "template_n6f6u6n", {
-                    to_name: recipient,
-                    from_name: currentUser.email.split('@')[0],
-                    message: body,
-                    subject_line: subject,
-                    reply_to: currentUser.email
-                });
-
-                closeCompose();
-            } catch (e) {
-                console.error(e);
-                alert("Protocol blicked. Check connection.");
-            } finally {
-                btn.disabled = false; btn.innerText = "DISPATCH";
-            }
+        window.handleLogin = () => {
+            const e = document.getElementById('email-in').value;
+            const p = document.getElementById('pass-in').value;
+            signInWithEmailAndPassword(auth, e, p).catch(err => alert("GATEKEEPER REJECTED: " + err.message));
         };
 
-        async function loadIconMap() {
-            try {
-                const res = await fetch('/storage/photos/pictures.txt?v=' + Date.now());
-                if (res.ok) {
-                    const text = await res.text();
-                    text.split('\n').forEach(line => {
-                        if (line.includes('=')) {
-                            const [name, file] = line.split('=').map(s => s.trim().toLowerCase());
-                            iconMap[name] = `/storage/photos/${file}`;
-                        }
-                    });
-                }
-            } catch (e) {}
-        }
+        window.handleCreateAccount = () => {
+            const e = document.getElementById('email-in').value;
+            const p = document.getElementById('pass-in').value;
+            createUserWithEmailAndPassword(auth, e, p).catch(err => alert("ERROR: " + err.message));
+        };
 
-        const games = [
-            { name: 'Ragdoll Hit', logo: '/storage/photos/rh.png' },
-            { name: 'Cookie Clicker', logo: '/storage/photos/cc.png' },
-            { name: 'Geometry Dash', logo: '/storage/photos/gd.png' },
-            { name: 'Polytrack', logo: '/storage/photos/polytrack.png' },
-            { name: 'Minecraft', logo: '/storage/photos/minecraft.png' },
-            { name: 'Proxycrib', logo: '/storage/photos/proxicrib.png' },
-            { name: 'Kick The Sod', logo: '/storage/photos/kts.png' }
-        ];
+        window.handleGoogleLogin = () => signInWithPopup(auth, provider);
+        window.handleLogout = () => signOut(auth).then(() => showView('home'));
 
-        function syncStats(uid) {
-            onSnapshot(doc(db, "playtime", uid), (snap) => {
-                const grid = document.getElementById('records-grid');
-                if (!snap.exists()) return;
-                const data = snap.data();
-                grid.innerHTML = '';
-                let totalMin = 0, maxMin = 1;
-                const entries = Object.entries(data).filter(([_, v]) => typeof v === 'number');
-                entries.forEach(([_, m]) => { totalMin += m; if(m > maxMin) maxMin = m; });
-                document.getElementById('total-time-val').innerText = (totalMin / 60).toFixed(1) + "h";
-                entries.sort((a,b) => b[1] - a[1]).forEach(([name, min]) => {
-                    const card = document.createElement('div');
-                    card.className = 'record-card';
-                    const icon = iconMap[name.toLowerCase()] || 'https://placehold.co/50/000/0f0?text=G';
-                    card.innerHTML = `<img src="${icon}" class="record-icon"><div class="flex-grow">
-                        <div class="flex justify-between font-black uppercase text-[10px]"><span>${name}</span><span>${(min/60).toFixed(1)}h</span></div>
-                        <div class="progress-bar"><div class="progress-fill" style="width: ${(min/maxMin)*100}%"></div></div>
-                    </div>`;
-                    grid.appendChild(card);
-                });
+        window.dispatchBan = async () => {
+            const email = document.getElementById('ban-email-in').value.trim().toLowerCase();
+            const reason = document.getElementById('ban-reason-in').value.trim();
+            const hours = document.getElementById('ban-hours-in').value;
+            
+            if(!email) return;
+
+            const expiresAt = hours ? Date.now() + (parseInt(hours) * 60 * 60 * 1000) : null;
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', email), {
+                banned: true,
+                reason: reason || "Oink Oink Level Threat",
+                expiresAt: expiresAt,
+                timestamp: Date.now()
             });
-        }
 
-        function loadMail() {
-            onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(100)), (snap) => {
-                const list = document.getElementById('thread-list');
-                list.innerHTML = '';
-                const threads = {};
-                snap.forEach(d => {
-                    const m = d.data();
-                    const me = currentUser.email.toLowerCase();
-                    const r = m.recipient.toLowerCase();
-                    if(r === "global" || r === me || m.senderUid === currentUser.uid) {
-                        const s = m.subject.toLowerCase() || "no subject";
-                        if(!threads[s]) threads[s] = [];
-                        threads[s].push(m);
-                    }
-                });
-                Object.keys(threads).reverse().forEach(s => {
-                    const group = threads[s];
-                    const div = document.createElement('div');
-                    div.className = 'thread-group';
-                    div.innerHTML = `<div class="thread-header"><span>${s.toUpperCase()}</span></div>`;
-                    group.forEach(msg => {
-                        div.innerHTML += `<div class="message-card">
-                            <span class="tag ${msg.recipient === 'global' ? 'tag-global' : ''}">${msg.recipient}</span>
-                            <div class="text-[10px] text-green-500 font-bold mb-1 uppercase">${msg.senderName}</div>
-                            <div class="text-sm text-gray-300">${msg.body}</div>
-                        </div>`;
-                    });
-                    list.appendChild(div);
-                });
-            });
-        }
+            document.getElementById('ban-email-in').value = '';
+            document.getElementById('ban-reason-in').value = '';
+            document.getElementById('ban-hours-in').value = '';
+        };
+
+        window.unbanUser = async (id) => {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', id));
+        };
 
         onAuthStateChanged(auth, async (user) => {
             const slot = document.getElementById('auth-status');
             if (user) {
                 currentUser = user;
-                const name = user.email.split('@')[0];
                 const isAdmin = admins.includes(user.email.toLowerCase());
-                slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">${isAdmin ? '🛡️ ADMIN' : '👤 ' + name}</button>`;
-                document.getElementById('hero-email').innerText = user.email;
-                document.getElementById('hero-initial').innerText = name[0].toUpperCase();
-                await loadIconMap();
-                syncStats(user.uid);
-                loadMail();
+                slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">${isAdmin ? '🛡️ COUNCIL' : '👤 ' + user.email.split('@')[0]}</button>`;
+                if(isAdmin && document.getElementById('view-login').classList.contains('active-view')) showView('admin');
             } else {
                 currentUser = null;
                 slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>`;
+                signInAnonymously(auth).catch(() => {}); 
             }
         });
 
-        window.handleLogin = () => signInWithEmailAndPassword(auth, document.getElementById('email-in').value, document.getElementById('pass-in').value).then(() => {
-            if(admins.includes(auth.currentUser.email.toLowerCase())) showView('admin');
-            else showView('home');
-        }).catch(e => alert("Access Denied."));
-
-        window.handleLogout = () => signOut(auth).then(() => showView('home'));
-
-        // Initialize Vault
-        const vault = document.getElementById('vaultGrid');
+        // Init
+        startGlobalBanWatch();
+        const games = ['Ragdoll Hit', 'Cookie Clicker', 'Geometry Dash', 'Polytrack', 'Minecraft', 'Proxycrib', 'Kick The Sod'];
+        const grid = document.getElementById('vaultGrid');
         games.forEach(g => {
             const card = document.createElement('div');
-            card.className = 'game-card';
+            card.className = 'game-card p-8 bg-[#0f0f0f] rounded-[2rem] cursor-pointer border border-transparent hover:border-green-500 transition';
             card.onclick = () => {
-                document.getElementById('game-frame').src = `https://thegamedungeon.github.io/storage/games/${g.name.toLowerCase().replace(/\s+/g, '_')}/`;
+                document.getElementById('game-frame').src = `https://thegamedungeon.github.io/storage/games/${g.toLowerCase().replace(/\s+/g, '_')}/`;
                 document.getElementById('game-layer').style.display = 'block';
             };
-            card.innerHTML = `<img src="${g.logo}" onerror="this.src='https://placehold.co/100/000/0f0?text=G'" class="w-[90px] h-[90px] object-cover rounded-3xl mx-auto mb-4">
-                <h3 class="font-black text-xs uppercase">${g.name}</h3>`;
-            vault.appendChild(card);
+            card.innerHTML = `<h3 class="font-black text-xs uppercase">${g}</h3>`;
+            grid.appendChild(card);
         });
 
         window.exitGame = () => { document.getElementById('game-layer').style.display = 'none'; document.getElementById('game-frame').src = 'about:blank'; };
-        window.openCompose = () => document.getElementById('composeModal').style.display = 'flex';
-        window.closeCompose = () => document.getElementById('composeModal').style.display = 'none';
-        window.filterVault = () => {
-            const val = document.getElementById('vaultSearch').value.toLowerCase();
-            document.querySelectorAll('.game-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(val) ? 'block' : 'none');
-        };
     </script>
 </body>
-</html>￼Enter
+</html>
