@@ -2,383 +2,236 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE CRIB | HPMS HIGH COUNCIL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THE CRIB | V6 TABS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        :root { --green-belt: #00ff00; --bg-black: #050505; --blick-red: #ff3333; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-black); color: white; margin: 0; overflow: hidden; height: 100vh; touch-action: none; }
         
-        :root {
-            --green-belt: #00ff00;
-            --bg-black: #050505;
-            --admin-red: #ff0033;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-black);
-            color: white;
-            margin: 0;
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        .page-view {
-            display: none;
-            width: 100%;
-            height: 100vh;
-            padding-top: 80px;
-            overflow-y: auto;
-            position: absolute;
-            top: 0; left: 0;
-            background: var(--bg-black);
-        }
-        .active-view { 
-            display: block !important; 
-            z-index: 50; 
-            animation: appFade 0.3s ease-in-out; 
-        }
-
-        @keyframes appFade {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .nav-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 24px; position: fixed; top: 0; width: 100%; height: 70px;
-            background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(20px);
-            z-index: 9000; border-bottom: 1px solid rgba(0, 255, 0, 0.1);
-        }
+        .crib-logo { text-shadow: 0 0 15px var(--green-belt); color: var(--green-belt); font-weight: 900; font-style: italic; letter-spacing: -1.5px; }
         
-        .crib-logo {
-            text-shadow: 0 0 15px var(--green-belt);
-            color: var(--green-belt);
-            font-weight: 900;
-            font-style: italic;
-            letter-spacing: -1.5px;
-        }
+        #main-slider { display: flex; width: 400vw; height: 100vh; transition: transform 0.5s cubic-bezier(0.2, 1, 0.3, 1); will-change: transform; }
+        .page { width: 100vw; height: 100vh; flex-shrink: 0; padding: 100px 20px 120px 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
 
-        .vault-btn {
-            background: rgba(0, 255, 0, 0.03);
-            border: 2px solid var(--green-belt);
-            color: var(--green-belt);
-            padding: 18px 0;
-            border-radius: 24px;
-            font-weight: 900;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            width: 100%;
-            font-size: 1rem;
-            text-align: center;
+        /* BLICK HAMMER SCREEN */
+        #blick-hammer-page {
+            position: fixed; inset: 0; background: #000; z-index: 99999;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px; text-align: center;
         }
+        .hammer-icon { font-size: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 20px var(--blick-red)); animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.1); opacity: 1; } }
 
-        .vault-btn:hover {
-            background: var(--green-belt);
-            color: black;
-            box-shadow: 0 0 30px var(--green-belt);
-            transform: scale(1.02);
+        /* NAVIGATION */
+        #nav-bar {
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; height: 70px;
+            background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(20px);
+            border-radius: 25px; border: 1px solid rgba(255,255,255,0.08);
+            z-index: 1000; display: flex; justify-content: space-around; align-items: center;
         }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.4; transition: 0.3s; cursor: pointer; flex: 1; -webkit-tap-highlight-color: transparent; }
+        .nav-item.active { opacity: 1; color: var(--green-belt); transform: translateY(-2px); }
+        .nav-dot { width: 4px; height: 4px; background: var(--green-belt); border-radius: 50%; opacity: 0; transition: 0.3s; box-shadow: 0 0 10px var(--green-belt); }
+        .active .nav-dot { opacity: 1; }
 
-        .account-btn {
-            background: rgba(0, 255, 0, 0.05);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            color: var(--green-belt);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 900;
-            text-transform: uppercase;
-            cursor: pointer;
-        }
+        .btn-primary { background: var(--green-belt); color: black; font-weight: 900; padding: 18px; border-radius: 20px; width: 100%; text-transform: uppercase; border: none; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(15px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #080808; border: 1px solid #151515; border-radius: 35px; width: 100%; max-width: 380px; padding: 35px; }
 
-        .crib-input {
-            width: 100%; padding: 18px; background: #0a0a0a;
-            border: 1px solid #1a1a1a; border-radius: 20px; color: white; font-weight: bold;
-            margin-bottom: 12px; outline: none;
-        }
-        .crib-input:focus { border-color: var(--green-belt); }
-
-        .card-dark {
-            background: #0a0a0a;
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 2.5rem;
-            padding: 2rem;
-        }
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="nav-header">
-        <div class="crib-logo text-2xl cursor-pointer" onclick="showView('home')">THE CRIB</div>
-        <div class="flex items-center">
-            <button class="mr-6 text-xl" onclick="showView('notifications')">🔔</button>
-            <div id="auth-status">
-                <button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>
-            </div>
+    <!-- THE BLICK HAMMER PAGE (REDIRECTOR) -->
+    <div id="blick-hammer-page">
+        <div class="hammer-icon">🔨</div>
+        <h1 class="text-4xl font-black italic text-red-600 mb-2 uppercase tracking-tighter">Blick Hammer Dropped</h1>
+        <p class="text-zinc-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-8">Verification Failed: Security Layer Alpha</p>
+        
+        <div class="bg-zinc-900/50 border border-red-900/30 p-8 rounded-[35px] w-full max-w-sm">
+            <p class="text-[9px] text-zinc-500 uppercase font-black mb-4 tracking-widest">Redirecting to Blick Zone in...</p>
+            <div id="redirect-timer" class="text-6xl font-mono font-black text-white italic">3</div>
+            <p id="sentence-preview" class="text-[9px] text-red-500/50 mt-6 uppercase font-bold tracking-tighter">Calculating remaining sentence...</p>
         </div>
     </div>
 
-    <!-- VIEW: HOME -->
-    <section id="view-home" class="page-view active-view">
-        <div class="flex flex-col items-center justify-center min-h-[85vh] text-center px-6">
-            <h1 class="text-7xl sm:text-9xl font-black crib-logo mb-2 tracking-tighter">THE CRIB</h1>
-            <p class="text-gray-600 uppercase tracking-[0.5em] text-[10px] mb-12 font-bold italic">HPMS HIGH COUNCIL</p>
-            <div class="w-64 space-y-4">
-                <button class="vault-btn" onclick="showView('vault')">🎮 VAULT</button>
-                <button class="w-full text-[10px] font-black text-gray-500 tracking-[0.3em] uppercase" onclick="showView('records')">View Records</button>
-            </div>
+    <!-- UI HEADERS -->
+    <div class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-[500]">
+        <div class="crib-logo text-xl">THE CRIB V6</div>
+        <div id="auth-status" class="bg-zinc-900/60 px-4 py-2 rounded-full border border-white/5 text-[9px] font-black uppercase tracking-widest">
+            INITIALIZING...
         </div>
-    </section>
+    </div>
 
-    <!-- VIEW: VAULT -->
-    <section id="view-vault" class="page-view">
-        <div class="max-w-6xl mx-auto px-6 pb-32">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-4xl font-black crib-logo uppercase italic">The Vault</h2>
-                <div class="text-[10px] text-gray-500 font-bold">8 GAMES DEPLOYED</div>
-            </div>
-            <div id="vaultGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-        </div>
-    </section>
-
-    <!-- VIEW: NOTIFICATIONS -->
-    <section id="view-notifications" class="page-view">
-        <div class="max-w-2xl mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black text-white mb-8 uppercase italic">Council Comms</h2>
-            <div id="notif-list" class="space-y-4">
-                <div class="card-dark border-l-4 border-l-green-500">
-                    <p class="text-sm font-bold">SERVER STATUS: ACTIVE</p>
-                    <p class="text-xs text-gray-500 mt-2">Gatekeeper V4 is live. Connor is still a zesty bot. Stay safe in the halls.</p>
+    <!-- CONTENT SLIDER -->
+    <div id="main-slider">
+        <!-- DUNGEON -->
+        <section class="page">
+            <div class="w-full max-w-md">
+                <h2 class="text-4xl font-black italic uppercase leading-none">The<br>Dungeon</h2>
+                <div class="h-1 w-12 bg-green-500 mt-4 mb-8"></div>
+                <div class="grid grid-cols-2 gap-4 w-full pb-32">
+                    <div class="p-8 border border-white/5 bg-zinc-900/20 rounded-3xl text-center opacity-20 text-[10px] font-black">LOCKED</div>
+                    <div class="p-8 border border-white/5 bg-zinc-900/20 rounded-3xl text-center opacity-20 text-[10px] font-black">LOCKED</div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- VIEW: RECORDS -->
-    <section id="view-records" class="page-view">
-        <div class="max-w-2xl mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black text-white mb-8 uppercase italic">The Records</h2>
-            <div class="card-dark text-center">
-                <p class="text-gray-500 text-sm mb-6 font-bold uppercase tracking-widest">Hall of Fame</p>
-                <div class="space-y-4">
-                    <div class="flex justify-between border-b border-white/5 pb-2">
-                        <span class="text-green-500 font-black italic">ALEX</span>
-                        <span class="text-gray-400 font-mono">999,999+</span>
-                    </div>
-                    <div class="flex justify-between border-b border-white/5 pb-2">
-                        <span class="text-white font-bold italic">DAIMYAN</span>
-                        <span class="text-gray-400 font-mono">0 (Thief)</span>
-                    </div>
+        <!-- HOME -->
+        <section class="page">
+            <div class="mt-24 text-center w-full max-w-sm">
+                <h1 class="text-9xl font-black italic mb-10 tracking-tighter">V6</h1>
+                <div id="home-ui" class="bg-zinc-900/20 p-10 rounded-[45px] border border-white/5 backdrop-blur-xl">
+                    <button onclick="document.getElementById('auth-modal').style.display='flex'" class="btn-primary">SYNC COUNCIL ID</button>
+                    <p class="text-[8px] text-zinc-600 mt-6 font-bold uppercase tracking-widest">Official Student Spot Terminal</p>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- VIEW: LOGIN -->
-    <section id="view-login" class="page-view">
-        <div class="flex items-center justify-center min-h-[80vh] px-6">
-            <div class="w-full max-w-sm card-dark text-center">
-                <h2 class="text-3xl font-black crib-logo mb-8 uppercase italic">Gatekeeper</h2>
-                <input type="email" id="email-in" class="crib-input" placeholder="Hero ID (Email)">
-                <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
-                <button class="vault-btn mb-4" onclick="handleLogin()">ENTER</button>
-                <div class="flex gap-2">
-                    <button class="w-1/2 bg-white/5 text-[10px] py-3 rounded-xl font-black" onclick="handleCreateAccount()">REGISTER</button>
-                    <button class="w-1/2 bg-white text-black text-[10px] py-3 rounded-xl font-black" onclick="handleGoogleLogin()">GOOGLE</button>
-                </div>
+        <!-- COUNCIL -->
+        <section class="page">
+            <div class="w-full max-w-md">
+                <h2 class="text-4xl font-black italic mb-8">COUNCIL</h2>
+                <div class="p-10 border border-white/5 rounded-3xl text-center text-zinc-700 font-black uppercase text-xs">Verify your rank to enter</div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- VIEW: SETTINGS (NON-ADMIN) -->
-    <section id="view-settings" class="page-view">
-        <div class="max-w-md mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black text-white mb-8 uppercase italic">Settings</h2>
-            <div class="card-dark space-y-6">
-                <div>
-                    <label class="text-[10px] text-gray-500 font-black uppercase">Identity</label>
-                    <p id="user-display-email" class="text-sm font-bold text-green-500">loading...</p>
-                </div>
-                <button class="w-full bg-red-600/10 text-red-500 font-black py-4 rounded-2xl border border-red-500/20" onclick="handleLogout()">TERMINATE SESSION</button>
+        <!-- SYSTEM -->
+        <section class="page">
+            <div class="w-full max-w-md">
+                <h2 class="text-4xl font-black italic mb-10 uppercase">System</h2>
+                <button id="logout-btn" class="w-full p-5 border-2 border-red-500/20 text-red-500 font-black rounded-3xl uppercase text-[10px] tracking-[0.2em]">LOGOUT</button>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
-    <!-- VIEW: ADMIN DASHBOARD -->
-    <section id="view-admin" class="page-view">
-        <div class="max-w-4xl mx-auto px-6 pb-32">
-            <h2 class="text-4xl font-black text-red-500 mb-10 uppercase italic">Council Settings</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="card-dark border-red-500/20">
-                    <h3 class="font-black mb-4">Security Protocols</h3>
-                    <button class="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg mb-4" onclick="showView('bans')">🚫 MANAGE BLICK LIST</button>
-                    <button class="w-full bg-white/5 text-gray-400 font-black py-4 rounded-2xl" onclick="handleLogout()">TERMINATE SESSION</button>
-                </div>
-                <div class="card-dark border-green-500/20">
-                    <h3 class="font-black mb-4 text-green-500 uppercase">Council Log</h3>
-                    <p class="text-xs text-gray-500 italic">Connor is still zesty. Sod-erdine is acting tuff again. Abas is watching shorts. Daimyan stole my seat.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- TABS -->
+    <nav id="nav-bar">
+        <div class="nav-item" onclick="swipeTo(0)"><span class="text-[8px] font-black">DUNGEON</span><div class="nav-dot"></div></div>
+        <div class="nav-item active" onclick="swipeTo(1)"><span class="text-[8px] font-black">CRIB</span><div class="nav-dot"></div></div>
+        <div class="nav-item" onclick="swipeTo(2)"><span class="text-[8px] font-black">COUNCIL</span><div class="nav-dot"></div></div>
+        <div class="nav-item" onclick="swipeTo(3)"><span class="text-[8px] font-black">SYS</span><div class="nav-dot"></div></div>
+    </nav>
 
-    <!-- VIEW: BAN PAGE -->
-    <section id="view-bans" class="page-view">
-        <div class="max-w-2xl mx-auto px-6 pb-32">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-4xl font-black text-red-500 uppercase italic">Blicked List</h2>
-                <button onclick="showView('admin')" class="text-[10px] font-black text-gray-500">BACK</button>
-            </div>
-            <div class="card-dark border-red-500/20 mb-8">
-                <input type="email" id="ban-email-in" class="crib-input" placeholder="Email to blick...">
-                <button class="w-full bg-red-600 py-3 rounded-xl font-black" onclick="dispatchBan()">EXECUTE</button>
-            </div>
-            <div id="ban-list-container" class="space-y-4"></div>
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-center font-black italic text-xl mb-6 uppercase">Sync ID</h3>
+            <input id="email-in" type="email" placeholder="COUNCIL EMAIL" class="w-full bg-zinc-900 p-4 rounded-2xl mb-3 text-xs font-bold border border-white/5 outline-none text-white">
+            <input id="pass-in" type="password" placeholder="PASSWORD" class="w-full bg-zinc-900 p-4 rounded-2xl mb-6 text-xs font-bold border border-white/5 outline-none text-white">
+            <button id="signin-btn" class="btn-primary">VERIFY IDENTITY</button>
+            <button onclick="document.getElementById('auth-modal').style.display='none'" class="w-full mt-4 text-[9px] font-bold text-zinc-600 uppercase">Cancel</button>
         </div>
-    </section>
-
-    <!-- GAME OVERLAY -->
-    <div id="game-layer" style="display:none; position:fixed; inset:0; background:black; z-index:20000;">
-        <button onclick="exitGame()" class="fixed top-6 left-6 z-[20001] bg-black/80 text-white w-12 h-12 rounded-full border border-white/10 font-bold">✕</button>
-        <iframe id="game-frame" src="about:blank" class="w-full h-full border-none" allowfullscreen></iframe>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-            projectId: "the-game-dungeon-4d75d",
-            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-            messagingSenderId: "533459716906",
-            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
-        };
-
+        const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
-        const appId = 'the-game-dungeon-4d75d';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        let currentUser = null;
-        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+        async function checkBlickStatus(user) {
+            if (!user || user.isAnonymous) return;
 
-        window.showView = (id) => {
-            document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
-            const target = document.getElementById('view-' + id);
-            if(target) target.classList.add('active-view');
-        };
+            // Check if user document exists in the public users collection
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+            const snap = await getDoc(userRef);
 
-        window.handleAccountClick = () => {
-            if (!currentUser) showView('login');
-            else if (admins.includes(currentUser.email.toLowerCase())) showView('admin');
-            else {
-                document.getElementById('user-display-email').innerText = currentUser.email;
-                showView('settings');
-            }
-        };
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.blicked) {
+                    const now = Date.now();
+                    const unblickTimestamp = data.unblickDate; // Stored as Unix timestamp (ms)
 
-        // --- AUTH LOGIC ---
-        window.handleLogin = () => {
-            const e = document.getElementById('email-in').value.trim();
-            const p = document.getElementById('pass-in').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => alert("Gatekeeper: " + err.message));
-        };
-
-        window.handleCreateAccount = async () => {
-            const e = document.getElementById('email-in').value.trim();
-            const p = document.getElementById('pass-in').value;
-            if(!e || !p) return alert("Identify yourself.");
-            await signOut(auth); // Clear any temp session
-            createUserWithEmailAndPassword(auth, e, p)
-                .then(() => alert("Identity Registered."))
-                .catch(err => alert("Auth Error: " + err.message));
-        };
-
-        window.handleGoogleLogin = () => signInWithPopup(auth, provider);
-        window.handleLogout = () => signOut(auth).then(() => { currentUser = null; showView('home'); });
-
-        // --- BAN SYSTEM ---
-        function startBanWatch() {
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'banned_users'), (snap) => {
-                let blickedEmails = [];
-                const list = document.getElementById('ban-list-container');
-                if(list) list.innerHTML = '';
-
-                snap.forEach(d => {
-                    blickedEmails.push(d.id.toLowerCase());
-                    if(list) {
-                        const div = document.createElement('div');
-                        div.className = 'flex justify-between items-center bg-red-900/10 p-4 rounded-xl border border-red-500/20';
-                        div.innerHTML = `<span class="text-xs font-black text-red-500">${d.id}</span>
-                                       <button onclick="unbanUser('${d.id}')" class="text-[10px] text-green-500 font-black">UNBLICK</button>`;
-                        list.appendChild(div);
+                    if (unblickTimestamp && now < unblickTimestamp) {
+                        // User is still serving their sentence
+                        initiateBlickRedirect(unblickTimestamp);
+                        return true;
+                    } else if (unblickTimestamp && now >= unblickTimestamp) {
+                        // Sentence finished! Update DB automatically
+                        await updateDoc(userRef, { blicked: false, unblickDate: null });
+                        return false;
+                    } else if (data.blicked && !unblickTimestamp) {
+                        // Permanent blick
+                        initiateBlickRedirect(null);
+                        return true;
                     }
-                });
-
-                if (currentUser && blickedEmails.includes(currentUser.email?.toLowerCase())) {
-                    window.location.replace("https://thegamedungeon.github.io/blicked/");
                 }
-            });
+            }
+            return false;
         }
 
-        window.dispatchBan = async () => {
-            const email = document.getElementById('ban-email-in').value.trim().toLowerCase();
-            if(!email) return;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', email), { timestamp: Date.now() });
-            document.getElementById('ban-email-in').value = '';
+        function initiateBlickRedirect(releaseTime) {
+            document.getElementById('blick-hammer-page').style.display = 'flex';
+            const timerEl = document.getElementById('redirect-timer');
+            const previewEl = document.getElementById('sentence-preview');
+
+            if (releaseTime) {
+                const diff = releaseTime - Date.now();
+                const days = Math.floor(diff / 86400000);
+                const hrs = Math.floor((diff % 86400000) / 3600000);
+                previewEl.innerText = `Sentence Remaining: ${days}D ${hrs}H`;
+            } else {
+                previewEl.innerText = "Sentence: ETERNAL (Cooked)";
+            }
+
+            // Start 3 second visual countdown then redirect
+            let count = 3;
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    timerEl.innerText = count;
+                } else {
+                    clearInterval(interval);
+                    timerEl.innerText = "BYE";
+                    // Redirecting to the /blicked/ subdirectory
+                    setTimeout(() => {
+                        window.location.href = '/blicked/';
+                    }, 500);
+                }
+            }, 1000);
+        }
+
+        onAuthStateChanged(auth, async user => {
+            const isBlicked = await checkBlickStatus(user);
+            if (isBlicked) return;
+
+            const isGuest = !user || user.isAnonymous;
+            document.getElementById('auth-status').innerText = isGuest ? "OINK OINK (GUEST)" : "COUNCIL RANK: VERIFIED";
+        });
+
+        window.swipeTo = (index) => {
+            document.getElementById('main-slider').style.transform = `translateX(-${index * 100}vw)`;
+            document.querySelectorAll('.nav-item').forEach((it, i) => it.classList.toggle('active', i === index));
         };
 
-        window.unbanUser = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', id));
-
-        // --- STATE SYNC ---
-        onAuthStateChanged(auth, async (user) => {
-            const slot = document.getElementById('auth-status');
-            if (user && !user.isAnonymous) {
-                currentUser = user;
-                const isAdmin = admins.includes(user.email.toLowerCase());
-                slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">${isAdmin ? '🛡️ COUNCIL' : '👤 ' + user.email.split('@')[0]}</button>`;
-            } else {
-                currentUser = null;
-                slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>`;
-                if(!user) signInAnonymously(auth).catch(()=>{});
+        document.getElementById('signin-btn').onclick = async () => {
+            const email = document.getElementById('email-in').value;
+            const pass = document.getElementById('pass-in').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                document.getElementById('auth-modal').style.display = 'none';
+            } catch(e) { 
+                console.error("Auth Error", e);
+                // Simple feedback without alert
+                document.getElementById('signin-btn').innerText = "FAILED";
+                setTimeout(() => document.getElementById('signin-btn').innerText = "VERIFY IDENTITY", 2000);
             }
-        });
+        };
 
-        // --- GAMES ---
-        const games = [
-            { name: 'Ragdoll Hit', id: 'ragdoll_hit' },
-            { name: 'Cookie Clicker', id: 'cookie_clicker' },
-            { name: 'Geometry Dash', id: 'geometry_dash' },
-            { name: 'Polytrack', id: 'polytrack' },
-            { name: 'Minecraft', id: 'minecraft' },
-            { name: 'Proxycrib', id: 'proxycrib' },
-            { name: 'Kick The Sod', id: 'kick_the_sod' },
-            { name: 'Basket Random', id: 'basket_random' }
-        ];
+        document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => signInAnonymously(auth));
 
-        const grid = document.getElementById('vaultGrid');
-        games.forEach(g => {
-            const card = document.createElement('div');
-            card.className = 'p-6 bg-[#0a0a0a] rounded-[2rem] cursor-pointer border border-white/5 hover:border-green-500 transition-all text-center';
-            card.onclick = () => {
-                document.getElementById('game-frame').src = `https://thegamedungeon.github.io/storage/games/${g.id}/`;
-                document.getElementById('game-layer').style.display = 'block';
-            };
-            card.innerHTML = `<h3 class="font-black text-[10px] uppercase italic text-gray-400 mb-2">Game</h3>
-                             <div class="font-black text-xs uppercase">${g.name}</div>`;
-            grid.appendChild(card);
-        });
-
-        window.exitGame = () => { document.getElementById('game-layer').style.display = 'none'; document.getElementById('game-frame').src = 'about:blank'; };
-
-        startBanWatch();
+        // Initial background sign in
+        signInAnonymously(auth);
     </script>
 </body>
 </html>
