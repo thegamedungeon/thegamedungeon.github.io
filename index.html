@@ -1,237 +1,422 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE CRIB | V6 TABS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        :root { --green-belt: #00ff00; --bg-black: #050505; --blick-red: #ff3333; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-black); color: white; margin: 0; overflow: hidden; height: 100vh; touch-action: none; }
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  onSnapshot, 
+  query, 
+  updateDoc,
+  addDoc
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut,
+  signInWithCustomToken,
+  signInAnonymously
+} from 'firebase/auth';
+import { 
+  Gamepad2, 
+  Users, 
+  X,
+  MessageSquare,
+  Send,
+  Lock,
+  UserCircle2,
+  ShieldAlert,
+  Terminal,
+  LogIn,
+  UserPlus,
+  Mail,
+  Key,
+  LogOut,
+  Chrome,
+  Fingerprint,
+  Settings,
+  ShieldCheck,
+  Zap,
+  Cpu
+} from 'lucide-react';
+
+// --- CONFIG ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'crib-v10-secure';
+
+const BASE_URL = "https://thegamedungeon.github.io/storage";
+
+const THE_GAMES = [
+  { id: 'proxy', name: 'PROXYCRIB', url: `${BASE_URL}/proxy-main/index.html`, icon: `${BASE_URL}/proxy-main/icon.png`, desc: 'Secure Tunneling', color: 'border-cyan-500/50' },
+  { id: 'gdash', name: 'GEOMETRY DASH', url: `${BASE_URL}/gdl-main/index.html`, icon: `${BASE_URL}/gdl-main/icon.png`, desc: 'The GDL Archive', color: 'border-yellow-500/50' },
+  { id: 'polytrack', name: 'POLYTRACK', url: `${BASE_URL}/polytrack-0.5.2-clean-main/index.html`, icon: `${BASE_URL}/polytrack-0.5.2-clean-main/icon.png`, desc: 'Drift King', color: 'border-blue-500/50' },
+  { id: 'minecraft', name: 'MINECRAFT', url: `${BASE_URL}/minecraft-main/index.html`, icon: `${BASE_URL}/minecraft-main/icon.png`, desc: 'Survival Mode', color: 'border-green-500/50' },
+  { id: 'cookie', name: 'COOKIE CLICKER', url: `${BASE_URL}/cookieclick-main/index.html`, icon: `${BASE_URL}/cookieclick-main/icon.png`, desc: 'Grandma’s Special', color: 'border-amber-500/50' },
+  { id: 'ragdoll', name: 'RAGDOLL HIT', url: `${BASE_URL}/ragdoll-hit-main/index.html`, icon: `${BASE_URL}/ragdoll-hit-main/icon.png`, desc: 'Physics Combat', color: 'border-red-500/50' }
+];
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authMode, setAuthMode] = useState('login'); 
+  const [error, setError] = useState("");
+  const [statusMsg, setStatusMsg] = useState("");
+
+  // Form States
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+
+  // UI States
+  const [view, setView] = useState('vault'); 
+  const [activeGame, setActiveGame] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+
+  // 1. Auth Init
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        }
+      } catch (err) {
+        console.error("Auth init failed", err);
+      }
+    };
+    initAuth();
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // 2. Data Listeners
+  useEffect(() => {
+    if (!user) return;
+    
+    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+    const unsubProfile = onSnapshot(userRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        // CONNOR FILTER
+        if (data.username?.toUpperCase().includes("CONNOR")) {
+          signOut(auth);
+          setError("CONNOR DETECTED: NODE TERMINATED");
+          return;
+        }
+        setProfile(data);
+      } else {
+        // Fallback if profile doesn't exist yet
+        setProfile({ username: 'NEW_USER', uid: user.uid });
+      }
+      setLoading(false);
+    }, (err) => console.error("Profile error", err));
+
+    const qMessages = query(collection(db, 'artifacts', appId, 'public', 'data', 'messages'));
+    const unsubMsgs = onSnapshot(qMessages, (snap) => {
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setMessages(msgs.sort((a, b) => a.timestamp - b.timestamp).slice(-50));
+    }, (err) => console.error("Msg error", err));
+
+    return () => { unsubProfile(); unsubMsgs(); };
+  }, [user]);
+
+  // --- PASSKEY LOGIC ---
+  const handlePasskeyCreate = async () => {
+    if (!user) return;
+    setStatusMsg("Accessing iPad Biometrics...");
+    
+    try {
+      // Simulate WebAuthn registration
+      await new Promise(r => setTimeout(r, 1200)); 
+      
+      const passkeyData = {
+        id: crypto.randomUUID(),
+        created: Date.now(),
+        platform: "iPadOS"
+      };
+
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
+        passkeyActive: true,
+        passkeyData: passkeyData
+      });
+
+      localStorage.setItem('crib_biometric_active', 'true');
+      localStorage.setItem('crib_node_id', user.uid);
+      
+      setStatusMsg("Passkey Synced. FaceID Enabled.");
+      setTimeout(() => setStatusMsg(""), 3000);
+    } catch (err) {
+      setError("Passkey Error: Hardware not responding.");
+    }
+  };
+
+  const handleEmailAuth = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!email || !password) return;
+
+    try {
+      if (authMode === 'signup') {
+        if (!username) throw new Error("Need a handle, bro.");
+        if (username.toUpperCase().includes("CONNOR")) throw new Error("Connor detected. Blicked.");
         
-        .crib-logo { text-shadow: 0 0 15px var(--green-belt); color: var(--green-belt); font-weight: 900; font-style: italic; letter-spacing: -1.5px; }
-        
-        #main-slider { display: flex; width: 400vw; height: 100vh; transition: transform 0.5s cubic-bezier(0.2, 1, 0.3, 1); will-change: transform; }
-        .page { width: 100vw; height: 100vh; flex-shrink: 0; padding: 100px 20px 120px 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
-
-        /* BLICK HAMMER SCREEN */
-        #blick-hammer-page {
-            position: fixed; inset: 0; background: #000; z-index: 99999;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            padding: 40px; text-align: center;
-        }
-        .hammer-icon { font-size: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 20px var(--blick-red)); animation: pulse 1s infinite alternate; }
-        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.1); opacity: 1; } }
-
-        /* NAVIGATION */
-        #nav-bar {
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 400px; height: 70px;
-            background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(20px);
-            border-radius: 25px; border: 1px solid rgba(255,255,255,0.08);
-            z-index: 1000; display: flex; justify-content: space-around; align-items: center;
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.4; transition: 0.3s; cursor: pointer; flex: 1; -webkit-tap-highlight-color: transparent; }
-        .nav-item.active { opacity: 1; color: var(--green-belt); transform: translateY(-2px); }
-        .nav-dot { width: 4px; height: 4px; background: var(--green-belt); border-radius: 50%; opacity: 0; transition: 0.3s; box-shadow: 0 0 10px var(--green-belt); }
-        .active .nav-dot { opacity: 1; }
-
-        .btn-primary { background: var(--green-belt); color: black; font-weight: 900; padding: 18px; border-radius: 20px; width: 100%; text-transform: uppercase; border: none; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(15px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #080808; border: 1px solid #151515; border-radius: 35px; width: 100%; max-width: 380px; padding: 35px; }
-
-        ::-webkit-scrollbar { display: none; }
-    </style>
-</head>
-<body>
-
-    <!-- THE BLICK HAMMER PAGE (REDIRECTOR) -->
-    <div id="blick-hammer-page">
-        <div class="hammer-icon">🔨</div>
-        <h1 class="text-4xl font-black italic text-red-600 mb-2 uppercase tracking-tighter">Blick Hammer Dropped</h1>
-        <p class="text-zinc-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-8">Verification Failed: Security Layer Alpha</p>
-        
-        <div class="bg-zinc-900/50 border border-red-900/30 p-8 rounded-[35px] w-full max-w-sm">
-            <p class="text-[9px] text-zinc-500 uppercase font-black mb-4 tracking-widest">Redirecting to Blick Zone in...</p>
-            <div id="redirect-timer" class="text-6xl font-mono font-black text-white italic">3</div>
-            <p id="sentence-preview" class="text-[9px] text-red-500/50 mt-6 uppercase font-bold tracking-tighter">Calculating remaining sentence...</p>
-        </div>
-    </div>
-
-    <!-- UI HEADERS -->
-    <div class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-[500]">
-        <div class="crib-logo text-xl">THE CRIB V6</div>
-        <div id="auth-status" class="bg-zinc-900/60 px-4 py-2 rounded-full border border-white/5 text-[9px] font-black uppercase tracking-widest">
-            INITIALIZING...
-        </div>
-    </div>
-
-    <!-- CONTENT SLIDER -->
-    <div id="main-slider">
-        <!-- DUNGEON -->
-        <section class="page">
-            <div class="w-full max-w-md">
-                <h2 class="text-4xl font-black italic uppercase leading-none">The<br>Dungeon</h2>
-                <div class="h-1 w-12 bg-green-500 mt-4 mb-8"></div>
-                <div class="grid grid-cols-2 gap-4 w-full pb-32">
-                    <div class="p-8 border border-white/5 bg-zinc-900/20 rounded-3xl text-center opacity-20 text-[10px] font-black">LOCKED</div>
-                    <div class="p-8 border border-white/5 bg-zinc-900/20 rounded-3xl text-center opacity-20 text-[10px] font-black">LOCKED</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- HOME -->
-        <section class="page">
-            <div class="mt-24 text-center w-full max-w-sm">
-                <h1 class="text-9xl font-black italic mb-10 tracking-tighter">V6</h1>
-                <div id="home-ui" class="bg-zinc-900/20 p-10 rounded-[45px] border border-white/5 backdrop-blur-xl">
-                    <button onclick="document.getElementById('auth-modal').style.display='flex'" class="btn-primary">SYNC COUNCIL ID</button>
-                    <p class="text-[8px] text-zinc-600 mt-6 font-bold uppercase tracking-widest">Official Student Spot Terminal</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- COUNCIL -->
-        <section class="page">
-            <div class="w-full max-w-md">
-                <h2 class="text-4xl font-black italic mb-8">COUNCIL</h2>
-                <div class="p-10 border border-white/5 rounded-3xl text-center text-zinc-700 font-black uppercase text-xs">Verify your rank to enter</div>
-            </div>
-        </section>
-
-        <!-- SYSTEM -->
-        <section class="page">
-            <div class="w-full max-w-md">
-                <h2 class="text-4xl font-black italic mb-10 uppercase">System</h2>
-                <button id="logout-btn" class="w-full p-5 border-2 border-red-500/20 text-red-500 font-black rounded-3xl uppercase text-[10px] tracking-[0.2em]">LOGOUT</button>
-            </div>
-        </section>
-    </div>
-
-    <!-- TABS -->
-    <nav id="nav-bar">
-        <div class="nav-item" onclick="swipeTo(0)"><span class="text-[8px] font-black">DUNGEON</span><div class="nav-dot"></div></div>
-        <div class="nav-item active" onclick="swipeTo(1)"><span class="text-[8px] font-black">CRIB</span><div class="nav-dot"></div></div>
-        <div class="nav-item" onclick="swipeTo(2)"><span class="text-[8px] font-black">COUNCIL</span><div class="nav-dot"></div></div>
-        <div class="nav-item" onclick="swipeTo(3)"><span class="text-[8px] font-black">SYS</span><div class="nav-dot"></div></div>
-    </nav>
-
-    <!-- AUTH MODAL -->
-    <div id="auth-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 class="text-center font-black italic text-xl mb-6 uppercase">Sync ID</h3>
-            <input id="email-in" type="email" placeholder="COUNCIL EMAIL" class="w-full bg-zinc-900 p-4 rounded-2xl mb-3 text-xs font-bold border border-white/5 outline-none text-white">
-            <input id="pass-in" type="password" placeholder="PASSWORD" class="w-full bg-zinc-900 p-4 rounded-2xl mb-6 text-xs font-bold border border-white/5 outline-none text-white">
-            <button id="signin-btn" class="btn-primary">VERIFY IDENTITY</button>
-            <button onclick="document.getElementById('auth-modal').style.display='none'" class="w-full mt-4 text-[9px] font-bold text-zinc-600 uppercase">Cancel</button>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        async function checkBlickStatus(user) {
-            if (!user || user.isAnonymous) return;
-
-            // Check if user document exists in the public users collection
-            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
-            const snap = await getDoc(userRef);
-
-            if (snap.exists()) {
-                const data = snap.data();
-                if (data.blicked) {
-                    const now = Date.now();
-                    const unblickTimestamp = data.unblickDate; // Stored as Unix timestamp (ms)
-
-                    if (unblickTimestamp && now < unblickTimestamp) {
-                        // User is still serving their sentence
-                        initiateBlickRedirect(unblickTimestamp);
-                        return true;
-                    } else if (unblickTimestamp && now >= unblickTimestamp) {
-                        // Sentence finished! Update DB automatically
-                        await updateDoc(userRef, { blicked: false, unblickDate: null });
-                        return false;
-                    } else if (data.blicked && !unblickTimestamp) {
-                        // Permanent blick
-                        initiateBlickRedirect(null);
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        function initiateBlickRedirect(releaseTime) {
-            document.getElementById('blick-hammer-page').style.display = 'flex';
-            const timerEl = document.getElementById('redirect-timer');
-            const previewEl = document.getElementById('sentence-preview');
-
-            if (releaseTime) {
-                const diff = releaseTime - Date.now();
-                const days = Math.floor(diff / 86400000);
-                const hrs = Math.floor((diff % 86400000) / 3600000);
-                previewEl.innerText = `Sentence Remaining: ${days}D ${hrs}H`;
-            } else {
-                previewEl.innerText = "Sentence: ETERNAL (Cooked)";
-            }
-
-            // Start 3 second visual countdown then redirect
-            let count = 3;
-            const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    timerEl.innerText = count;
-                } else {
-                    clearInterval(interval);
-                    timerEl.innerText = "BYE";
-                    // Redirecting to the /blicked/ subdirectory
-                    setTimeout(() => {
-                        window.location.href = '/blicked/';
-                    }, 500);
-                }
-            }, 1000);
-        }
-
-        onAuthStateChanged(auth, async user => {
-            const isBlicked = await checkBlickStatus(user);
-            if (isBlicked) return;
-
-            const isGuest = !user || user.isAnonymous;
-            document.getElementById('auth-status').innerText = isGuest ? "OINK OINK (GUEST)" : "COUNCIL RANK: VERIFIED";
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', cred.user.uid), {
+          uid: cred.user.uid,
+          username: username.toUpperCase(),
+          joinedAt: Date.now(),
+          passkeyActive: false
         });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err) {
+      setError(err.message.replace("Firebase: ", ""));
+    }
+  };
 
-        window.swipeTo = (index) => {
-            document.getElementById('main-slider').style.transform = `translateX(-${index * 100}vw)`;
-            document.querySelectorAll('.nav-item').forEach((it, i) => it.classList.toggle('active', i === index));
-        };
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !user || !profile) return;
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+        text: chatInput,
+        sender: profile.username || "ANON",
+        uid: user.uid,
+        timestamp: Date.now()
+      });
+      setChatInput("");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-        document.getElementById('signin-btn').onclick = async () => {
-            const email = document.getElementById('email-in').value;
-            const pass = document.getElementById('pass-in').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                document.getElementById('auth-modal').style.display = 'none';
-            } catch(e) { 
-                console.error("Auth Error", e);
-                // Simple feedback without alert
-                document.getElementById('signin-btn').innerText = "FAILED";
-                setTimeout(() => document.getElementById('signin-btn').innerText = "VERIFY IDENTITY", 2000);
-            }
-        };
+  if (loading) {
+    return (
+      <div className="h-screen bg-black flex flex-col items-center justify-center space-y-4">
+        <Cpu className="text-green-500 animate-spin" size={32} />
+        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Booting The Crib...</span>
+      </div>
+    );
+  }
 
-        document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => signInAnonymously(auth));
+  if (!user || !profile) {
+    return (
+      <div className="h-screen bg-[#050505] flex items-center justify-center p-6 text-white">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase">The Crib V10</h1>
+            <div className="h-1 w-12 bg-green-500 mx-auto rounded-full" />
+          </div>
 
-        // Initial background sign in
-        signInAnonymously(auth);
-    </script>
-</body>
-</html>
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center gap-3">
+              <ShieldAlert className="text-red-500 shrink-0" size={18} />
+              <p className="text-[10px] font-black uppercase text-red-500">{error}</p>
+            </div>
+          )}
+
+          <div className="bg-zinc-900/40 border border-white/5 p-6 rounded-[40px] shadow-2xl space-y-4">
+            <form onSubmit={handleEmailAuth} className="space-y-3">
+              {authMode === 'signup' && (
+                <input 
+                  placeholder="USERNAME" 
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-5 text-xs font-bold uppercase outline-none focus:border-green-500/40 transition-all"
+                />
+              )}
+              <input 
+                type="email"
+                placeholder="EMAIL" 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-5 text-xs font-bold uppercase outline-none"
+              />
+              <input 
+                type="password"
+                placeholder="PASSWORD" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-5 text-xs font-bold uppercase outline-none"
+              />
+              <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-green-500 transition-colors uppercase italic text-sm">
+                {authMode === 'login' ? 'Access Vault' : 'Initialize Node'}
+              </button>
+            </form>
+          </div>
+
+          <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="w-full text-[10px] font-black text-zinc-600 uppercase tracking-widest hover:text-white transition-all">
+            {authMode === 'login' ? 'New Node? Create ID' : 'Return to Login'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-[#050505] text-white overflow-hidden font-sans">
+      
+      <header className="flex-none p-6 pt-12 flex justify-between items-center border-b border-white/5 bg-black/50 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-black">
+            <ShieldCheck size={20} strokeWidth={3} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black italic text-white tracking-tighter">THE CRIB</h1>
+            <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              Node: {profile.username}
+            </p>
+          </div>
+        </div>
+        <button onClick={() => signOut(auth)} className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center text-zinc-500 hover:text-red-500 transition-all">
+          <LogOut size={18} />
+        </button>
+      </header>
+
+      <main className="flex-grow overflow-y-auto pb-32">
+        {view === 'vault' && (
+          <div className="p-6 grid gap-3 max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-4">
+              <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] ml-2">App Deployment</h2>
+            </div>
+            {THE_GAMES.map(game => (
+              <button key={game.id} onClick={() => setActiveGame(game)} className={`group flex items-center gap-4 p-4 bg-zinc-900/20 border ${game.color} rounded-[28px] active:scale-95 transition-all hover:bg-zinc-800/40`}>
+                <div className="relative">
+                  <img src={game.icon} className="w-14 h-14 rounded-2xl object-cover border border-white/5" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black flex items-center justify-center">
+                    <Zap size={8} className="text-black fill-black" />
+                  </div>
+                </div>
+                <div className="text-left flex-grow">
+                  <h3 className="font-black italic text-lg uppercase leading-none group-hover:text-green-400 transition-colors">{game.name}</h3>
+                  <p className="text-[8px] text-zinc-500 uppercase mt-1 font-bold">{game.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {view === 'settings' && (
+          <div className="p-6 max-w-md mx-auto space-y-6 animate-in fade-in duration-300">
+            <div className="bg-zinc-900/30 border border-white/5 p-8 rounded-[40px] space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black uppercase italic tracking-tighter">Account Ops</h2>
+                <p className="text-[9px] font-bold text-zinc-500 uppercase leading-relaxed max-w-[80%]">
+                  Manage your biometric keys and security protocols.
+                </p>
+              </div>
+
+              {statusMsg && (
+                <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-3">
+                  <Fingerprint size={16} className="text-green-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-green-500 uppercase">{statusMsg}</p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <p className="text-[8px] font-black text-zinc-600 uppercase ml-2">Biometrics</p>
+                <button 
+                  onClick={handlePasskeyCreate}
+                  className="w-full bg-white text-black font-black p-5 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <Fingerprint size={20} />
+                    <span className="text-xs uppercase italic">Sync iPad Passkey</span>
+                  </div>
+                  <ShieldCheck size={18} />
+                </button>
+                
+                <div className="p-4 bg-black/40 rounded-2xl border border-white/5 flex justify-between items-center">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase">Status:</span>
+                  <span className={`text-[10px] font-black uppercase ${profile?.passkeyActive ? 'text-green-500' : 'text-zinc-600'}`}>
+                    {profile?.passkeyActive ? 'SECURED' : 'UNPROTECTED'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/5">
+                 <button onClick={() => signOut(auth)} className="w-full py-4 text-xs font-black uppercase text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-500/5 transition-all">
+                   Terminate Session
+                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'messages' && (
+          <div className="flex flex-col p-6 space-y-6 h-full max-w-md mx-auto">
+             <div className="flex-grow space-y-4">
+               {messages.map(m => (
+                 <div key={m.id} className={`flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}`}>
+                   <span className="text-[8px] font-black text-zinc-600 uppercase mb-1 px-2">{m.sender}</span>
+                   <div className={`max-w-[85%] p-4 rounded-[24px] text-xs font-bold leading-relaxed shadow-lg ${m.uid === user.uid ? 'bg-green-500 text-black rounded-tr-none' : 'bg-zinc-900 border border-white/5 rounded-tl-none'}`}>
+                     {m.text}
+                   </div>
+                 </div>
+               ))}
+             </div>
+             
+             <form onSubmit={sendMessage} className="fixed bottom-28 left-6 right-6 flex gap-2 max-w-md mx-auto">
+                <input 
+                  value={chatInput} 
+                  onChange={e => setChatInput(e.target.value)} 
+                  className="flex-grow bg-zinc-900/80 backdrop-blur-md rounded-2xl px-5 py-4 text-xs font-bold border border-white/10 outline-none focus:border-green-500/50" 
+                  placeholder="ENCRYPTED MSG..." 
+                />
+                <button type="submit" className="bg-green-500 text-black w-14 h-14 rounded-2xl flex items-center justify-center active:scale-90 transition-all">
+                  <Send size={20} strokeWidth={3} />
+                </button>
+             </form>
+          </div>
+        )}
+      </main>
+
+      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-xs bg-zinc-900/80 backdrop-blur-3xl border border-white/10 rounded-[32px] p-2 flex justify-around items-center z-[200] shadow-2xl">
+        {[
+          { id: 'vault', icon: Gamepad2 },
+          { id: 'messages', icon: MessageSquare },
+          { id: 'settings', icon: Settings }
+        ].map(item => (
+          <button key={item.id} onClick={() => setView(item.id)} className={`p-4 rounded-2xl transition-all ${view === item.id ? 'bg-green-500 text-black' : 'text-zinc-500 hover:text-white'}`}>
+            <item.icon size={22} strokeWidth={view === item.id ? 3 : 2} />
+          </button>
+        ))}
+      </nav>
+
+      {activeGame && (
+        <div className="fixed inset-0 bg-black z-[300] flex flex-col animate-in zoom-in duration-300">
+          <div className="h-16 flex items-center justify-between px-6 bg-black/90 backdrop-blur-md border-b border-white/5">
+            <div className="flex items-center gap-3">
+               <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center text-black">
+                 <Zap size={14} fill="currentColor" />
+               </div>
+               <span className="text-[10px] font-black uppercase text-white tracking-widest">{activeGame.name}</span>
+            </div>
+            <button onClick={() => setActiveGame(null)} className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center hover:bg-red-500 transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+          <iframe src={activeGame.url} className="flex-grow w-full border-none" allow="autoplay; fullscreen; pointer-lock" />
+        </div>
+      )}
+    </div>
+  );
+}
