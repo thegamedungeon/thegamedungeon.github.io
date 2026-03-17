@@ -63,23 +63,23 @@
             background: rgba(0, 255, 0, 0.03);
             border: 2px solid var(--green-belt);
             color: var(--green-belt);
-            padding: 22px 0;
-            border-radius: 28px;
+            padding: 18px 0;
+            border-radius: 24px;
             font-weight: 900;
             cursor: pointer;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-transform: uppercase;
-            letter-spacing: 5px;
+            letter-spacing: 3px;
             width: 100%;
-            font-size: 1.2rem;
+            font-size: 1rem;
             text-align: center;
         }
 
         .vault-btn:hover {
             background: var(--green-belt);
             color: black;
-            box-shadow: 0 0 40px var(--green-belt);
-            transform: scale(1.03);
+            box-shadow: 0 0 30px var(--green-belt);
+            transform: scale(1.02);
         }
 
         .account-btn {
@@ -97,23 +97,15 @@
         .crib-input {
             width: 100%; padding: 18px; background: #0a0a0a;
             border: 1px solid #1a1a1a; border-radius: 20px; color: white; font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 12px; outline: none;
         }
+        .crib-input:focus { border-color: var(--green-belt); }
 
-        .ban-card {
-            background: #110000; border: 1px solid var(--admin-red);
-            padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .disclaimer-text {
-            font-size: 9px;
-            color: #444;
-            margin-top: 20px;
-            line-height: 1.4;
-            max-width: 80%;
-            margin-left: auto;
-            margin-right: auto;
+        .card-dark {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 2.5rem;
+            padding: 2rem;
         }
     </style>
 </head>
@@ -122,7 +114,7 @@
     <div class="nav-header">
         <div class="crib-logo text-2xl cursor-pointer" onclick="showView('home')">THE CRIB</div>
         <div class="flex items-center">
-            <button class="bell-btn mr-4" onclick="showView('notifications')">🔔</button>
+            <button class="mr-6 text-xl" onclick="showView('notifications')">🔔</button>
             <div id="auth-status">
                 <button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>
             </div>
@@ -132,45 +124,85 @@
     <!-- VIEW: HOME -->
     <section id="view-home" class="page-view active-view">
         <div class="flex flex-col items-center justify-center min-h-[85vh] text-center px-6">
-            <h1 class="text-8xl sm:text-[10rem] font-black crib-logo mb-2 tracking-tighter">THE CRIB</h1>
+            <h1 class="text-7xl sm:text-9xl font-black crib-logo mb-2 tracking-tighter">THE CRIB</h1>
             <p class="text-gray-600 uppercase tracking-[0.5em] text-[10px] mb-12 font-bold italic">HPMS HIGH COUNCIL</p>
-            <div class="w-72">
-                <button class="vault-btn" onclick="showView('vault')">🎮 OPEN VAULT</button>
+            <div class="w-64 space-y-4">
+                <button class="vault-btn" onclick="showView('vault')">🎮 VAULT</button>
+                <button class="w-full text-[10px] font-black text-gray-500 tracking-[0.3em] uppercase" onclick="showView('records')">View Records</button>
             </div>
         </div>
     </section>
 
     <!-- VIEW: VAULT -->
     <section id="view-vault" class="page-view">
-        <div class="max-w-6xl mx-auto px-6 pb-32 text-center">
-            <div class="flex justify-between items-end mb-12">
-                <h2 class="text-5xl font-black crib-logo uppercase italic">The Vault</h2>
-                <button onclick="showView('records')" class="text-[10px] border border-green-500/30 text-green-500 px-4 py-2 rounded-full font-black">📜 RECORDS</button>
+        <div class="max-w-6xl mx-auto px-6 pb-32">
+            <div class="flex justify-between items-center mb-10">
+                <h2 class="text-4xl font-black crib-logo uppercase italic">The Vault</h2>
+                <div class="text-[10px] text-gray-500 font-bold">8 GAMES DEPLOYED</div>
             </div>
-            <div id="vaultGrid" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+            <div id="vaultGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+    </section>
+
+    <!-- VIEW: NOTIFICATIONS -->
+    <section id="view-notifications" class="page-view">
+        <div class="max-w-2xl mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black text-white mb-8 uppercase italic">Council Comms</h2>
+            <div id="notif-list" class="space-y-4">
+                <div class="card-dark border-l-4 border-l-green-500">
+                    <p class="text-sm font-bold">SERVER STATUS: ACTIVE</p>
+                    <p class="text-xs text-gray-500 mt-2">Gatekeeper V4 is live. Connor is still a zesty bot. Stay safe in the halls.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: RECORDS -->
+    <section id="view-records" class="page-view">
+        <div class="max-w-2xl mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black text-white mb-8 uppercase italic">The Records</h2>
+            <div class="card-dark text-center">
+                <p class="text-gray-500 text-sm mb-6 font-bold uppercase tracking-widest">Hall of Fame</p>
+                <div class="space-y-4">
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-green-500 font-black italic">ALEX</span>
+                        <span class="text-gray-400 font-mono">999,999+</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-white font-bold italic">DAIMYAN</span>
+                        <span class="text-gray-400 font-mono">0 (Thief)</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- VIEW: LOGIN -->
     <section id="view-login" class="page-view">
         <div class="flex items-center justify-center min-h-[80vh] px-6">
-            <div class="w-full max-w-sm bg-[#0a0a0a] p-10 rounded-[2.5rem] border border-white/5 text-center shadow-2xl">
+            <div class="w-full max-w-sm card-dark text-center">
                 <h2 class="text-3xl font-black crib-logo mb-8 uppercase italic">Gatekeeper</h2>
-                <div class="mb-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">Identification Required</div>
-                
-                <input type="email" id="email-in" class="crib-input" placeholder="Hero ID (Email)" autocomplete="email">
-                <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key" autocomplete="new-password">
-                
-                <button class="vault-btn !py-4 !text-lg !rounded-2xl mb-4" onclick="handleLogin()">ENTER</button>
-                
+                <input type="email" id="email-in" class="crib-input" placeholder="Hero ID (Email)">
+                <input type="password" id="pass-in" class="crib-input" placeholder="Secret Key">
+                <button class="vault-btn mb-4" onclick="handleLogin()">ENTER</button>
                 <div class="flex gap-2">
                     <button class="w-1/2 bg-white/5 text-[10px] py-3 rounded-xl font-black" onclick="handleCreateAccount()">REGISTER</button>
                     <button class="w-1/2 bg-white text-black text-[10px] py-3 rounded-xl font-black" onclick="handleGoogleLogin()">GOOGLE</button>
                 </div>
+            </div>
+        </div>
+    </section>
 
-                <p class="disclaimer-text">
-                    Progress is saved via Firebase Auth. No personal info is tracked or stored.
-                </p>
+    <!-- VIEW: SETTINGS (NON-ADMIN) -->
+    <section id="view-settings" class="page-view">
+        <div class="max-w-md mx-auto px-6 pb-32">
+            <h2 class="text-4xl font-black text-white mb-8 uppercase italic">Settings</h2>
+            <div class="card-dark space-y-6">
+                <div>
+                    <label class="text-[10px] text-gray-500 font-black uppercase">Identity</label>
+                    <p id="user-display-email" class="text-sm font-bold text-green-500">loading...</p>
+                </div>
+                <button class="w-full bg-red-600/10 text-red-500 font-black py-4 rounded-2xl border border-red-500/20" onclick="handleLogout()">TERMINATE SESSION</button>
             </div>
         </div>
     </section>
@@ -180,14 +212,14 @@
         <div class="max-w-4xl mx-auto px-6 pb-32">
             <h2 class="text-4xl font-black text-red-500 mb-10 uppercase italic">Council Settings</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-red-500/20 text-center">
+                <div class="card-dark border-red-500/20">
                     <h3 class="font-black mb-4">Security Protocols</h3>
                     <button class="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg mb-4" onclick="showView('bans')">🚫 MANAGE BLICK LIST</button>
                     <button class="w-full bg-white/5 text-gray-400 font-black py-4 rounded-2xl" onclick="handleLogout()">TERMINATE SESSION</button>
                 </div>
-                <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-green-500/20">
-                    <h3 class="font-black mb-4 text-green-500 uppercase">Status</h3>
-                    <p class="text-xs text-gray-500 italic">Connor is still zesty. Sod-erdine is still trying to be tuff. Jack is actually tuff. Daimyan is lurking.</p>
+                <div class="card-dark border-green-500/20">
+                    <h3 class="font-black mb-4 text-green-500 uppercase">Council Log</h3>
+                    <p class="text-xs text-gray-500 italic">Connor is still zesty. Sod-erdine is acting tuff again. Abas is watching shorts. Daimyan stole my seat.</p>
                 </div>
             </div>
         </div>
@@ -200,16 +232,15 @@
                 <h2 class="text-4xl font-black text-red-500 uppercase italic">Blicked List</h2>
                 <button onclick="showView('admin')" class="text-[10px] font-black text-gray-500">BACK</button>
             </div>
-            <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-red-500/20 mb-8">
+            <div class="card-dark border-red-500/20 mb-8">
                 <input type="email" id="ban-email-in" class="crib-input" placeholder="Email to blick...">
-                <input type="text" id="ban-reason-in" class="crib-input" placeholder="Reason">
-                <input type="number" id="ban-hours-in" class="crib-input" placeholder="Hours (Blank = Perma)">
                 <button class="w-full bg-red-600 py-3 rounded-xl font-black" onclick="dispatchBan()">EXECUTE</button>
             </div>
             <div id="ban-list-container" class="space-y-4"></div>
         </div>
     </section>
 
+    <!-- GAME OVERLAY -->
     <div id="game-layer" style="display:none; position:fixed; inset:0; background:black; z-index:20000;">
         <button onclick="exitGame()" class="fixed top-6 left-6 z-[20001] bg-black/80 text-white w-12 h-12 rounded-full border border-white/10 font-bold">✕</button>
         <iframe id="game-frame" src="about:blank" class="w-full h-full border-none" allowfullscreen></iframe>
@@ -238,137 +269,116 @@
         let currentUser = null;
         const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
 
-        // --- THE VOID REDIRECTOR ---
-        function startGlobalBanWatch() {
-            const banCol = collection(db, 'artifacts', appId, 'public', 'data', 'banned_users');
-            onSnapshot(banCol, (snap) => {
-                const now = Date.now();
-                let blickedList = [];
-                snap.forEach(d => {
-                    const data = d.data();
-                    const expiry = data.expiresAt || Infinity;
-                    if (now < expiry) blickedList.push(d.id.toLowerCase());
-                });
-
-                // Immediate ejection if current email is blicked
-                if (currentUser && blickedList.includes(currentUser.email?.toLowerCase())) {
-                    window.location.replace("https://thegamedungeon.github.io/blicked/");
-                }
-
-                // Admin UI update
-                const listContainer = document.getElementById('ban-list-container');
-                if (listContainer) {
-                    listContainer.innerHTML = '';
-                    snap.forEach(d => {
-                        const data = d.data();
-                        const time = !data.expiresAt ? "PERMANENT" : new Date(data.expiresAt).toLocaleString();
-                        const card = document.createElement('div');
-                        card.className = 'ban-card';
-                        card.innerHTML = `
-                            <div class="text-left">
-                                <div class="text-xs font-black text-red-500">${d.id}</div>
-                                <div class="text-[9px] text-gray-400 font-bold uppercase">${data.reason}</div>
-                                <div class="text-[7px] text-gray-600">UNBLICK: ${time}</div>
-                            </div>
-                            <button onclick="unbanUser('${d.id}')" class="text-[10px] text-green-500 font-black">RESTORE</button>
-                        `;
-                        listContainer.appendChild(card);
-                    });
-                }
-            });
-        }
-
         window.showView = (id) => {
             document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
-            document.getElementById('view-' + id).classList.add('active-view');
+            const target = document.getElementById('view-' + id);
+            if(target) target.classList.add('active-view');
         };
 
         window.handleAccountClick = () => {
             if (!currentUser) showView('login');
             else if (admins.includes(currentUser.email.toLowerCase())) showView('admin');
-            else showView('home');
+            else {
+                document.getElementById('user-display-email').innerText = currentUser.email;
+                showView('settings');
+            }
         };
 
+        // --- AUTH LOGIC ---
         window.handleLogin = () => {
             const e = document.getElementById('email-in').value.trim();
             const p = document.getElementById('pass-in').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => {
-                alert("Gatekeeper: " + err.message);
-            });
+            signInWithEmailAndPassword(auth, e, p).catch(err => alert("Gatekeeper: " + err.message));
         };
 
         window.handleCreateAccount = async () => {
             const e = document.getElementById('email-in').value.trim();
             const p = document.getElementById('pass-in').value;
-            if(!e || !p) return alert("Fill in the identity nodes, bro.");
-
-            // Force a sign out of the current anonymous session before creating
-            await signOut(auth);
-
+            if(!e || !p) return alert("Identify yourself.");
+            await signOut(auth); // Clear any temp session
             createUserWithEmailAndPassword(auth, e, p)
                 .then(() => alert("Identity Registered."))
-                .catch(err => {
-                    console.error(err.code);
-                    if (err.code === 'auth/email-already-in-use') {
-                        alert("That identity is already active in the Crib database.");
-                    } else {
-                        alert("Auth Error: " + err.message);
-                    }
-                });
+                .catch(err => alert("Auth Error: " + err.message));
         };
 
         window.handleGoogleLogin = () => signInWithPopup(auth, provider);
-        window.handleLogout = () => signOut(auth).then(() => showView('home'));
+        window.handleLogout = () => signOut(auth).then(() => { currentUser = null; showView('home'); });
+
+        // --- BAN SYSTEM ---
+        function startBanWatch() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'banned_users'), (snap) => {
+                let blickedEmails = [];
+                const list = document.getElementById('ban-list-container');
+                if(list) list.innerHTML = '';
+
+                snap.forEach(d => {
+                    blickedEmails.push(d.id.toLowerCase());
+                    if(list) {
+                        const div = document.createElement('div');
+                        div.className = 'flex justify-between items-center bg-red-900/10 p-4 rounded-xl border border-red-500/20';
+                        div.innerHTML = `<span class="text-xs font-black text-red-500">${d.id}</span>
+                                       <button onclick="unbanUser('${d.id}')" class="text-[10px] text-green-500 font-black">UNBLICK</button>`;
+                        list.appendChild(div);
+                    }
+                });
+
+                if (currentUser && blickedEmails.includes(currentUser.email?.toLowerCase())) {
+                    window.location.replace("https://thegamedungeon.github.io/blicked/");
+                }
+            });
+        }
 
         window.dispatchBan = async () => {
             const email = document.getElementById('ban-email-in').value.trim().toLowerCase();
-            const reason = document.getElementById('ban-reason-in').value.trim();
-            const hours = document.getElementById('ban-hours-in').value;
             if(!email) return;
-            const expiresAt = hours ? Date.now() + (parseInt(hours) * 60 * 60 * 1000) : null;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', email), {
-                reason: reason || "High Council Order",
-                expiresAt: expiresAt,
-                timestamp: Date.now()
-            });
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', email), { timestamp: Date.now() });
             document.getElementById('ban-email-in').value = '';
         };
 
-        window.unbanUser = async (id) => {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', id));
-        };
+        window.unbanUser = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', id));
 
+        // --- STATE SYNC ---
         onAuthStateChanged(auth, async (user) => {
             const slot = document.getElementById('auth-status');
-            if (user) {
+            if (user && !user.isAnonymous) {
                 currentUser = user;
                 const isAdmin = admins.includes(user.email.toLowerCase());
                 slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">${isAdmin ? '🛡️ COUNCIL' : '👤 ' + user.email.split('@')[0]}</button>`;
-                if(isAdmin && document.getElementById('view-login').classList.contains('active-view')) showView('admin');
             } else {
                 currentUser = null;
                 slot.innerHTML = `<button class="account-btn" onclick="handleAccountClick()">🔑 LOGIN</button>`;
-                // Keep anonymous session for DB listening
-                signInAnonymously(auth).catch(() => {});
+                if(!user) signInAnonymously(auth).catch(()=>{});
             }
         });
 
-        // Init
-        startGlobalBanWatch();
-        const games = ['Ragdoll Hit', 'Cookie Clicker', 'Geometry Dash', 'Polytrack', 'Minecraft', 'Proxycrib', 'Kick The Sod', 'Basket Random'];
+        // --- GAMES ---
+        const games = [
+            { name: 'Ragdoll Hit', id: 'ragdoll_hit' },
+            { name: 'Cookie Clicker', id: 'cookie_clicker' },
+            { name: 'Geometry Dash', id: 'geometry_dash' },
+            { name: 'Polytrack', id: 'polytrack' },
+            { name: 'Minecraft', id: 'minecraft' },
+            { name: 'Proxycrib', id: 'proxycrib' },
+            { name: 'Kick The Sod', id: 'kick_the_sod' },
+            { name: 'Basket Random', id: 'basket_random' }
+        ];
+
         const grid = document.getElementById('vaultGrid');
         games.forEach(g => {
             const card = document.createElement('div');
-            card.className = 'game-card p-8 bg-[#0f0f0f] rounded-[2rem] cursor-pointer border border-transparent hover:border-green-500 transition';
+            card.className = 'p-6 bg-[#0a0a0a] rounded-[2rem] cursor-pointer border border-white/5 hover:border-green-500 transition-all text-center';
             card.onclick = () => {
-                document.getElementById('game-frame').src = `https://thegamedungeon.github.io/storage/games/${g.toLowerCase().replace(/\s+/g, '_')}/`;
+                document.getElementById('game-frame').src = `https://thegamedungeon.github.io/storage/games/${g.id}/`;
                 document.getElementById('game-layer').style.display = 'block';
             };
-            card.innerHTML = `<h3 class="font-black text-xs uppercase">${g}</h3>`;
+            card.innerHTML = `<h3 class="font-black text-[10px] uppercase italic text-gray-400 mb-2">Game</h3>
+                             <div class="font-black text-xs uppercase">${g.name}</div>`;
             grid.appendChild(card);
         });
 
         window.exitGame = () => { document.getElementById('game-layer').style.display = 'none'; document.getElementById('game-frame').src = 'about:blank'; };
+
+        startBanWatch();
     </script>
 </body>
 </html>
