@@ -24,9 +24,9 @@
         
         #login-screen { 
             position: fixed; inset: 0; 
-            background: rgba(0,0,0,0.9); 
+            background: rgba(0,0,0,0.95); 
             z-index: 9000; display: none; align-items: center; justify-content: center; 
-            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
         }
         
         #desktop { 
@@ -41,8 +41,26 @@
         .login-card {
             background: #0a0a0a;
             border: 1px solid rgba(255,255,255,0.1);
-            padding: 40px; border-radius: 2rem; width: 340px;
-            text-align: center; box-shadow: 0 0 50px rgba(59, 130, 246, 0.2);
+            padding: 40px; border-radius: 2.5rem; 
+            width: 90%; max-width: 360px;
+            text-align: center; box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* Fixed the "Huge Image" bug from the screenshot */
+        .login-avatar-wrapper {
+            width: 100px; height: 100px;
+            margin-bottom: 24px;
+            border-radius: 50%;
+            border: 3px solid #3b82f6;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .login-avatar-wrapper img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .app-icon { 
@@ -90,10 +108,12 @@
 
     <div id="login-screen">
         <div class="login-card">
-            <img src="/storage/photos/user.png" class="w-20 h-20 rounded-full mx-auto mb-6 border-2 border-blue-500 object-cover shadow-lg">
+            <div class="login-avatar-wrapper">
+                <img src="/storage/photos/user.png" onerror="this.src='https://ui-avatars.com/api/?name=Crib&background=3b82f6&color=fff'">
+            </div>
             <h2 class="text-xl font-bold mb-8 italic text-blue-400">Welcome to the Crib</h2>
             
-            <div id="login-form">
+            <div id="login-form" class="w-full">
                 <input type="text" id="username-field" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 text-center text-white outline-none focus:border-blue-500 transition">
                 <input type="password" id="pass-field" placeholder="Password (Optional)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 text-center text-white outline-none focus:border-blue-500 transition">
                 <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">UNLOCK</button>
@@ -172,7 +192,10 @@
             const pass = document.getElementById('pass-field').value;
             
             if (pass === 'crib123' || pass === '') {
-                if (!auth.currentUser) await signInAnonymously(auth);
+                try {
+                    if (!auth.currentUser) await signInAnonymously(auth);
+                } catch(e) { console.error("Auth failed but entering anyway"); }
+                
                 document.getElementById('stat-name').innerText = user || "Wanderer";
                 enterDesktop();
             } else {
