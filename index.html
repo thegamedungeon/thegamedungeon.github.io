@@ -7,17 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --taskbar-height: 64px;
+            --taskbar-height: 70px;
         }
 
         body, html { 
             margin: 0; padding: 0; 
             height: 100svh; 
             overflow: hidden; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background: black; 
-            touch-action: manipulation;
+            touch-action: none; 
             color: white;
+            user-select: none;
         }
         
         #boot-screen { position: fixed; inset: 0; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
@@ -36,6 +37,7 @@
             background-position: center; 
             position: relative; 
             display: none; 
+            overflow: hidden;
         }
 
         .login-card {
@@ -54,51 +56,88 @@
             border: 3px solid #3b82f6;
             overflow: hidden;
             flex-shrink: 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .login-avatar-wrapper img {
-            width: 100%; height: 100%;
-            object-fit: cover;
-            display: block;
-        }
+        .login-avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
         .app-icon { 
             width: 90px; display: flex; flex-direction: column; align-items: center; cursor: pointer; margin: 12px; 
             transition: 0.2s; -webkit-tap-highlight-color: transparent; 
         }
-        .app-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.1); border-radius: 12px; }
-        .app-icon img { width: 60px; height: 60px; border-radius: 14px; margin-bottom: 8px; pointer-events: none; object-fit: cover; }
-        .app-label { color: white; font-size: 11px; text-align: center; font-weight: 500; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .app-icon:active { transform: scale(0.9); }
+        .app-icon img { width: 65px; height: 65px; border-radius: 16px; margin-bottom: 8px; pointer-events: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .app-label { color: white; font-size: 11px; text-align: center; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 
         .window { 
-            position: absolute; background: #1a1a1a; border: 1px solid #333; border-radius: 16px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; 
+            position: absolute; background: #161616; border: 1px solid #333; border-radius: 16px; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7); display: flex; flex-direction: column; 
+            overflow: hidden; transition: opacity 0.2s, transform 0.2s;
+            min-width: 300px; min-height: 200px;
         }
-        .window-header { background: #262626; height: 40px; display: flex; align-items: center; padding: 0 12px; cursor: move; user-select: none; border-bottom: 1px solid #333; }
-        .control-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: none; margin-right: 8px; }
+        .window.minimized {
+            transform: scale(0.8) translateY(100px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .window.maximized {
+            top: 0 !important; left: 0 !important;
+            width: 100vw !important; height: calc(100svh - var(--taskbar-height) - 10px) !important;
+            border-radius: 0;
+        }
+
+        .window-header { 
+            background: #222; height: 45px; display: flex; align-items: center; 
+            padding: 0 15px; cursor: move; user-select: none; border-bottom: 1px solid #333;
+            touch-action: none;
+        }
+        .window-controls { display: flex; gap: 8px; }
+        .control-btn { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: none; }
         .close { background: #ff5f56; } 
-        .window-title { flex-grow: 1; text-align: center; color: #aaa; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .window-content { flex-grow: 1; background: #000; position: relative; }
+        .min { background: #ffbd2e; }
+        .max { background: #27c93f; }
+        
+        .window-title { flex-grow: 1; text-align: center; color: #eee; font-size: 12px; font-weight: 600; pointer-events: none; }
+        .window-content { flex-grow: 1; background: #000; position: relative; overflow: auto; }
         iframe { width: 100%; height: 100%; border: none; }
 
         #taskbar { 
-            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: auto; min-width: 300px; height: var(--taskbar-height); 
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            display: flex; align-items: center; padding: 0 12px; z-index: 99999;
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); 
+            width: auto; height: var(--taskbar-height); 
+            background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            display: flex; align-items: center; padding: 0 15px; z-index: 99999;
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 24px;
+            gap: 10px;
         }
         
-        .taskbar-item { width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 10px; }
-        .taskbar-item:hover { background: rgba(255,255,255,0.1); }
-        .taskbar-item img { width: 34px; height: 34px; border-radius: 8px; }
+        .taskbar-item { 
+            width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            transition: 0.2s; border-radius: 12px; position: relative;
+        }
+        .taskbar-item:active { transform: scale(0.8); }
+        .taskbar-item img { width: 38px; height: 38px; border-radius: 10px; }
+        .taskbar-item.active::after {
+            content: ''; position: absolute; bottom: -5px; width: 4px; height: 4px; background: #3b82f6; border-radius: 50%;
+        }
+
+        #clock { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; margin-left: 5px; color: rgba(255,255,255,0.7); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+        
+        /* YT MUSIC LEGIT UI */
+        .ytm-container { height: 100%; display: flex; flex-direction: column; background: #030303; }
+        .ytm-header { padding: 12px; border-bottom: 1px solid #1a1a1a; display: flex; flex-direction: column; gap: 8px; }
+        .ytm-search-row { display: flex; align-items: center; gap: 8px; }
+        .ytm-search { flex: 1; background: #1a1a1a; border: none; border-radius: 8px; padding: 10px 15px; color: white; outline: none; font-size: 13px; border: 1px solid transparent; transition: 0.2s; }
+        .ytm-search:focus { border-color: #f00; }
+        .ytm-btn { background: #f00; color: white; font-weight: bold; font-size: 11px; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+        .ytm-player-box { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .ytm-controls { height: 110px; padding: 15px 20px; display: flex; flex-direction: column; justify-content: center; gap: 12px; background: linear-gradient(to bottom, #0a0a0a, #030303); border-top: 1px solid #1a1a1a; }
+        
+        #ytm-frame { position: absolute; top: -10%; left: 0; width: 100%; height: 120%; pointer-events: auto; } /* Oversized to hide some YT UI */
     </style>
 </head>
 <body>
 
     <div id="boot-screen">
         <img src="/storage/photos/tgdtc.png" class="w-20 mb-4 animate-pulse">
-        <div class="text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">CribOS Core Loading...</div>
+        <div class="text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">CribOS Core v2.0</div>
     </div>
 
     <div id="login-screen">
@@ -110,7 +149,7 @@
             
             <div id="login-form" class="w-full space-y-3">
                 <input type="text" id="username-field" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
-                <input type="password" id="pass-field" placeholder="Password (Optional)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
+                <input type="password" id="pass-field" placeholder="Password (crib123)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
                 
                 <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">UNLOCK</button>
                 
@@ -120,50 +159,44 @@
                     <div class="flex-grow h-[1px] bg-white/10"></div>
                 </div>
 
-                <!-- Google Fastpass -->
                 <button onclick="googleFastpass()" class="w-full bg-white text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
                     <span>Google Fastpass</span>
                 </button>
-
-                <!-- Create Account Link -->
-                <p class="text-[11px] text-white/40 pt-2">
-                    New here? <a href="#" onclick="showCreateAccount()" class="text-blue-400 font-bold hover:underline">Create Account</a>
-                </p>
             </div>
         </div>
     </div>
 
     <div id="desktop">
-        <div id="icon-layer" class="flex flex-col flex-wrap h-[calc(100svh-80px)] p-6 items-start gap-2"></div>
+        <div id="icon-layer" class="flex flex-col flex-wrap h-[calc(100svh-100px)] p-6 items-start gap-2"></div>
+        
         <div id="taskbar">
             <div class="taskbar-item" onclick="toggleMenu('start-menu')">
                 <img src="/storage/photos/tgdtc.png">
             </div>
-            <div class="flex-grow flex justify-center gap-2" id="running-apps">
-                <div class="taskbar-item" onclick="launchApp('browser')"><img src="/storage/photos/proxicrib.png"></div>
-                <div class="taskbar-item" onclick="launchApp('scrolls')"><img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png"></div>
-                <div class="taskbar-item" onclick="launchApp('settings')"><img src="/storage/photos/settings.png"></div>
-            </div>
-            <div id="clock" class="px-4 text-xs font-bold font-mono text-white/50">00:00</div>
+            <div class="flex items-center gap-2" id="running-apps-dock"></div>
+            <div id="clock">00:00</div>
         </div>
 
-        <div id="start-menu" class="fixed bottom-24 left-1/2 -translate-x-1/2 w-[320px] bg-zinc-900/95 border border-white/10 rounded-[20px] p-4 hidden flex-col z-[100001] backdrop-blur-xl">
-            <div class="flex items-center gap-3 mb-6 p-2 border-b border-white/10 pb-4">
-                <img src="/storage/photos/user.png" class="w-10 h-10 rounded-full" id="menu-avatar">
-                <span id="stat-name" class="font-bold text-white">Wanderer</span>
+        <div id="start-menu" class="fixed bottom-24 left-1/2 -translate-x-1/2 w-[340px] bg-zinc-900/95 border border-white/10 rounded-[24px] p-5 hidden flex-col z-[100001] backdrop-blur-3xl shadow-2xl">
+            <div class="flex items-center gap-4 mb-6 p-2 border-b border-white/10 pb-5">
+                <img src="/storage/photos/user.png" class="w-12 h-12 rounded-full border-2 border-blue-500" id="menu-avatar">
+                <div class="flex flex-col">
+                    <span id="stat-name" class="font-bold text-white text-lg">Wanderer</span>
+                    <span class="text-[10px] text-blue-400 uppercase font-black tracking-widest">Crib Resident</span>
+                </div>
             </div>
-            <div class="space-y-1" id="start-list"></div>
-            <div class="mt-6 pt-4 border-t border-white/10 text-center">
-                <button onclick="location.reload()" class="text-[10px] text-zinc-500 hover:text-white uppercase font-bold">Restart System</button>
+            <div class="grid grid-cols-1 gap-1" id="start-list"></div>
+            <div class="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
+                <button onclick="location.reload()" class="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">Restart CribOS</button>
+                <span class="text-[10px] text-zinc-700">Ver 2.3.0</span>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -176,17 +209,18 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
         let state = {
             z: 100,
-            installed: ['browser', 'scrolls', 'cc', 'gd', 'kts', 'minecraft', 'polytrack', 'rh', 'settings']
+            windows: {},
+            installed: ['browser', 'scrolls', 'ytmusic', 'cc', 'gd', 'kts', 'minecraft', 'polytrack', 'rh', 'settings']
         };
 
         const APPS = {
-            browser: { name: 'ProxiCrib', icon: '/storage/photos/proxicrib.png' },
-            scrolls: { name: 'Scrolls', icon: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png' },
+            browser: { name: 'ProxiCrib', icon: '/storage/photos/proxicrib.png', url: '/storage/proxy-main/index.html' },
+            scrolls: { name: 'Scrolls', icon: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png', url: '/storage/scrolls-main/index.html' },
+            ytmusic: { name: 'YT Music', icon: '/storage/photos/ytmusic.png', type: 'ytm' },
             settings: { name: 'Settings', icon: '/storage/photos/settings.png' },
             cc: { name: 'Cookie Clicker', icon: '/storage/photos/cc.png', url: '/storage/cookieclick-main/index.html' },
             gd: { name: 'Geometry Dash', icon: '/storage/photos/gd.png', url: '/storage/gdl-main/index.html' },
@@ -199,48 +233,20 @@
         window.googleFastpass = async () => {
             try {
                 const result = await signInWithPopup(auth, provider);
-                const user = result.user;
-                document.getElementById('stat-name').innerText = user.displayName;
-                if (user.photoURL) {
-                    document.getElementById('menu-avatar').src = user.photoURL;
-                }
+                document.getElementById('stat-name').innerText = result.user.displayName;
+                if (result.user.photoURL) document.getElementById('menu-avatar').src = result.user.photoURL;
                 enterDesktop();
-            } catch (error) {
-                console.error("Fastpass failed", error);
-            }
-        };
-
-        window.showCreateAccount = () => {
-            document.getElementById('login-greeting').innerText = "Join the Dungeon";
-            document.getElementById('username-field').placeholder = "Email Address";
-            document.getElementById('pass-field').placeholder = "New Password";
-            const btn = document.querySelector('#login-form button');
-            btn.innerText = "CREATE ACCOUNT";
-            btn.onclick = window.doCreate;
-        };
-
-        window.doCreate = async () => {
-            const email = document.getElementById('username-field').value;
-            const pass = document.getElementById('pass-field').value;
-            try {
-                await createUserWithEmailAndPassword(auth, email, pass);
-                document.getElementById('stat-name').innerText = email.split('@')[0];
-                enterDesktop();
-            } catch (e) {
-                alert(e.message);
-            }
+            } catch (e) { console.error(e); }
         };
 
         window.doLogin = async () => {
             const user = document.getElementById('username-field').value.trim();
             const pass = document.getElementById('pass-field').value;
             if (pass === 'crib123' || pass === '') {
-                if (!auth.currentUser) await signInAnonymously(auth);
+                await signInAnonymously(auth);
                 document.getElementById('stat-name').innerText = user || "Wanderer";
                 enterDesktop();
-            } else {
-                alert("Wrong key. Try again.");
-            }
+            } else { alert("Incorrect Key."); }
         };
 
         function enterDesktop() {
@@ -248,8 +254,8 @@
             setTimeout(() => {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('desktop').style.display = 'block';
-                const savedWall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80';
-                document.getElementById('desktop').style.backgroundImage = `url('${savedWall}')`;
+                const wall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop';
+                document.getElementById('desktop').style.backgroundImage = `url('${wall}')`;
                 renderIcons();
                 startClock();
             }, 400);
@@ -265,13 +271,14 @@
 
         window.toggleMenu = (id) => {
             const m = document.getElementById(id);
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
         };
 
         function renderIcons() {
             const layer = document.getElementById('icon-layer');
             const startList = document.getElementById('start-list');
             layer.innerHTML = ''; startList.innerHTML = '';
+            
             state.installed.forEach(id => {
                 const app = APPS[id];
                 const div = document.createElement('div');
@@ -279,42 +286,195 @@
                 div.onclick = () => launchApp(id);
                 div.innerHTML = `<img src="${app.icon}"><span class="app-label">${app.name}</span>`;
                 layer.appendChild(div);
+
                 const sItem = document.createElement('div');
-                sItem.className = 'flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer text-white text-xs';
-                sItem.innerHTML = `<img src="${app.icon}" class="w-6 h-6 rounded"><span>${app.name}</span>`;
+                sItem.className = 'flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl cursor-pointer text-white text-sm transition';
+                sItem.innerHTML = `<img src="${app.icon}" class="w-8 h-8 rounded-lg shadow-md"><span>${app.name}</span>`;
                 sItem.onclick = () => { launchApp(id); toggleMenu('start-menu'); };
                 startList.appendChild(sItem);
             });
         }
 
         window.launchApp = (id) => {
-            if (id === 'browser') return createWindow('ProxiCrib', null, `<div class="h-full bg-zinc-900 flex items-center justify-center text-white/20">Browser is Loading...</div>`);
-            if (id === 'settings') return createWindow('Settings', null, `<div class="p-8 text-white">Settings coming soon.</div>`);
-            createWindow(APPS[id].name, APPS[id].url);
+            const app = APPS[id];
+            if (id === 'settings') return openSettings();
+            if (app.type === 'ytm') return openYTMusic();
+            createWindow(id, app.name, app.url, app.icon);
         };
 
-        function createWindow(title, url, customHtml = null) {
-            const id = 'win_' + Math.random().toString(36).substr(2, 9);
-            const win = document.createElement('div');
-            win.id = id; win.className = 'window';
-            state.z++; win.style.zIndex = state.z;
-            const isMobile = window.innerWidth < 768;
-            win.style.width = isMobile ? '92%' : '800px';
-            win.style.height = isMobile ? '70%' : '500px';
-            win.style.left = isMobile ? '4%' : '100px';
-            win.style.top = isMobile ? '30px' : '60px';
-            win.innerHTML = `<div class="window-header" onmousedown="window.initDrag(event, '${id}')"><button class="control-btn close" onclick="window.closeWin('${id}')"></button><div class="window-title">${title}</div></div><div class="window-content">${customHtml || `<iframe src="${url}"></iframe>`}</div>`;
-            document.getElementById('desktop').appendChild(win);
+        function openYTMusic() {
+            const html = `
+                <div class="ytm-container">
+                    <div class="ytm-header">
+                        <div class="flex items-center gap-2 mb-1">
+                            <img src="/storage/photos/ytmusic.png" class="w-5 h-5 rounded">
+                            <span class="text-[10px] uppercase font-black tracking-tighter text-white/50">CribOS Music Player</span>
+                        </div>
+                        <div class="ytm-search-row">
+                            <input type="text" id="ytm-search-input" class="ytm-search" placeholder="Search song or playlist..." onkeydown="if(event.key==='Enter') window.ytmAction('search')">
+                            <button onclick="window.ytmAction('playlist')" class="ytm-btn">Playlist</button>
+                        </div>
+                    </div>
+                    <div class="ytm-player-box">
+                        <iframe id="ytm-frame" src="https://www.youtube.com/embed?enablejsapi=1&listType=search&list=music&autoplay=1" allow="autoplay; encrypted-media"></iframe>
+                    </div>
+                    <div class="ytm-controls">
+                        <div class="flex flex-col items-center mb-1">
+                             <div id="ytm-status" class="text-[11px] font-bold text-white truncate w-full text-center">Ready to Play</div>
+                        </div>
+                        <div class="flex items-center justify-center gap-8">
+                             <button class="text-white opacity-50 text-xl" onclick="window.ytmAction('prev')">⏮</button>
+                             <button id="ytm-play-btn" class="text-white text-3xl" onclick="window.ytmAction('play')">⏯</button>
+                             <button class="text-white opacity-50 text-xl" onclick="window.ytmAction('next')">⏭</button>
+                        </div>
+                        <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden mt-1">
+                            <div class="h-full bg-red-600 w-1/3 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            createWindow('ytmusic', 'YouTube Music', null, '/storage/photos/ytmusic.png', html);
         }
 
-        window.closeWin = (id) => document.getElementById(id).remove();
+        window.ytmAction = (type) => {
+            const input = document.getElementById('ytm-search-input');
+            const frame = document.getElementById('ytm-frame');
+            const status = document.getElementById('ytm-status');
+            if (!frame) return;
+
+            if (type === 'search') {
+                status.innerText = `Searching for: ${input.value}`;
+                frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(input.value)}&autoplay=1`;
+            } else if (type === 'playlist') {
+                status.innerText = `Loading Playlist: ${input.value || 'Music'}`;
+                // This forces YouTube to treat the search as a playlist type
+                frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(input.value + " playlist")}&autoplay=1`;
+            } else if (type === 'play') {
+                 const cur = frame.src;
+                 frame.src = cur.includes('autoplay=1') ? cur.replace('autoplay=1', 'autoplay=0') : cur.replace('autoplay=0', 'autoplay=1');
+            }
+        };
+
+        function createWindow(appId, title, url, icon, customHtml = null) {
+            if (state.windows[appId]) return toggleMinimize(appId);
+            const winId = 'win_' + appId;
+            const win = document.createElement('div');
+            win.id = winId; win.className = 'window';
+            state.z++; win.style.zIndex = state.z;
+            
+            const isMusic = appId === 'ytmusic';
+            win.style.width = isMusic ? '380px' : '850px';
+            win.style.height = isMusic ? '600px' : '550px';
+            win.style.left = '100px'; win.style.top = '50px';
+
+            win.innerHTML = `
+                <div class="window-header" onmousedown="window.initDrag(event, '${winId}')" ontouchstart="window.initDrag(event, '${winId}')">
+                    <div class="window-controls">
+                        <button class="control-btn close" onclick="window.closeWin('${appId}')"></button>
+                        <button class="control-btn min" onclick="window.toggleMinimize('${appId}')"></button>
+                        <button class="control-btn max" onclick="window.toggleMaximize('${winId}')"></button>
+                    </div>
+                    <div class="window-title">${title}</div>
+                </div>
+                <div class="window-content" onmousedown="window.bringToFront('${winId}')">
+                    ${customHtml ? customHtml : `<iframe src="${url}"></iframe>`}
+                    <div class="absolute inset-0 bg-transparent pointer-events-none" id="cover_${winId}"></div>
+                </div>
+            `;
+            document.getElementById('desktop').appendChild(win);
+            state.windows[appId] = { id: winId, title, icon };
+            updateDock();
+        }
+
+        window.bringToFront = (id) => {
+            state.z++;
+            const el = document.getElementById(id);
+            if (el) el.style.zIndex = state.z;
+        };
+
+        window.toggleMinimize = (appId) => {
+            const el = document.getElementById('win_' + appId);
+            if (el.classList.contains('minimized')) {
+                el.classList.remove('minimized');
+                window.bringToFront('win_' + appId);
+            } else {
+                el.classList.add('minimized');
+            }
+        };
+
+        window.toggleMaximize = (id) => {
+            document.getElementById(id).classList.toggle('maximized');
+        };
+
+        window.closeWin = (appId) => {
+            document.getElementById('win_' + appId).remove();
+            delete state.windows[appId];
+            updateDock();
+        };
+
+        function updateDock() {
+            const dock = document.getElementById('running-apps-dock');
+            dock.innerHTML = '';
+            Object.keys(state.windows).forEach(appId => {
+                const app = state.windows[appId];
+                const div = document.createElement('div');
+                div.className = 'taskbar-item active';
+                div.onclick = () => toggleMinimize(appId);
+                div.innerHTML = `<img src="${app.icon}">`;
+                dock.appendChild(div);
+            });
+        }
+
         window.initDrag = (e, id) => {
             const el = document.getElementById(id);
-            if (e.target.classList.contains('control-btn')) return;
-            let startX = e.clientX, startY = e.clientY, startL = el.offsetLeft, startT = el.offsetTop;
-            const move = (ev) => { el.style.left = (startL + ev.clientX - startX) + 'px'; el.style.top = (startT + ev.clientY - startY) + 'px'; };
-            const stop = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop); };
-            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+            window.bringToFront(id);
+            if (el.classList.contains('maximized')) return;
+            const covers = document.querySelectorAll('[id^="cover_"]');
+            covers.forEach(c => c.style.pointerEvents = 'auto');
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            let startX = clientX, startY = clientY;
+            let startL = el.offsetLeft, startT = el.offsetTop;
+            const move = (ev) => {
+                const moveX = ev.type.includes('touch') ? ev.touches[0].clientX : ev.clientX;
+                const moveY = ev.type.includes('touch') ? ev.touches[0].clientY : ev.clientY;
+                el.style.left = (startL + moveX - startX) + 'px';
+                el.style.top = (startT + moveY - startY) + 'px';
+            };
+            const stop = () => {
+                covers.forEach(c => c.style.pointerEvents = 'none');
+                window.removeEventListener('mousemove', move);
+                window.removeEventListener('mouseup', stop);
+                window.removeEventListener('touchmove', move);
+                window.removeEventListener('touchend', stop);
+            };
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', stop);
+            window.addEventListener('touchmove', move, { passive: false });
+            window.addEventListener('touchend', stop);
+        };
+
+        function openSettings() {
+            const html = `<div class="p-8 text-white"><h2 class="text-3xl font-black mb-8 italic text-blue-500">SYSTEM SETTINGS</h2><div class="space-y-8"><section class="bg-zinc-900/50 p-6 rounded-2xl border border-white/5"><h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Desktop Customization</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="space-y-2"><label class="text-[10px] font-black uppercase text-zinc-500">URL Source</label><input type="text" id="wall-input" class="w-full bg-black border border-white/10 p-3 rounded-xl text-sm outline-none focus:border-blue-500" placeholder="Paste image link here..."></div><div class="space-y-2"><label class="text-[10px] font-black uppercase text-zinc-500">iPad Photo Picker</label><label for="wall-file" class="flex items-center justify-center w-full bg-zinc-800 border border-white/10 p-3 rounded-xl text-sm font-bold cursor-pointer hover:bg-zinc-700 transition">Choose from Gallery</label><input type="file" id="wall-file" class="hidden" accept="image/*" onchange="window.handleFileWall(event)"></div></div><button onclick="window.saveWall()" class="w-full mt-6 bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition shadow-lg shadow-blue-900/20">APPLY CHANGES</button></section></div></div>`;
+            createWindow('settings', 'Settings', null, '/storage/photos/settings.png', html);
+        }
+
+        window.handleFileWall = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64 = event.target.result;
+                document.getElementById('wall-input').value = base64;
+                document.getElementById('desktop').style.backgroundImage = `url('${base64}')`;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveWall = () => {
+            const url = document.getElementById('wall-input').value;
+            if (!url) return;
+            localStorage.setItem('crib_wall', url);
+            document.getElementById('desktop').style.backgroundImage = `url('${url}')`;
         };
 
         setTimeout(() => {
@@ -323,7 +483,7 @@
                 document.getElementById('boot-screen').style.display = 'none';
                 document.getElementById('login-screen').style.display = 'flex';
             }, 500);
-        }, 1200);
+        }, 1500);
 
     </script>
 </body>
