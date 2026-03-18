@@ -1,422 +1,535 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  onSnapshot, 
-  query, 
-  updateDoc,
-  addDoc
-} from 'firebase/firestore';
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signOut,
-  signInWithCustomToken,
-  signInAnonymously
-} from 'firebase/auth';
-import { 
-  Gamepad2, 
-  Users, 
-  X,
-  MessageSquare,
-  Send,
-  Lock,
-  UserCircle2,
-  ShieldAlert,
-  Terminal,
-  LogIn,
-  UserPlus,
-  Mail,
-  Key,
-  LogOut,
-  Chrome,
-  Fingerprint,
-  Settings,
-  ShieldCheck,
-  Zap,
-  Cpu
-} from 'lucide-react';
-
-// --- CONFIG ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'crib-v10-secure';
-
-const BASE_URL = "https://thegamedungeon.github.io/storage";
-
-const THE_GAMES = [
-  { id: 'proxy', name: 'PROXYCRIB', url: `${BASE_URL}/proxy-main/index.html`, icon: `${BASE_URL}/proxy-main/icon.png`, desc: 'Secure Tunneling', color: 'border-cyan-500/50' },
-  { id: 'gdash', name: 'GEOMETRY DASH', url: `${BASE_URL}/gdl-main/index.html`, icon: `${BASE_URL}/gdl-main/icon.png`, desc: 'The GDL Archive', color: 'border-yellow-500/50' },
-  { id: 'polytrack', name: 'POLYTRACK', url: `${BASE_URL}/polytrack-0.5.2-clean-main/index.html`, icon: `${BASE_URL}/polytrack-0.5.2-clean-main/icon.png`, desc: 'Drift King', color: 'border-blue-500/50' },
-  { id: 'minecraft', name: 'MINECRAFT', url: `${BASE_URL}/minecraft-main/index.html`, icon: `${BASE_URL}/minecraft-main/icon.png`, desc: 'Survival Mode', color: 'border-green-500/50' },
-  { id: 'cookie', name: 'COOKIE CLICKER', url: `${BASE_URL}/cookieclick-main/index.html`, icon: `${BASE_URL}/cookieclick-main/icon.png`, desc: 'Grandma’s Special', color: 'border-amber-500/50' },
-  { id: 'ragdoll', name: 'RAGDOLL HIT', url: `${BASE_URL}/ragdoll-hit-main/index.html`, icon: `${BASE_URL}/ragdoll-hit-main/icon.png`, desc: 'Physics Combat', color: 'border-red-500/50' }
-];
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [authMode, setAuthMode] = useState('login'); 
-  const [error, setError] = useState("");
-  const [statusMsg, setStatusMsg] = useState("");
-
-  // Form States
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-
-  // UI States
-  const [view, setView] = useState('vault'); 
-  const [activeGame, setActiveGame] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [chatInput, setChatInput] = useState("");
-
-  // 1. Auth Init
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        }
-      } catch (err) {
-        console.error("Auth init failed", err);
-      }
-    };
-    initAuth();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (!u) {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-    return () => unsub();
-  }, []);
-
-  // 2. Data Listeners
-  useEffect(() => {
-    if (!user) return;
-    
-    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
-    const unsubProfile = onSnapshot(userRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        // CONNOR FILTER
-        if (data.username?.toUpperCase().includes("CONNOR")) {
-          signOut(auth);
-          setError("CONNOR DETECTED: NODE TERMINATED");
-          return;
-        }
-        setProfile(data);
-      } else {
-        // Fallback if profile doesn't exist yet
-        setProfile({ username: 'NEW_USER', uid: user.uid });
-      }
-      setLoading(false);
-    }, (err) => console.error("Profile error", err));
-
-    const qMessages = query(collection(db, 'artifacts', appId, 'public', 'data', 'messages'));
-    const unsubMsgs = onSnapshot(qMessages, (snap) => {
-      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMessages(msgs.sort((a, b) => a.timestamp - b.timestamp).slice(-50));
-    }, (err) => console.error("Msg error", err));
-
-    return () => { unsubProfile(); unsubMsgs(); };
-  }, [user]);
-
-  // --- PASSKEY LOGIC ---
-  const handlePasskeyCreate = async () => {
-    if (!user) return;
-    setStatusMsg("Accessing iPad Biometrics...");
-    
-    try {
-      // Simulate WebAuthn registration
-      await new Promise(r => setTimeout(r, 1200)); 
-      
-      const passkeyData = {
-        id: crypto.randomUUID(),
-        created: Date.now(),
-        platform: "iPadOS"
-      };
-
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
-        passkeyActive: true,
-        passkeyData: passkeyData
-      });
-
-      localStorage.setItem('crib_biometric_active', 'true');
-      localStorage.setItem('crib_node_id', user.uid);
-      
-      setStatusMsg("Passkey Synced. FaceID Enabled.");
-      setTimeout(() => setStatusMsg(""), 3000);
-    } catch (err) {
-      setError("Passkey Error: Hardware not responding.");
-    }
-  };
-
-  const handleEmailAuth = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!email || !password) return;
-
-    try {
-      if (authMode === 'signup') {
-        if (!username) throw new Error("Need a handle, bro.");
-        if (username.toUpperCase().includes("CONNOR")) throw new Error("Connor detected. Blicked.");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Game Dungeon | CribOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: black; }
         
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', cred.user.uid), {
-          uid: cred.user.uid,
-          username: username.toUpperCase(),
-          joinedAt: Date.now(),
-          passkeyActive: false
-        });
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-    } catch (err) {
-      setError(err.message.replace("Firebase: ", ""));
-    }
-  };
+        /* Boot & Login */
+        #boot-screen { position: fixed; inset: 0; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        #login-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(25px); }
+        
+        /* Desktop */
+        #desktop { width: 100vw; height: 100vh; background-size: cover; background-position: center; position: relative; display: none; }
+        .app-icon { width: 80px; display: flex; flex-direction: column; align-items: center; cursor: pointer; margin: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: 0.2s; }
+        .app-icon:hover { background: rgba(255,255,255,0.1); border-radius: 8px; }
+        .app-icon img { width: 50px; height: 50px; border-radius: 12px; margin-bottom: 4px; pointer-events: none; }
+        .app-label { color: white; font-size: 11px; text-align: center; font-weight: 500; pointer-events: none; }
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!chatInput.trim() || !user || !profile) return;
-    try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-        text: chatInput,
-        sender: profile.username || "ANON",
-        uid: user.uid,
-        timestamp: Date.now()
-      });
-      setChatInput("");
-    } catch (err) {
-      console.error(err);
-    }
-  };
+        /* Window Management */
+        .window { position: absolute; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; z-index: 10; }
+        .window-header { background: #262626; height: 35px; display: flex; align-items: center; padding: 0 10px; cursor: move; user-select: none; border-bottom: 1px solid #333; }
+        .window-controls { display: flex; gap: 8px; width: 60px; }
+        .control-btn { width: 13px; height: 13px; border-radius: 50%; cursor: pointer; border: none; transition: 0.2s; }
+        .close { background: #ff5f56; } .close:hover { background: #e04e46; }
+        .min { background: #ffbd2e; } .min:hover { background: #e0a526; }
+        .max { background: #27c93f; } .max:hover { background: #1fa533; }
+        .window-title { flex-grow: 1; text-align: center; color: #aaa; font-size: 12px; font-weight: 600; margin-right: 60px; }
+        .window-content { flex-grow: 1; background: #000; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-black flex flex-col items-center justify-center space-y-4">
-        <Cpu className="text-green-500 animate-spin" size={32} />
-        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Booting The Crib...</span>
-      </div>
-    );
-  }
+        /* Taskbar */
+        #taskbar { position: absolute; bottom: 0; width: 100%; height: 45px; background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(15px); display: flex; align-items: center; padding: 0 10px; z-index: 9999; border-top: 1px solid rgba(255,255,255,0.05); }
+        .start-btn { width: 32px; height: 32px; cursor: pointer; margin-right: 15px; }
+        #scroll-notif { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: 12px; right: 85px; display: none; box-shadow: 0 0 10px #ef4444; }
 
-  if (!user || !profile) {
-    return (
-      <div className="h-screen bg-[#050505] flex items-center justify-center p-6 text-white">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase">The Crib V10</h1>
-            <div className="h-1 w-12 bg-green-500 mx-auto rounded-full" />
-          </div>
+        /* Custom UI */
+        .scroll-item { background: #222; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 10px; transition: 0.2s; position: relative; }
+        .scroll-item:hover { border-color: #444; background: #262626; }
+        
+        input, textarea { transition: all 0.2s ease; }
+        input:focus, textarea:focus { transform: scale(1.01); border-color: #3b82f6 !important; }
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center gap-3">
-              <ShieldAlert className="text-red-500 shrink-0" size={18} />
-              <p className="text-[10px] font-black uppercase text-red-500">{error}</p>
-            </div>
-          )}
+        .google-btn {
+            background: white;
+            color: #374151;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            font-size: 14px;
+            transition: 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+        .google-btn:hover { background: #f9fafb; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
 
-          <div className="bg-zinc-900/40 border border-white/5 p-6 rounded-[40px] shadow-2xl space-y-4">
-            <form onSubmit={handleEmailAuth} className="space-y-3">
-              {authMode === 'signup' && (
-                <input 
-                  placeholder="USERNAME" 
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-5 text-xs font-bold uppercase outline-none focus:border-green-500/40 transition-all"
-                />
-              )}
-              <input 
-                type="email"
-                placeholder="EMAIL" 
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-5 text-xs font-bold uppercase outline-none"
-              />
-              <input 
-                type="password"
-                placeholder="PASSWORD" 
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-5 text-xs font-bold uppercase outline-none"
-              />
-              <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-green-500 transition-colors uppercase italic text-sm">
-                {authMode === 'login' ? 'Access Vault' : 'Initialize Node'}
-              </button>
-            </form>
-          </div>
-
-          <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="w-full text-[10px] font-black text-zinc-600 uppercase tracking-widest hover:text-white transition-all">
-            {authMode === 'login' ? 'New Node? Create ID' : 'Return to Login'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-screen bg-[#050505] text-white overflow-hidden font-sans">
-      
-      <header className="flex-none p-6 pt-12 flex justify-between items-center border-b border-white/5 bg-black/50 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-black">
-            <ShieldCheck size={20} strokeWidth={3} />
-          </div>
-          <div>
-            <h1 className="text-xl font-black italic text-white tracking-tighter">THE CRIB</h1>
-            <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              Node: {profile.username}
-            </p>
-          </div>
-        </div>
-        <button onClick={() => signOut(auth)} className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center text-zinc-500 hover:text-red-500 transition-all">
-          <LogOut size={18} />
-        </button>
-      </header>
-
-      <main className="flex-grow overflow-y-auto pb-32">
-        {view === 'vault' && (
-          <div className="p-6 grid gap-3 max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-4">
-              <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] ml-2">App Deployment</h2>
-            </div>
-            {THE_GAMES.map(game => (
-              <button key={game.id} onClick={() => setActiveGame(game)} className={`group flex items-center gap-4 p-4 bg-zinc-900/20 border ${game.color} rounded-[28px] active:scale-95 transition-all hover:bg-zinc-800/40`}>
-                <div className="relative">
-                  <img src={game.icon} className="w-14 h-14 rounded-2xl object-cover border border-white/5" />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black flex items-center justify-center">
-                    <Zap size={8} className="text-black fill-black" />
-                  </div>
-                </div>
-                <div className="text-left flex-grow">
-                  <h3 className="font-black italic text-lg uppercase leading-none group-hover:text-green-400 transition-colors">{game.name}</h3>
-                  <p className="text-[8px] text-zinc-500 uppercase mt-1 font-bold">{game.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {view === 'settings' && (
-          <div className="p-6 max-w-md mx-auto space-y-6 animate-in fade-in duration-300">
-            <div className="bg-zinc-900/30 border border-white/5 p-8 rounded-[40px] space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black uppercase italic tracking-tighter">Account Ops</h2>
-                <p className="text-[9px] font-bold text-zinc-500 uppercase leading-relaxed max-w-[80%]">
-                  Manage your biometric keys and security protocols.
-                </p>
-              </div>
-
-              {statusMsg && (
-                <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-3">
-                  <Fingerprint size={16} className="text-green-500 animate-pulse" />
-                  <p className="text-[10px] font-black text-green-500 uppercase">{statusMsg}</p>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <p className="text-[8px] font-black text-zinc-600 uppercase ml-2">Biometrics</p>
-                <button 
-                  onClick={handlePasskeyCreate}
-                  className="w-full bg-white text-black font-black p-5 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <Fingerprint size={20} />
-                    <span className="text-xs uppercase italic">Sync iPad Passkey</span>
-                  </div>
-                  <ShieldCheck size={18} />
-                </button>
-                
-                <div className="p-4 bg-black/40 rounded-2xl border border-white/5 flex justify-between items-center">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase">Status:</span>
-                  <span className={`text-[10px] font-black uppercase ${profile?.passkeyActive ? 'text-green-500' : 'text-zinc-600'}`}>
-                    {profile?.passkeyActive ? 'SECURED' : 'UNPROTECTED'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-white/5">
-                 <button onClick={() => signOut(auth)} className="w-full py-4 text-xs font-black uppercase text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-500/5 transition-all">
-                   Terminate Session
-                 </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {view === 'messages' && (
-          <div className="flex flex-col p-6 space-y-6 h-full max-w-md mx-auto">
-             <div className="flex-grow space-y-4">
-               {messages.map(m => (
-                 <div key={m.id} className={`flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}`}>
-                   <span className="text-[8px] font-black text-zinc-600 uppercase mb-1 px-2">{m.sender}</span>
-                   <div className={`max-w-[85%] p-4 rounded-[24px] text-xs font-bold leading-relaxed shadow-lg ${m.uid === user.uid ? 'bg-green-500 text-black rounded-tr-none' : 'bg-zinc-900 border border-white/5 rounded-tl-none'}`}>
-                     {m.text}
-                   </div>
-                 </div>
-               ))}
-             </div>
-             
-             <form onSubmit={sendMessage} className="fixed bottom-28 left-6 right-6 flex gap-2 max-w-md mx-auto">
-                <input 
-                  value={chatInput} 
-                  onChange={e => setChatInput(e.target.value)} 
-                  className="flex-grow bg-zinc-900/80 backdrop-blur-md rounded-2xl px-5 py-4 text-xs font-bold border border-white/10 outline-none focus:border-green-500/50" 
-                  placeholder="ENCRYPTED MSG..." 
-                />
-                <button type="submit" className="bg-green-500 text-black w-14 h-14 rounded-2xl flex items-center justify-center active:scale-90 transition-all">
-                  <Send size={20} strokeWidth={3} />
-                </button>
-             </form>
-          </div>
-        )}
-      </main>
-
-      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-xs bg-zinc-900/80 backdrop-blur-3xl border border-white/10 rounded-[32px] p-2 flex justify-around items-center z-[200] shadow-2xl">
-        {[
-          { id: 'vault', icon: Gamepad2 },
-          { id: 'messages', icon: MessageSquare },
-          { id: 'settings', icon: Settings }
-        ].map(item => (
-          <button key={item.id} onClick={() => setView(item.id)} className={`p-4 rounded-2xl transition-all ${view === item.id ? 'bg-green-500 text-black' : 'text-zinc-500 hover:text-white'}`}>
-            <item.icon size={22} strokeWidth={view === item.id ? 3 : 2} />
-          </button>
-        ))}
-      </nav>
-
-      {activeGame && (
-        <div className="fixed inset-0 bg-black z-[300] flex flex-col animate-in zoom-in duration-300">
-          <div className="h-16 flex items-center justify-between px-6 bg-black/90 backdrop-blur-md border-b border-white/5">
-            <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center text-black">
-                 <Zap size={14} fill="currentColor" />
-               </div>
-               <span className="text-[10px] font-black uppercase text-white tracking-widest">{activeGame.name}</span>
-            </div>
-            <button onClick={() => setActiveGame(null)} className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center hover:bg-red-500 transition-colors">
-              <X size={20} />
-            </button>
-          </div>
-          <iframe src={activeGame.url} className="flex-grow w-full border-none" allow="autoplay; fullscreen; pointer-lock" />
-        </div>
-      )}
+    <!-- Boot Sequence -->
+    <div id="boot-screen">
+        <img src="/storage/photos/tgdtc.png" id="boot-logo" class="w-24 mb-6 animate-pulse">
+        <div id="boot-text" class="text-xs font-mono tracking-widest opacity-40 uppercase">System Loading...</div>
     </div>
-  );
-}
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div id="login-card" class="bg-zinc-900/50 p-10 rounded-3xl border border-white/10 w-96 text-center shadow-2xl backdrop-blur-xl">
+            <img id="login-avatar" src="/storage/photos/user.png" class="w-24 h-24 rounded-full mx-auto mb-6 border-2 border-blue-500 shadow-lg object-cover">
+            <h2 id="welcome-msg" class="text-2xl font-bold mb-8 italic text-blue-400">CribOS</h2>
+            
+            <div id="user-input-section">
+                <input type="text" id="username-field" placeholder="Username or Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 outline-none focus:border-blue-500 text-center text-white">
+                <button onclick="handleIdentityNext()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4">CONTINUE</button>
+                <div class="border-t border-white/5 pt-4">
+                    <button onclick="showSignUp()" class="text-xs text-blue-400 hover:underline font-semibold uppercase tracking-wider">Create Account</button>
+                </div>
+            </div>
+
+            <div id="pass-input-section" class="hidden">
+                <input type="password" id="pass-field" placeholder="Password" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 outline-none focus:border-blue-500 text-center text-white">
+                <button onclick="verifyCribPassword()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4">UNLATCH</button>
+                <button onclick="resetLoginView()" class="text-[10px] opacity-40 hover:opacity-100 uppercase">Back to Username</button>
+            </div>
+
+            <div id="signup-section" class="hidden text-left">
+                <label class="text-[10px] uppercase font-bold opacity-40 ml-2">Display Name</label>
+                <input type="text" id="signup-name" placeholder="Alex" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-3 outline-none focus:border-blue-500 text-white">
+                <label class="text-[10px] uppercase font-bold opacity-40 ml-2">Crib Password</label>
+                <input type="password" id="signup-pass" placeholder="Create Password" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-4 outline-none focus:border-blue-500 text-white">
+                <button onclick="finalizeSignUp()" class="w-full bg-green-600 hover:bg-green-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4">CREATE ACCOUNT</button>
+                <button onclick="resetLoginView()" class="w-full text-center text-[10px] opacity-40 hover:opacity-100 uppercase">Back to Login</button>
+            </div>
+
+            <div id="auth-extras">
+                <div id="social-divider" class="flex items-center my-6">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="mx-4 text-xs opacity-40 uppercase">FAST PASS</span>
+                    <div class="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <button id="google-btn-main" onclick="googleFastPass()" class="google-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+                    GOOGLE FAST PASS
+                </button>
+            </div>
+            
+            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden">Access Denied. Check credentials.</p>
+        </div>
+    </div>
+
+    <!-- Blicked Screen -->
+    <div id="blicked-screen" style="display:none; position:fixed; inset:0; background:black; color:white; flex-direction:column; align-items:center; justify-content:center; z-index:10001;">
+        <h1 class="text-7xl font-black mb-6 italic">BLICKED.</h1>
+        <p class="text-xl opacity-70">Access Denied by The Game Dungeon Admin.</p>
+    </div>
+
+    <!-- Main Desktop -->
+    <div id="desktop">
+        <div id="icon-layer" class="flex flex-col flex-wrap h-full p-4 items-start"></div>
+        
+        <div id="taskbar">
+            <img src="/storage/photos/tgdtc.png" class="start-btn" title="Crib Start">
+            <div id="open-apps" class="flex gap-2"></div>
+            <div class="flex-grow"></div>
+            <div id="scroll-notif"></div>
+            <div id="system-time" class="text-[11px] font-bold opacity-70 mr-4"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, where, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        (function(){ emailjs.init("B27WRyM1IvaQI_Ysy"); })();
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        const appId = "cribos-v1";
+        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+
+        let state = {
+            user: null,
+            cribAccount: null,
+            installed: JSON.parse(localStorage.getItem('crib_installed')) || ['browser', 'scrolls', 'store', 'settings'],
+            wallpaper: localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80',
+            pfp: '/storage/photos/user.png'
+        };
+
+        const APP_DB = {
+            'browser': { name: 'Browser', icon: '/storage/photos/proxicrib.png', url: '/storage/proxy-main/index.html', essential: true },
+            'scrolls': { name: 'Dungeon Scrolls', icon: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png', internal: 'scrolls', essential: true },
+            'store': { name: 'Crib Store', icon: '/storage/photos/tgdtc.png', internal: 'store', essential: true },
+            'settings': { name: 'Settings', icon: '/storage/photos/settings.png', internal: 'settings', essential: true },
+            'cc': { name: 'Cookie Clicker', icon: '/storage/photos/cc.png', url: '/storage/cookieclick-main/index.html' },
+            'gd': { name: 'Geometry Dash', icon: '/storage/photos/gd.png', url: '/storage/gdl-main/index.html' },
+            'kts': { name: 'Kick the Sod', icon: '/storage/photos/kts.png', url: '/storage/kickthesod-main/index.html' },
+            'minecraft': { name: 'Minecraft', icon: '/storage/photos/minecraft.png', url: '/storage/minecraft-main/index.html' },
+            'polytrack': { name: 'Polytrack', icon: '/storage/photos/polytrack.png', url: '/storage/polytrack-0.5.2-clean-main/index.html' },
+            'rh': { name: 'Ragdoll Hit', icon: '/storage/photos/rh.png', url: '/storage/ragdoll-hit-main/index.html' }
+        };
+
+        async function boot() {
+            setTimeout(() => {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        state.user = user;
+                        const userDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", user.uid));
+                        if (userDoc.exists()) {
+                            state.cribAccount = userDoc.data();
+                            showPassEntry(state.cribAccount.displayName, state.cribAccount.pfp);
+                            listenForScrolls();
+                        } else {
+                            showSignUp(user.displayName, user.photoURL);
+                        }
+                    } else {
+                        const localName = localStorage.getItem('crib_last_user');
+                        if (localName) document.getElementById('username-field').value = localName;
+                    }
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('login-screen').style.display = 'flex';
+                });
+            }, 1200);
+            setInterval(updateTime, 1000);
+            document.getElementById('desktop').style.backgroundImage = `url(${state.wallpaper})`;
+        }
+
+        // --- Auth Logic ---
+        window.resetLoginView = function() {
+            document.getElementById('welcome-msg').innerText = "CribOS";
+            document.getElementById('login-avatar').src = '/storage/photos/user.png';
+            document.getElementById('user-input-section').classList.remove('hidden');
+            document.getElementById('pass-input-section').classList.add('hidden');
+            document.getElementById('signup-section').classList.add('hidden');
+            document.getElementById('auth-extras').classList.remove('hidden');
+            document.getElementById('error-msg').classList.add('hidden');
+        };
+
+        window.handleIdentityNext = async function() {
+            const input = document.getElementById('username-field').value.trim();
+            if (!input) return;
+            showPassEntry(input, '/storage/photos/user.png');
+        };
+
+        window.showPassEntry = function(name, pfp) {
+            document.getElementById('welcome-msg').innerText = `Welcome, ${name}`;
+            document.getElementById('login-avatar').src = pfp || '/storage/photos/user.png';
+            document.getElementById('user-input-section').classList.add('hidden');
+            document.getElementById('signup-section').classList.add('hidden');
+            document.getElementById('pass-input-section').classList.remove('hidden');
+            document.getElementById('auth-extras').classList.add('hidden');
+        };
+
+        window.showSignUp = function(preName = "", prePfp = "") {
+            document.getElementById('welcome-msg').innerText = "Register Crib Account";
+            document.getElementById('login-avatar').src = prePfp || "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=Crib+User";
+            document.getElementById('user-input-section').classList.add('hidden');
+            document.getElementById('pass-input-section').classList.add('hidden');
+            document.getElementById('signup-section').classList.remove('hidden');
+            document.getElementById('auth-extras').classList.add('hidden');
+            if (preName) document.getElementById('signup-name').value = preName;
+        };
+
+        window.finalizeSignUp = async function() {
+            const name = document.getElementById('signup-name').value.trim();
+            const pass = document.getElementById('signup-pass').value.trim();
+            if (!name || !pass) return;
+            if (!state.user) state.user = (await signInAnonymously(auth)).user;
+            const pfp = state.user.photoURL || `https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=${name}`;
+            const userData = { uid: state.user.uid, displayName: name, pfp: pfp, cribPass: pass, email: state.user.email || 'anonymous', createdAt: new Date().toISOString() };
+            await setDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", state.user.uid), userData);
+            state.cribAccount = userData;
+            enterDesktop();
+        };
+
+        window.verifyCribPassword = async function() {
+            const pass = document.getElementById('pass-field').value;
+            if (state.user) {
+                const userDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", state.user.uid));
+                if (userDoc.exists() && userDoc.data().cribPass === pass) {
+                    const blickDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "blicked", state.user.uid));
+                    if (blickDoc.exists()) {
+                        document.getElementById('login-screen').style.display = 'none';
+                        document.getElementById('blicked-screen').style.display = 'flex';
+                        return;
+                    }
+                    enterDesktop();
+                    return;
+                }
+            }
+            if (pass === "crib123") enterDesktop();
+            else document.getElementById('error-msg').classList.remove('hidden');
+        };
+
+        window.googleFastPass = async () => { try { await signInWithPopup(auth, provider); } catch(e) { console.error(e); } };
+
+        function enterDesktop() {
+            if (state.cribAccount) localStorage.setItem('crib_last_user', state.cribAccount.displayName);
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('desktop').style.display = 'block';
+            renderIcons();
+            listenForScrolls();
+        }
+
+        // --- Dungeon Scrolls Logic ---
+        function listenForScrolls() {
+            if (!state.user) return;
+            const q = collection(db, "artifacts", appId, "users", state.user.uid, "scrolls");
+            onSnapshot(q, (snapshot) => {
+                let unread = 0;
+                snapshot.forEach(doc => { if (!doc.data().read) unread++; });
+                document.getElementById('scroll-notif').style.display = unread > 0 ? 'block' : 'none';
+                if (document.getElementById('scroll-list-container')) renderScrollList();
+            }, (err) => console.error(err));
+        }
+
+        async function renderScrollList() {
+            const container = document.getElementById('scroll-list-container');
+            const q = collection(db, "artifacts", appId, "users", state.user.uid, "scrolls");
+            const snap = await getDocs(q);
+            let scrolls = [];
+            snap.forEach(d => scrolls.push({ id: d.id, ...d.data() }));
+            scrolls.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+
+            container.innerHTML = scrolls.length ? scrolls.map(s => `
+                <div class="scroll-item ${s.read ? 'opacity-60' : 'border-blue-500'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-blue-400">FROM: ${s.fromName}</span>
+                        <span class="text-[10px] opacity-40">${new Date(s.sentAt).toLocaleDateString()}</span>
+                    </div>
+                    <p class="text-sm text-zinc-300 mb-3">${s.message}</p>
+                    <div class="flex gap-2">
+                        ${!s.read ? `<button onclick="markRead('${s.id}')" class="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-1 rounded">Mark Read</button>` : ''}
+                        <button onclick="deleteScroll('${s.id}')" class="text-[10px] bg-red-600/20 text-red-400 px-2 py-1 rounded">Burn Scroll</button>
+                    </div>
+                </div>
+            `).join('') : `<div class="text-center opacity-30 mt-10">No scrolls in your dungeon...</div>`;
+        }
+
+        window.markRead = async (id) => {
+            await updateDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id), { read: true });
+            renderScrollList();
+        };
+
+        window.deleteScroll = async (id) => {
+            await deleteDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id));
+            renderScrollList();
+        };
+
+        window.sendScroll = async function() {
+            const toEmail = document.getElementById('scroll-to').value.trim();
+            const msg = document.getElementById('scroll-msg').value.trim();
+            const isGlobal = document.getElementById('scroll-global')?.checked;
+            
+            if (!msg || (!toEmail && !isGlobal)) return;
+
+            const isAdmin = admins.includes(state.user.email);
+            const senderName = state.cribAccount?.displayName || state.user.displayName || "Unknown Wanderer";
+
+            if (isGlobal && isAdmin) {
+                const usersSnap = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
+                usersSnap.forEach(async (uDoc) => {
+                    await addDoc(collection(db, "artifacts", appId, "users", uDoc.id, "scrolls"), {
+                        fromName: senderName,
+                        fromEmail: state.user.email,
+                        message: msg,
+                        sentAt: new Date().toISOString(),
+                        read: false,
+                        type: 'global'
+                    });
+                });
+            } else {
+                const usersSnap = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
+                let targetUser = null;
+                usersSnap.forEach(u => {
+                    if (u.data().email === toEmail || u.data().displayName === toEmail) targetUser = u.id;
+                });
+
+                if (targetUser) {
+                    await addDoc(collection(db, "artifacts", appId, "users", targetUser, "scrolls"), {
+                        fromName: senderName,
+                        fromEmail: state.user.email,
+                        message: msg,
+                        sentAt: new Date().toISOString(),
+                        read: false
+                    });
+
+                    emailjs.send("service_n2hsxcf", "template_rip4cmz", {
+                        to_name: toEmail,
+                        from_name: senderName,
+                        message: msg,
+                        to_email: toEmail.includes('@') ? toEmail : 'thegamedungeon.thecrib@gmail.com'
+                    });
+                } else {
+                    alert("Wanderer not found in the Crib.");
+                    return;
+                }
+            }
+            
+            document.getElementById('scroll-msg').value = '';
+            alert("Scroll dispatched.");
+            closeWin(document.querySelector('.window:has(.window-title:contains("New Scroll"))')?.id);
+        };
+
+        function openScrolls() {
+            const html = `
+                <div class="flex flex-col h-full bg-zinc-950 text-white">
+                    <div class="p-4 border-b border-white/5 flex justify-between items-center bg-zinc-900">
+                        <h2 class="font-bold italic text-blue-400 tracking-tighter">DUNGEON SCROLLS</h2>
+                        <button onclick="openNewScroll()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-full font-bold transition">COMPOSE</button>
+                    </div>
+                    <div id="scroll-list-container" class="flex-grow overflow-y-auto p-4">
+                        Loading scrolls...
+                    </div>
+                </div>
+            `;
+            createWindow('Dungeon Scrolls', null, html);
+            renderScrollList();
+        }
+
+        window.openNewScroll = function() {
+            const isAdmin = admins.includes(state.user.email);
+            const html = `
+                <div class="p-6 bg-zinc-900 h-full">
+                    <div class="mb-4">
+                        <label class="text-[10px] uppercase font-bold opacity-40 mb-1 block">Recipient (Email or User)</label>
+                        <input type="text" id="scroll-to" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-sm text-white outline-none">
+                    </div>
+                    ${isAdmin ? `
+                    <div class="mb-4 flex items-center gap-2">
+                        <input type="checkbox" id="scroll-global" class="w-4 h-4 bg-zinc-800 rounded">
+                        <label for="scroll-global" class="text-xs font-bold text-red-400">SEND AS GLOBAL SCROLL (ADMIN)</label>
+                    </div>
+                    ` : ''}
+                    <div class="mb-6">
+                        <label class="text-[10px] uppercase font-bold opacity-40 mb-1 block">Your Message</label>
+                        <textarea id="scroll-msg" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-sm text-white h-32 outline-none resize-none" placeholder="Type your scroll..."></textarea>
+                    </div>
+                    <button onclick="sendScroll()" class="w-full bg-blue-600 py-4 rounded-xl font-bold hover:bg-blue-500 transition-all">DISPATCH SCROLL</button>
+                </div>
+            `;
+            createWindow('New Scroll', null, html);
+        }
+
+        // --- System UI ---
+        function renderIcons() {
+            const container = document.getElementById('icon-layer');
+            container.innerHTML = '';
+            state.installed.forEach(id => {
+                const app = APP_DB[id];
+                const div = document.createElement('div');
+                div.className = 'app-icon';
+                div.onclick = () => launchApp(id);
+                div.innerHTML = `<img src="${app.icon}"><span class="app-label">${app.name}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        window.launchApp = function(id) {
+            const app = APP_DB[id];
+            if (app.internal === 'store') return openStore();
+            if (app.internal === 'settings') return openSettings();
+            if (app.internal === 'scrolls') return openScrolls();
+            createWindow(app.name, app.url);
+        };
+
+        function createWindow(title, url, contentHtml = null) {
+            const id = 'win_' + Math.random().toString(36).substr(2, 9);
+            const win = document.createElement('div');
+            win.id = id; win.className = 'window';
+            win.style.width = '65%'; win.style.height = '65%';
+            win.style.left = '17.5%'; win.style.top = '10%';
+            win.innerHTML = `
+                <div class="window-header" onmousedown="startDrag(event, '${id}')">
+                    <div class="window-controls">
+                        <button class="control-btn close" onclick="closeWin('${id}')"></button>
+                        <button class="control-btn min" onclick="minWin('${id}')"></button>
+                        <button class="control-btn max" onclick="toggleFull('${id}')"></button>
+                    </div>
+                    <div class="window-title">${title}</div>
+                </div>
+                <div class="window-content">${contentHtml ? contentHtml : `<iframe src="${url}"></iframe>`}</div>
+            `;
+            document.getElementById('desktop').appendChild(win);
+        }
+
+        window.closeWin = (id) => document.getElementById(id)?.remove();
+        window.startDrag = function(e, id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let ox = e.clientX - el.offsetLeft, oy = e.clientY - el.offsetTop;
+            function move(e) { el.style.left = (e.clientX-ox)+'px'; el.style.top = (e.clientY-oy)+'px'; }
+            function stop() { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop); }
+            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+        };
+
+        function openStore() {
+            const storeHtml = `<div class="p-8 bg-zinc-900 h-full overflow-y-auto"><h2 class="text-2xl font-bold mb-6 italic">CRIB STORE</h2><div class="grid grid-cols-2 gap-4">${Object.keys(APP_DB).filter(k => !APP_DB[k].essential).map(k => `<div class="bg-zinc-800 p-4 rounded-2xl flex items-center justify-between border border-white/5"><div class="flex items-center gap-4"><img src="${APP_DB[k].icon}" class="w-12 h-12 rounded-lg"><span class="font-bold">${APP_DB[k].name}</span></div><button onclick="installApp('${k}')" class="bg-blue-600 px-5 py-2 rounded-full text-xs font-bold hover:bg-blue-500">${state.installed.includes(k) ? 'INSTALLED' : 'GET'}</button></div>`).join('')}</div></div>`;
+            createWindow('Crib Store', null, storeHtml);
+        }
+
+        window.installApp = function(k) {
+            if(!state.installed.includes(k)) {
+                state.installed.push(k);
+                localStorage.setItem('crib_installed', JSON.stringify(state.installed));
+                renderIcons();
+                const current = Array.from(document.querySelectorAll('.window-title')).find(t => t.innerText === "Crib Store")?.closest('.window');
+                if(current) closeWin(current.id);
+                openStore();
+            }
+        };
+
+        function openSettings() {
+            const settingsHtml = `
+                <div class="settings-container">
+                    <div class="settings-sidebar">
+                        <img src="${state.cribAccount?.pfp || state.pfp}" class="w-20 h-20 rounded-full mb-4 border-2 border-blue-500 object-cover">
+                        <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest text-center">${state.cribAccount?.displayName || 'Crib User'}</span>
+                    </div>
+                    <div class="settings-main">
+                        <h2 class="text-xl font-bold mb-6 italic">SETTINGS</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs opacity-60 mb-1 block">Desktop Wallpaper</label>
+                                <input type="text" id="wall-input" class="w-full bg-zinc-800 p-2 rounded border border-white/10 text-xs text-white" value="${state.wallpaper}">
+                                <button onclick="changeWall()" class="mt-2 bg-blue-600 px-4 py-1 rounded text-[10px] font-bold">APPLY</button>
+                            </div>
+                            <div class="pt-6 border-t border-white/5 flex gap-2">
+                                <button onclick="auth.signOut().then(() => location.reload())" class="bg-zinc-700 px-4 py-2 rounded text-[10px] font-bold">LOGOUT</button>
+                                <button onclick="factoryReset()" class="bg-red-900/40 px-4 py-2 rounded text-[10px] border border-red-500/50">FACTORY RESET</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            createWindow('Settings', null, settingsHtml);
+        }
+
+        window.changeWall = function() {
+            const url = document.getElementById('wall-input').value;
+            state.wallpaper = url;
+            localStorage.setItem('crib_wall', url);
+            document.getElementById('desktop').style.backgroundImage = `url(${url})`;
+        };
+
+        window.factoryReset = () => { if(confirm("Nuke everything?")) { localStorage.clear(); location.reload(); } };
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('system-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        boot();
+    </script>
+</body>
+</html>
