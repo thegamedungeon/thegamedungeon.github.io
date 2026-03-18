@@ -41,6 +41,7 @@
         .app-icon img { width: 55px; height: 55px; border-radius: 14px; margin-bottom: 6px; pointer-events: none; object-fit: cover; }
         .app-label { color: white; font-size: 11px; text-align: center; font-weight: 500; pointer-events: none; }
 
+        /* Window Styles */
         .window { 
             position: absolute; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; 
             box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; 
@@ -54,6 +55,7 @@
         .window-content { flex-grow: 1; background: #000; position: relative; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; pointer-events: auto; }
 
+        /* Taskbar & Menus */
         #taskbar { 
             position: absolute; 
             bottom: 0; left: 0; width: 100%; 
@@ -62,24 +64,48 @@
             backdrop-filter: blur(20px); 
             display: flex; align-items: center; padding: 0 12px; 
             padding-bottom: env(safe-area-inset-bottom);
-            z-index: 99999; /* Always above windows */
+            z-index: 99999;
             border-top: 1px solid rgba(255,255,255,0.1); 
             box-sizing: content-box;
         }
         
-        .start-btn { width: 34px; height: 34px; cursor: pointer; margin-right: 15px; transition: 0.2s; }
-        #scroll-notif { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; position: absolute; top: 10px; right: 85px; display: none; box-shadow: 0 0 12px #ef4444; border: 2px solid #000; }
+        .taskbar-item { width: 38px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 8px; margin: 0 4px; }
+        .taskbar-item:hover { background: rgba(255,255,255,0.1); }
+        .taskbar-item img { width: 26px; height: 26px; border-radius: 4px; }
 
-        .scroll-item { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
-        .scroll-unread { border-left: 4px solid #3b82f6; background: #1e293b; }
+        .taskbar-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+        }
+
+        #start-menu, #search-menu {
+            position: absolute; bottom: 65px; left: 12px; width: 320px; 
+            background: rgba(20, 20, 20, 0.98); border: 1px solid #333; 
+            border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none; flex-direction: column; overflow: hidden; z-index: 100000;
+        }
+
+        .scroll-unread-badge { background: #ef4444; color: white; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
         
-        input, textarea { outline: none !important; }
-
+        /* Animations */
         @keyframes blickAnimation {
             0%, 100% { transform: scale(1); filter: grayscale(0); }
             50% { transform: scale(1.05); filter: grayscale(1); }
         }
         .blicked-text { animation: blickAnimation 3s infinite ease-in-out; }
+
+        /* Browser Specific Styles */
+        .browser-toolbar {
+            height: 44px; background: #222; border-bottom: 1px solid #333;
+            display: flex; align-items: center; padding: 0 10px; gap: 8px;
+        }
+        .url-bar {
+            flex-grow: 1; background: #111; border: 1px solid #444; border-radius: 6px;
+            color: #eee; font-size: 11px; padding: 4px 10px; outline: none;
+        }
     </style>
 </head>
 <body>
@@ -90,12 +116,47 @@
         <div class="text-xs font-mono tracking-widest opacity-40 uppercase">Initializing CribOS v1.2...</div>
     </div>
 
+    <!-- Start Menu (All Apps) -->
+    <div id="start-menu" class="p-4">
+        <div class="flex items-center gap-3 mb-6 p-2 border-b border-white/10 pb-4">
+            <img id="start-pfp" src="/storage/photos/user.png" class="w-10 h-10 rounded-full border border-blue-500 object-cover">
+            <div class="flex flex-col">
+                <span id="start-user-name" class="text-sm font-bold text-white">Guest Wanderer</span>
+                <span class="text-[10px] text-blue-400 font-mono">Crib ID: Verified</span>
+            </div>
+        </div>
+        <p class="text-[9px] text-zinc-500 font-bold uppercase mb-2 ml-2">All Programs</p>
+        <div class="grid grid-cols-1 gap-1 mb-4 overflow-auto max-h-[250px]" id="start-apps-list">
+            <!-- Populated via JS -->
+        </div>
+        <div class="mt-auto pt-4 border-t border-white/10 flex justify-between items-center">
+            <div class="flex gap-4">
+                <button onclick="location.reload()" class="text-[10px] text-zinc-400 hover:text-white font-bold uppercase">Restart</button>
+                <button id="logout-btn-start" class="text-[10px] text-zinc-400 hover:text-white font-bold uppercase">Sign Out</button>
+            </div>
+            <img src="/storage/photos/tgdtc.png" class="w-4 h-4 opacity-20">
+        </div>
+    </div>
+
+    <!-- Search Menu -->
+    <div id="search-menu" class="p-4">
+        <div class="relative">
+            <input type="text" id="app-search-input" placeholder="Search the Dungeon..." class="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl mb-4 text-white text-sm outline-none focus:border-blue-500 transition-colors">
+            <svg class="absolute left-3 top-3 text-zinc-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+        <div id="search-results" class="space-y-2 max-h-[300px] overflow-auto pr-2">
+            <!-- Results here -->
+        </div>
+    </div>
+
+    <!-- Security Layers -->
     <div id="blicked-screen" class="hidden fixed inset-0 bg-black text-white flex flex-col items-center justify-center z-[10001]">
         <h1 class="text-6xl md:text-8xl font-black mb-6 italic blicked-text">BLICKED.</h1>
         <p class="text-xl opacity-70 tracking-widest font-mono">ACCESS DENIED</p>
         <p class="mt-4 text-[10px] opacity-20 font-mono" id="blicked-uid"></p>
     </div>
 
+    <!-- Login -->
     <div id="login-screen">
         <div class="bg-zinc-900/70 p-8 rounded-[32px] border border-white/10 w-[360px] text-center shadow-2xl backdrop-blur-3xl">
             <img id="login-avatar" src="/storage/photos/user.png" class="w-20 h-20 rounded-full mx-auto mb-6 border-2 border-blue-500 shadow-xl object-cover">
@@ -131,12 +192,56 @@
     <!-- Main Desktop -->
     <div id="desktop">
         <div id="icon-layer" class="flex flex-col flex-wrap h-[calc(100svh-52px)] p-6 items-start gap-2"></div>
+        
+        <!-- Taskbar -->
         <div id="taskbar">
-            <img src="/storage/photos/tgdtc.png" class="start-btn" onclick="openSettings()">
-            <div id="open-apps-tray" class="flex gap-2"></div>
+            <!-- Left -->
+            <div class="flex items-center">
+                <div class="taskbar-item" onclick="toggleMenu('start-menu')">
+                    <img src="/storage/photos/tgdtc.png" class="hover:rotate-12 transition-transform">
+                </div>
+                <div class="taskbar-item" onclick="toggleMenu('search-menu')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div id="open-apps-tray" class="flex gap-1 ml-2"></div>
+            </div>
+
+            <!-- Center -->
+            <div class="taskbar-center">
+                <div class="taskbar-item" title="Browser" onclick="launchApp('browser')">
+                    <img src="/storage/photos/proxicrib.png">
+                </div>
+                <div class="taskbar-item" title="Settings" onclick="launchApp('settings')">
+                    <img src="/storage/photos/settings.png">
+                </div>
+                <div class="taskbar-item" title="Dungeon Scrolls" onclick="launchApp('scrolls')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png">
+                </div>
+            </div>
+            
             <div class="flex-grow"></div>
-            <div id="scroll-notif"></div>
-            <div id="system-time" class="text-[11px] font-bold opacity-70 mr-4 font-mono"></div>
+            
+            <div class="flex items-center gap-4 text-white mr-2">
+                <!-- Message Tracker -->
+                <div onclick="launchApp('scrolls')" class="flex items-center cursor-pointer group px-2 py-1 rounded-lg hover:bg-white/5 transition-colors">
+                    <div class="relative">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span id="unread-count" class="absolute -top-2 -right-2 scroll-unread-badge hidden">0</span>
+                    </div>
+                </div>
+                
+                <!-- Battery Indicator -->
+                <div class="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+                    <span id="battery-pct" class="text-[10px] font-bold opacity-80">100%</span>
+                    <div class="w-6 h-3 border border-white/40 rounded-[3px] relative p-[1px] flex items-center">
+                        <div id="battery-fill" class="h-full bg-green-500 rounded-[1px] transition-all duration-1000" style="width: 100%"></div>
+                        <div class="absolute -right-[3px] top-[3px] w-[2px] h-[4px] bg-white/40 rounded-r-sm"></div>
+                    </div>
+                </div>
+                
+                <!-- Clock -->
+                <div id="system-time" class="text-[11px] font-bold opacity-80 font-mono tracking-tight text-right min-w-[60px]">00:00 AM</div>
+            </div>
         </div>
     </div>
 
@@ -166,11 +271,12 @@
             cribAccount: null,
             installed: JSON.parse(localStorage.getItem('crib_installed')) || ['browser', 'scrolls', 'store', 'settings'],
             wallpaper: localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80',
-            highestZ: 100
+            highestZ: 100,
+            browserMode: localStorage.getItem('crib_browser_mode') || 'proxy' // 'proxy' or 'regular'
         };
 
         const APP_DB = {
-            'browser': { name: 'Browser', icon: '/storage/photos/proxicrib.png', url: '/storage/proxy-main/index.html', essential: true },
+            'browser': { name: 'Browser', icon: '/storage/photos/proxicrib.png', internal: 'browser', essential: true },
             'scrolls': { name: 'Dungeon Scrolls', icon: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png', internal: 'scrolls', essential: true },
             'store': { name: 'Crib Store', icon: '/storage/photos/tgdtc.png', internal: 'store', essential: true },
             'settings': { name: 'Settings', icon: '/storage/photos/settings.png', internal: 'settings', essential: true },
@@ -204,45 +310,87 @@
                     document.getElementById('login-screen').style.display = 'flex';
                 });
             }, 1000);
+
+            // Clock & Battery
             setInterval(() => {
                 const now = new Date();
                 document.getElementById('system-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }, 1000);
+
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(bat => {
+                    const updateBat = () => {
+                        const lvl = Math.round(bat.level * 100);
+                        document.getElementById('battery-pct').innerText = lvl + '%';
+                        document.getElementById('battery-fill').style.width = lvl + '%';
+                        document.getElementById('battery-fill').className = bat.charging ? 'h-full bg-blue-500' : 'h-full bg-green-500';
+                    };
+                    updateBat();
+                    bat.addEventListener('levelchange', updateBat);
+                    bat.addEventListener('chargingchange', updateBat);
+                });
+            }
+
             document.getElementById('desktop').style.backgroundImage = `url(${state.wallpaper})`;
+            document.getElementById('app-search-input').addEventListener('input', (e) => searchApps(e.target.value));
+            document.getElementById('logout-btn-start').onclick = () => signOut(auth).then(()=>location.reload());
         }
 
-        window.bringToFront = (id) => {
-            const el = document.getElementById(id);
-            if (el) {
-                state.highestZ++;
-                el.style.zIndex = state.highestZ;
-            }
+        window.toggleMenu = (id) => {
+            const menu = document.getElementById(id);
+            const other = id === 'start-menu' ? 'search-menu' : 'start-menu';
+            document.getElementById(other).style.display = 'none';
+            if (menu.style.display === 'flex') menu.style.display = 'none';
+            else { menu.style.display = 'flex'; if (id === 'search-menu') document.getElementById('app-search-input').focus(); if (id === 'start-menu') populateStartMenu(); }
         };
+
+        function searchApps(query) {
+            const results = document.getElementById('search-results');
+            results.innerHTML = '';
+            if (!query.trim()) return;
+            Object.keys(APP_DB).forEach(key => {
+                const app = APP_DB[key];
+                if (app.name.toLowerCase().includes(query.toLowerCase())) {
+                    const div = document.createElement('div');
+                    div.className = "flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer text-white text-sm transition-colors";
+                    div.innerHTML = `<img src="${app.icon}" class="w-8 h-8 rounded-lg shadow-lg"><span>${app.name}</span>`;
+                    div.onclick = () => { launchApp(key); toggleMenu('search-menu'); };
+                    results.appendChild(div);
+                }
+            });
+        }
+
+        function populateStartMenu() {
+            const list = document.getElementById('start-apps-list');
+            list.innerHTML = '';
+            state.installed.forEach(id => {
+                const app = APP_DB[id];
+                if (!app) return;
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl cursor-pointer text-white text-sm transition-colors";
+                div.innerHTML = `<img src="${app.icon}" class="w-8 h-8 rounded-lg"><span>${app.name}</span>`;
+                div.onclick = () => { launchApp(id); toggleMenu('start-menu'); };
+                list.appendChild(div);
+            });
+            if (state.cribAccount) {
+                document.getElementById('start-user-name').innerText = state.cribAccount.displayName;
+                document.getElementById('start-pfp').src = state.cribAccount.pfp;
+            }
+        }
+
+        window.bringToFront = (id) => { const el = document.getElementById(id); if (el) { state.highestZ++; el.style.zIndex = state.highestZ; } };
 
         window.resetLoginView = () => {
             document.getElementById('user-input-section').classList.remove('hidden');
             document.getElementById('pass-input-section').classList.add('hidden');
             document.getElementById('signup-section').classList.add('hidden');
             document.getElementById('login-avatar').src = '/storage/photos/user.png';
+            document.getElementById('welcome-msg').innerText = "CribOS";
         };
 
-        window.handleIdentityNext = () => {
-            const val = document.getElementById('username-field').value.trim();
-            if (val) showPassEntry(val, '/storage/photos/user.png');
-        };
-
-        window.showPassEntry = (name, pfp) => {
-            document.getElementById('welcome-msg').innerText = `Welcome, ${name}`;
-            document.getElementById('login-avatar').src = pfp || '/storage/photos/user.png';
-            document.getElementById('user-input-section').classList.add('hidden');
-            document.getElementById('pass-input-section').classList.remove('hidden');
-        };
-
-        window.showSignUp = () => {
-            document.getElementById('user-input-section').classList.add('hidden');
-            document.getElementById('signup-section').classList.remove('hidden');
-        };
-
+        window.handleIdentityNext = () => { const val = document.getElementById('username-field').value.trim(); if (val) showPassEntry(val, '/storage/photos/user.png'); };
+        window.showPassEntry = (name, pfp) => { document.getElementById('welcome-msg').innerText = `Welcome, ${name}`; document.getElementById('login-avatar').src = pfp || '/storage/photos/user.png'; document.getElementById('user-input-section').classList.add('hidden'); document.getElementById('pass-input-section').classList.remove('hidden'); };
+        window.showSignUp = () => { document.getElementById('user-input-section').classList.add('hidden'); document.getElementById('signup-section').classList.remove('hidden'); };
         window.googleFastPass = async () => { try { await signInWithPopup(auth, provider); } catch(e) { console.error(e); } };
 
         window.finalizeSignUp = async () => {
@@ -252,8 +400,7 @@
             if (!state.user) state.user = (await signInAnonymously(auth)).user;
             const data = { uid: state.user.uid, displayName: name, pfp: state.user.photoURL || `https://ui-avatars.com/api/?name=${name}`, cribPass: pass, email: state.user.email || 'anon' };
             await setDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", state.user.uid), data);
-            state.cribAccount = data;
-            enterDesktop();
+            state.cribAccount = data; enterDesktop();
         };
 
         window.verifyCribPassword = async () => {
@@ -262,200 +409,171 @@
                 const d = await getDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", state.user.uid));
                 if (d.exists() && d.data().cribPass === p) return enterDesktop();
             }
-            if (p === "crib123") enterDesktop();
-            else alert("Wrong password, scrub.");
+            if (p === "crib123") enterDesktop(); else alert("Wrong password, scrub.");
         };
 
-        function enterDesktop() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('desktop').style.display = 'block';
-            renderIcons();
-            listenForScrolls();
-        }
+        function enterDesktop() { document.getElementById('login-screen').style.display = 'none'; document.getElementById('desktop').style.display = 'block'; renderIcons(); listenForScrolls(); populateStartMenu(); }
 
         function listenForScrolls() {
             if (!state.user) return;
             onSnapshot(query(collection(db, "artifacts", appId, "users", state.user.uid, "scrolls")), (snap) => {
-                let unread = 0;
-                snap.forEach(d => { if(!d.data().read) unread++; });
-                document.getElementById('scroll-notif').style.display = unread > 0 ? 'block' : 'none';
+                let unread = 0; snap.forEach(d => { if(!d.data().read) unread++; });
+                const badge = document.getElementById('unread-count');
+                badge.innerText = unread; badge.classList.toggle('hidden', unread === 0);
                 if (document.getElementById('scroll-list')) renderScrollList();
-            });
+            }, (err) => console.error("Scroll Sync Failed", err));
         }
 
         async function renderScrollList() {
-            const list = document.getElementById('scroll-list');
+            const list = document.getElementById('scroll-list'); if (!list) return;
             const snap = await getDocs(collection(db, "artifacts", appId, "users", state.user.uid, "scrolls"));
-            let items = [];
-            snap.forEach(d => items.push({id: d.id, ...d.data()}));
+            let items = []; snap.forEach(d => items.push({id: d.id, ...d.data()}));
             items.sort((a,b) => new Date(b.sentAt) - new Date(a.sentAt));
-            list.innerHTML = items.map(s => `
-                <div class="scroll-item ${!s.read ? 'scroll-unread' : ''}">
-                    <div class="flex justify-between text-[10px] font-bold opacity-40 mb-1">
-                        <span>FROM: ${s.fromName.toUpperCase()}</span>
-                    </div>
-                    <p class="text-sm">${s.message}</p>
-                    <div class="flex gap-4 mt-2">
-                        <button onclick="markRead('${s.id}')" class="text-[10px] text-blue-400 font-bold uppercase">Read</button>
-                        <button onclick="delScroll('${s.id}')" class="text-[10px] text-red-500 font-bold uppercase">Burn</button>
-                    </div>
-                </div>
-            `).join('') || '<div class="opacity-20 text-center py-10 italic">Quiet in the Dungeon...</div>';
+            list.innerHTML = items.map(s => `<div class="mb-3 p-3 bg-zinc-900/50 rounded-xl border border-white/5 ${!s.read ? 'border-l-4 border-l-blue-500' : ''}"><div class="flex justify-between text-[10px] font-bold opacity-40 mb-1"><span>${s.fromName.toUpperCase()}</span><span>${new Date(s.sentAt).toLocaleDateString()}</span></div><p class="text-xs text-zinc-300 leading-relaxed">${s.message}</p><div class="flex gap-4 mt-3 pt-2 border-t border-white/5">${!s.read ? `<button onclick="markRead('${s.id}')" class="text-[9px] text-blue-400 font-bold uppercase">Mark Read</button>` : ''}<button onclick="delScroll('${s.id}')" class="text-[9px] text-red-500 font-bold uppercase">Burn</button></div></div>`).join('') || '<div class="opacity-20 text-center py-10 italic text-sm">Quiet in the Dungeon...</div>';
         }
 
         window.markRead = async (id) => { await updateDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id), {read:true}); renderScrollList(); };
         window.delScroll = async (id) => { await deleteDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id)); renderScrollList(); };
 
         window.sendScroll = async () => {
-            const to = document.getElementById('to').value.trim();
-            const msg = document.getElementById('msg').value.trim();
-            const global = document.getElementById('global')?.checked;
+            const to = document.getElementById('to').value.trim(); const msg = document.getElementById('msg').value.trim(); const global = document.getElementById('global')?.checked;
             if (!msg) return;
-
             if (global && ADMINS.includes(state.user.email)) {
                 const users = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
-                users.forEach(async u => {
-                    await addDoc(collection(db, "artifacts", appId, "users", u.id, "scrolls"), { fromName: "[GLOBAL] Admin", message: msg, sentAt: new Date().toISOString(), read: false });
-                });
+                users.forEach(async u => { await addDoc(collection(db, "artifacts", appId, "users", u.id, "scrolls"), { fromName: "[GLOBAL] Admin", message: msg, sentAt: new Date().toISOString(), read: false }); });
             } else {
                 const users = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
-                let tid = null;
-                users.forEach(u => { if (u.data().email === to || u.data().displayName === to) tid = u.id; });
+                let tid = null; users.forEach(u => { if (u.data().email === to || u.data().displayName === to) tid = u.id; });
                 if (tid) await addDoc(collection(db, "artifacts", appId, "users", tid, "scrolls"), { fromName: state.cribAccount.displayName, message: msg, sentAt: new Date().toISOString(), read: false });
                 else alert("Wanderer not found.");
             }
-            alert("Sent.");
-            closeWin(document.getElementById('msg').closest('.window').id);
+            alert("Sent."); closeWin(document.getElementById('msg').closest('.window').id);
         };
 
         function renderIcons() {
-            const layer = document.getElementById('icon-layer');
-            layer.innerHTML = '';
+            const layer = document.getElementById('icon-layer'); layer.innerHTML = '';
             state.installed.forEach(id => {
-                const app = APP_DB[id];
-                if (!app) return;
-                const div = document.createElement('div');
-                div.className = 'app-icon';
-                div.onclick = () => launchApp(id);
+                const app = APP_DB[id]; if (!app) return;
+                const div = document.createElement('div'); div.className = 'app-icon'; div.onclick = () => launchApp(id);
                 div.innerHTML = `<img src="${app.icon}"><span class="app-label">${app.name}</span>`;
                 layer.appendChild(div);
             });
         }
 
-        function launchApp(id) {
-            const app = APP_DB[id];
+        window.launchApp = (id) => {
+            const app = APP_DB[id]; if (!app) return;
             if (app.internal === 'store') return openStore();
             if (app.internal === 'settings') return openSettings();
             if (app.internal === 'scrolls') return openScrolls();
+            if (app.internal === 'browser') return openBrowser();
             createWindow(app.name, app.url);
+        };
+
+        // --- BROWSER REWRITE WITH PROXY TOGGLE ---
+        function openBrowser() {
+            const html = `
+                <div class="flex flex-col h-full bg-black">
+                    <div class="browser-toolbar">
+                        <button onclick="this.closest('.window-content').querySelector('iframe').contentWindow.location.reload()" class="p-2 hover:bg-white/10 rounded-lg"><svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+                        <input id="browser-input" type="text" class="url-bar" placeholder="Enter URL (Daimyan will try to break this)..." value="https://google.com">
+                        <button onclick="browserGo(this)" class="bg-blue-600 px-4 py-1 rounded-md text-[10px] font-bold uppercase">Go</button>
+                        <button onclick="toggleBrowserSettings(this)" class="p-2 hover:bg-white/10 rounded-lg"><svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
+                    </div>
+                    <div id="browser-settings-panel" class="hidden absolute top-[84px] right-2 w-48 bg-zinc-900 border border-white/10 p-3 rounded-xl z-50 shadow-2xl">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase mb-2">Engine Mode</p>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="setBrowserMode('proxy', this)" class="mode-btn text-[10px] text-left p-2 rounded-lg ${state.browserMode === 'proxy' ? 'bg-blue-600 font-bold' : 'hover:bg-white/5'}">ProxiCrib (Recommended)</button>
+                            <button onclick="setBrowserMode('regular', this)" class="mode-btn text-[10px] text-left p-2 rounded-lg ${state.browserMode === 'regular' ? 'bg-blue-600 font-bold' : 'hover:bg-white/5'}">Regular (Blicked-Risk)</button>
+                        </div>
+                        <p class="text-[8px] text-zinc-600 mt-2 leading-tight">Note: Regular mode frames sites directly. Sites like Google/YouTube will probably break.</p>
+                    </div>
+                    <div class="flex-grow relative bg-white">
+                        <iframe id="browser-frame" src="/storage/proxy-main/index.html" class="w-full h-full bg-white"></iframe>
+                    </div>
+                </div>
+            `;
+            createWindow('Browser', null, html);
         }
+
+        window.toggleBrowserSettings = (btn) => {
+            const panel = btn.closest('.window-content').querySelector('#browser-settings-panel');
+            panel.classList.toggle('hidden');
+        };
+
+        window.setBrowserMode = (mode, btn) => {
+            state.browserMode = mode;
+            localStorage.setItem('crib_browser_mode', mode);
+            const panel = btn.closest('#browser-settings-panel');
+            panel.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('bg-blue-600', 'font-bold'));
+            btn.classList.add('bg-blue-600', 'font-bold');
+            alert(`Mode switched to ${mode.toUpperCase()}. Reload to apply.`);
+        };
+
+        window.browserGo = (btn) => {
+            const content = btn.closest('.window-content');
+            const input = content.querySelector('#browser-input');
+            const frame = content.querySelector('#browser-frame');
+            let url = input.value.trim();
+            if (!url.startsWith('http')) url = 'https://' + url;
+            
+            if (state.browserMode === 'proxy') {
+                // If using ProxiCrib, we navigate the proxy app's frame or just reload with target
+                frame.src = `/storage/proxy-main/index.html?url=${encodeURIComponent(url)}`;
+            } else {
+                // Regular framing (Most sites block this with X-Frame-Options)
+                frame.src = url;
+            }
+        };
 
         function createWindow(title, url, html = null) {
             const id = 'w_' + Math.random().toString(36).substr(2,9);
             const win = document.createElement('div');
             win.id = id; win.className = 'window';
-            state.highestZ++;
-            win.style.zIndex = state.highestZ;
-            win.style.width = '80%'; win.style.height = '70%'; win.style.left = '10%'; win.style.top = '10%';
-            
-            // Touch to front
+            state.highestZ++; win.style.zIndex = state.highestZ;
+            const isSmall = window.innerWidth < 768;
+            win.style.width = isSmall ? '95%' : '80%'; win.style.height = isSmall ? '80%' : '70%'; win.style.left = isSmall ? '2.5%' : '10%'; win.style.top = isSmall ? '5%' : '10%';
             win.addEventListener('mousedown', () => bringToFront(id));
             win.addEventListener('touchstart', () => bringToFront(id), {passive: true});
-
-            win.innerHTML = `
-                <div class="window-header" onmousedown="startDrag(event, '${id}')" ontouchstart="startDrag(event, '${id}')">
-                    <div class="window-controls">
-                        <button class="control-btn close" onclick="closeWin('${id}')"></button>
-                        <button class="control-btn max" onclick="toggleFull('${id}')"></button>
-                    </div>
-                    <div class="window-title">${title}</div>
-                </div>
-                <div class="window-content">${html || `<iframe src="${url}"></iframe>`}</div>
-            `;
+            win.innerHTML = `<div class="window-header" onmousedown="startDrag(event, '${id}')" ontouchstart="startDrag(event, '${id}')"><div class="window-controls"><button class="control-btn close" onclick="closeWin('${id}')"></button><button class="control-btn max" onclick="toggleFull('${id}')"></button></div><div class="window-title text-zinc-400 font-bold uppercase tracking-widest pointer-events-none">${title}</div></div><div class="window-content">${html || `<iframe src="${url}" allow="autoplay; fullscreen; keyboard"></iframe>`}</div>`;
             document.getElementById('desktop').appendChild(win);
         }
 
         window.closeWin = (id) => document.getElementById(id).remove();
         window.toggleFull = (id) => {
             const el = document.getElementById(id);
-            if (el.style.width === '100%') { el.style.width='80%'; el.style.height='70%'; el.style.left='10%'; el.style.top='10%'; }
-            else { el.style.width='100%'; el.style.height='calc(100svh - 52px)'; el.style.left='0'; el.style.top='0'; }
+            if (el.style.width === '100%') { el.style.width='80%'; el.style.height='70%'; el.style.left='10%'; el.style.top='10%'; el.style.borderRadius = '12px'; }
+            else { el.style.width='100%'; el.style.height='calc(100svh - 52px)'; el.style.left='0'; el.style.top='0'; el.style.borderRadius = '0'; }
         };
 
         window.startDrag = (e, id) => {
-            const el = document.getElementById(id);
-            bringToFront(id); // Bring to front when starting drag
-            const cx = e.clientX || e.touches?.[0]?.clientX;
-            const cy = e.clientY || e.touches?.[0]?.clientY;
+            const el = document.getElementById(id); if (el.style.width === '100%') return;
+            bringToFront(id);
+            const cx = e.clientX || e.touches?.[0]?.clientX; const cy = e.clientY || e.touches?.[0]?.clientY;
             let ox = cx - el.offsetLeft, oy = cy - el.offsetTop;
-            const move = (ev) => {
-                const mx = ev.clientX || ev.touches?.[0]?.clientX;
-                const my = ev.clientY || ev.touches?.[0]?.clientY;
-                el.style.left = (mx - ox) + 'px'; el.style.top = (my - oy) + 'px';
-            };
+            const move = (ev) => { const mx = ev.clientX || ev.touches?.[0]?.clientX; const my = ev.clientY || ev.touches?.[0]?.clientY; el.style.left = (mx - ox) + 'px'; el.style.top = (my - oy) + 'px'; };
             const stop = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop); window.removeEventListener('touchmove', move); window.removeEventListener('touchend', stop); };
-            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-            window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('touchend', stop);
+            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop); window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('touchend', stop);
         };
 
         function openStore() {
-            const html = `
-                <div class="p-6 bg-zinc-950 h-full overflow-auto">
-                    <h2 class="text-2xl font-black italic mb-6">CRIB STORE</h2>
-                    <div class="space-y-4">
-                        ${Object.keys(APP_DB).filter(k => !APP_DB[k].essential).map(k => `
-                            <div class="bg-zinc-900 p-4 rounded-xl flex items-center justify-between">
-                                <div class="flex items-center gap-4"><img src="${APP_DB[k].icon}" class="w-12 h-12 rounded-lg"><span>${APP_DB[k].name}</span></div>
-                                <button onclick="install('${k}')" class="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold ${state.installed.includes(k)?'opacity-30':''}">
-                                    ${state.installed.includes(k)?'INSTALLED':'GET'}
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+            const html = `<div class="p-6 bg-zinc-950 h-full overflow-auto"><h2 class="text-2xl font-black italic mb-6 uppercase tracking-tighter">Crib Store</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${Object.keys(APP_DB).filter(k => !APP_DB[k].essential).map(k => `<div class="bg-zinc-900 border border-white/5 p-4 rounded-2xl flex items-center justify-between"><div class="flex items-center gap-4"><img src="${APP_DB[k].icon}" class="w-12 h-12 rounded-xl shadow-lg"><div><div class="font-bold text-sm">${APP_DB[k].name}</div><div class="text-[9px] text-zinc-500 uppercase font-mono">Game Data</div></div></div><button onclick="install('${k}')" class="bg-blue-600 px-5 py-2 rounded-full text-[10px] font-black tracking-widest ${state.installed.includes(k)?'opacity-30':''}">${state.installed.includes(k)?'INSTALLED':'GET'}</button></div>`).join('')}</div></div>`;
             createWindow('Crib Store', null, html);
         }
 
-        window.install = (k) => { if(!state.installed.includes(k)){ state.installed.push(k); localStorage.setItem('crib_installed', JSON.stringify(state.installed)); renderIcons(); alert('Added.'); } };
+        window.install = (k) => { if(!state.installed.includes(k)){ state.installed.push(k); localStorage.setItem('crib_installed', JSON.stringify(state.installed)); renderIcons(); populateStartMenu(); } };
 
         function openScrolls() {
-            const html = `
-                <div class="flex flex-col h-full bg-black">
-                    <div class="p-4 bg-zinc-900 border-b border-white/10 flex justify-between items-center">
-                        <span class="font-bold italic">SCROLLS</span>
-                        <button onclick="newScr()" class="text-xs bg-blue-600 px-3 py-1 rounded-lg">NEW</button>
-                    </div>
-                    <div id="scroll-list" class="flex-grow overflow-auto p-4"></div>
-                </div>
-            `;
+            const html = `<div class="flex flex-col h-full bg-black"><div class="p-4 bg-zinc-900 border-b border-white/10 flex justify-between items-center"><span class="font-black italic tracking-tighter">SCROLLS</span><button onclick="newScr()" class="text-[10px] bg-blue-600 px-4 py-1.5 rounded-full font-bold uppercase">Compose</button></div><div id="scroll-list" class="flex-grow overflow-auto p-4 space-y-3"></div></div>`;
             createWindow('Dungeon Scrolls', null, html); renderScrollList();
         }
 
         window.newScr = () => {
-            const html = `
-                <div class="p-6 bg-zinc-900 h-full">
-                    <input id="to" placeholder="User Name" class="w-full bg-black p-3 rounded-lg mb-4 text-white">
-                    ${ADMINS.includes(state.user.email)?'<label class="text-[10px] text-red-500 font-bold"><input type="checkbox" id="global"> GLOBAL</label>':''}
-                    <textarea id="msg" placeholder="Message..." class="w-full h-32 bg-black p-3 rounded-lg mb-4 text-white"></textarea>
-                    <button onclick="sendScroll()" class="w-full bg-blue-600 py-3 rounded-lg font-bold">DISPATCH</button>
-                </div>
-            `;
-            createWindow('Compose', null, html);
+            const html = `<div class="p-6 bg-zinc-900 h-full"><p class="text-[9px] text-zinc-500 font-bold uppercase mb-2">Recipient</p><input id="to" placeholder="Wanderer Name..." class="w-full bg-black p-3 rounded-xl mb-4 text-white text-sm border border-white/5 outline-none focus:border-blue-500">${ADMINS.includes(state.user?.email)?'<label class="flex items-center gap-2 text-[10px] text-red-500 font-bold mb-4 cursor-pointer"><input type="checkbox" id="global" class="accent-red-500"> BROADCAST TO ALL</label>':''}<p class="text-[9px] text-zinc-500 font-bold uppercase mb-2">Message</p><textarea id="msg" placeholder="Write your scroll..." class="w-full h-32 bg-black p-3 rounded-xl mb-6 text-white text-sm border border-white/5 outline-none focus:border-blue-500 resize-none"></textarea><button onclick="sendScroll()" class="w-full bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest active:scale-95 transition-transform">DISPATCH SCROLL</button></div>`;
+            createWindow('New Scroll', null, html);
         };
 
         function openSettings() {
-            const html = `
-                <div class="p-8 bg-zinc-950 h-full">
-                    <h2 class="text-xl font-bold mb-6 italic">Settings</h2>
-                    <input id="w" value="${state.wallpaper}" placeholder="Wallpaper URL" class="w-full bg-zinc-900 p-3 rounded-lg mb-4 text-white text-xs">
-                    <button onclick="upW()" class="bg-blue-600 px-6 py-2 rounded-lg text-xs font-bold mb-8">APPLY</button>
-                    <div class="border-t border-white/10 pt-6 flex gap-4">
-                        <button onclick="signOut(auth).then(()=>location.reload())" class="text-xs opacity-50">LOGOUT</button>
-                        <button onclick="localStorage.clear();location.reload()" class="text-xs text-red-500">FACTORY RESET</button>
-                    </div>
-                </div>
-            `;
+            const html = `<div class="p-8 bg-zinc-950 h-full overflow-auto"><h2 class="text-xl font-black italic mb-6 uppercase">System Settings</h2><div class="space-y-6"><div class="bg-zinc-900 p-5 rounded-2xl border border-white/5"><p class="text-[10px] text-zinc-500 font-bold uppercase mb-3">Customization</p><input id="w" value="${state.wallpaper}" placeholder="Wallpaper Image URL" class="w-full bg-black border border-white/10 p-3 rounded-xl mb-4 text-white text-xs outline-none focus:border-blue-500"><button onclick="upW()" class="w-full bg-blue-600 py-3 rounded-xl text-xs font-bold uppercase">Update Desktop</button></div><div class="bg-zinc-900 p-5 rounded-2xl border border-white/5"><p class="text-[10px] text-zinc-500 font-bold uppercase mb-3">System Identity</p><div class="flex items-center gap-4 mb-4"><img src="${state.cribAccount?.pfp}" class="w-12 h-12 rounded-full border border-blue-500"><div><div class="text-sm font-bold">${state.cribAccount?.displayName}</div><div class="text-[10px] text-zinc-500">${state.user?.email}</div></div></div><div class="flex gap-2"><button onclick="signOut(auth).then(()=>location.reload())" class="flex-1 bg-white/5 hover:bg-white/10 py-3 rounded-xl text-[10px] font-bold uppercase transition-colors">Log Out</button><button onclick="localStorage.clear();location.reload()" class="flex-1 bg-red-900/20 hover:bg-red-900/40 text-red-500 py-3 rounded-xl text-[10px] font-bold uppercase transition-colors">Factory Reset</button></div></div></div></div>`;
             createWindow('Settings', null, html);
         }
 
