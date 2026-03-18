@@ -120,17 +120,12 @@
 
         #clock { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; margin-left: 5px; color: rgba(255,255,255,0.7); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
         
-        /* YT MUSIC LEGIT UI */
-        .ytm-container { height: 100%; display: flex; flex-direction: column; background: #030303; }
-        .ytm-header { padding: 12px; border-bottom: 1px solid #1a1a1a; display: flex; flex-direction: column; gap: 8px; }
-        .ytm-search-row { display: flex; align-items: center; gap: 8px; }
-        .ytm-search { flex: 1; background: #1a1a1a; border: none; border-radius: 8px; padding: 10px 15px; color: white; outline: none; font-size: 13px; border: 1px solid transparent; transition: 0.2s; }
-        .ytm-search:focus { border-color: #f00; }
-        .ytm-btn { background: #f00; color: white; font-weight: bold; font-size: 11px; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
-        .ytm-player-box { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .ytm-controls { height: 110px; padding: 15px 20px; display: flex; flex-direction: column; justify-content: center; gap: 12px; background: linear-gradient(to bottom, #0a0a0a, #030303); border-top: 1px solid #1a1a1a; }
-        
-        #ytm-frame { position: absolute; top: -10%; left: 0; width: 100%; height: 120%; pointer-events: auto; } /* Oversized to hide some YT UI */
+        /* BROWSER UI */
+        .browser-container { height: 100%; display: flex; flex-direction: column; background: #111; }
+        .browser-toolbar { background: #222; padding: 10px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; }
+        .browser-url-bar { flex: 1; background: #000; border: 1px solid #444; border-radius: 8px; padding: 8px 15px; color: #fff; outline: none; font-size: 14px; }
+        .browser-url-bar:focus { border-color: #3b82f6; }
+        .browser-go-btn { background: #3b82f6; color: white; font-weight: bold; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -148,14 +143,14 @@
             <h2 id="login-greeting" class="text-xl font-bold mb-6 italic text-blue-400">Welcome to the Crib</h2>
             
             <div id="login-form" class="w-full space-y-3">
-                <input type="text" id="username-field" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
-                <input type="password" id="pass-field" placeholder="Password (crib123)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
+                <input type="text" id="username-field" placeholder="Choose a Resident Name" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
+                <input type="password" id="pass-field" placeholder="Passkey (Any works)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
                 
-                <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">UNLOCK</button>
+                <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">ENTER CRIB</button>
                 
                 <div class="flex items-center gap-2 py-2">
                     <div class="flex-grow h-[1px] bg-white/10"></div>
-                    <span class="text-[10px] text-white/30 font-bold uppercase tracking-widest">OR</span>
+                    <span class="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instant Resident</span>
                     <div class="flex-grow h-[1px] bg-white/10"></div>
                 </div>
 
@@ -189,14 +184,14 @@
             <div class="grid grid-cols-1 gap-1" id="start-list"></div>
             <div class="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
                 <button onclick="location.reload()" class="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">Restart CribOS</button>
-                <span class="text-[10px] text-zinc-700">Ver 2.3.0</span>
+                <span class="text-[10px] text-zinc-700">Ver 2.3.1</span>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -218,7 +213,7 @@
         };
 
         const APPS = {
-            browser: { name: 'ProxiCrib', icon: '/storage/photos/proxicrib.png', url: '/storage/proxy-main/index.html' },
+            browser: { name: 'ProxiCrib', icon: '/storage/photos/proxicrib.png', type: 'browser' },
             scrolls: { name: 'Scrolls', icon: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png', url: '/storage/scrolls-main/index.html' },
             ytmusic: { name: 'YT Music', icon: '/storage/photos/ytmusic.png', type: 'ytm' },
             settings: { name: 'Settings', icon: '/storage/photos/settings.png' },
@@ -230,32 +225,47 @@
             rh: { name: 'Ragdoll Hit', icon: '/storage/photos/rh.png', url: '/storage/ragdoll-hit-main/index.html' }
         };
 
+        const applySavedWallpaper = () => {
+            const wall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop';
+            document.getElementById('desktop').style.backgroundImage = `url('${wall}')`;
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('stat-name').innerText = user.displayName || localStorage.getItem('crib_username') || "Resident";
+                if (user.photoURL) {
+                    document.getElementById('menu-avatar').src = user.photoURL;
+                    document.getElementById('login-avatar').src = user.photoURL;
+                }
+            }
+        });
+
         window.googleFastpass = async () => {
             try {
                 const result = await signInWithPopup(auth, provider);
                 document.getElementById('stat-name').innerText = result.user.displayName;
-                if (result.user.photoURL) document.getElementById('menu-avatar').src = result.user.photoURL;
+                if (result.user.photoURL) {
+                    document.getElementById('menu-avatar').src = result.user.photoURL;
+                }
                 enterDesktop();
-            } catch (e) { console.error(e); }
+            } catch (e) { enterDesktop(); }
         };
 
         window.doLogin = async () => {
             const user = document.getElementById('username-field').value.trim();
-            const pass = document.getElementById('pass-field').value;
-            if (pass === 'crib123' || pass === '') {
-                await signInAnonymously(auth);
-                document.getElementById('stat-name').innerText = user || "Wanderer";
-                enterDesktop();
-            } else { alert("Incorrect Key."); }
+            await signInAnonymously(auth);
+            const finalName = user || "Wanderer";
+            document.getElementById('stat-name').innerText = finalName;
+            localStorage.setItem('crib_username', finalName);
+            enterDesktop();
         };
 
         function enterDesktop() {
+            applySavedWallpaper();
             document.getElementById('login-screen').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('desktop').style.display = 'block';
-                const wall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop';
-                document.getElementById('desktop').style.backgroundImage = `url('${wall}')`;
                 renderIcons();
                 startClock();
             }, 400);
@@ -298,38 +308,77 @@
         window.launchApp = (id) => {
             const app = APPS[id];
             if (id === 'settings') return openSettings();
+            if (id === 'browser') return openBrowser();
             if (app.type === 'ytm') return openYTMusic();
             createWindow(id, app.name, app.url, app.icon);
+        };
+
+        // --- NEW PROXICRIB BROWSER LOGIC ---
+        function openBrowser() {
+            const html = `
+                <div class="browser-container">
+                    <div class="browser-toolbar">
+                        <input type="text" id="browser-input" class="browser-url-bar" placeholder="Enter URL or Search Query..." 
+                               onkeydown="if(event.key==='Enter') window.browse()" 
+                               onclick="window.clearBrowserBar()">
+                        <button onclick="window.browse()" class="browser-go-btn">GO</button>
+                    </div>
+                    <div class="flex-grow bg-black relative">
+                        <iframe id="browser-iframe" class="w-full h-full" onload="window.browserLoaded()"></iframe>
+                    </div>
+                </div>
+            `;
+            createWindow('browser', 'ProxiCrib', null, '/storage/photos/proxicrib.png', html);
+        }
+
+        window.clearBrowserBar = () => {
+            const input = document.getElementById('browser-input');
+            if (input.value === 'LOADING...' || input.value === 'BYPASSED') {
+                input.value = '';
+            }
+        };
+
+        window.browse = () => {
+            const input = document.getElementById('browser-input');
+            const frame = document.getElementById('browser-iframe');
+            let query = input.value.trim();
+            if (!query) return;
+
+            input.value = "LOADING...";
+
+            let targetUrl = "";
+            const isUrl = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/.*)?$/.test(query);
+
+            if (isUrl) {
+                if (!query.startsWith('http')) query = 'https://' + query;
+                targetUrl = query;
+            } else {
+                // Bing Search Logic
+                targetUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}&form=QBLH&sp=-1&ghc=1&lq=0`;
+            }
+
+            // Wrap in the bypass proxy
+            frame.src = `https://nodeunbl0cker.vercel.app/proxy/https:/${targetUrl.replace(/^https?:\/\//, '')}`;
+        };
+
+        window.browserLoaded = () => {
+            const input = document.getElementById('browser-input');
+            if (input && input.value === 'LOADING...') {
+                input.value = 'BYPASSED';
+            }
         };
 
         function openYTMusic() {
             const html = `
                 <div class="ytm-container">
                     <div class="ytm-header">
-                        <div class="flex items-center gap-2 mb-1">
-                            <img src="/storage/photos/ytmusic.png" class="w-5 h-5 rounded">
-                            <span class="text-[10px] uppercase font-black tracking-tighter text-white/50">CribOS Music Player</span>
-                        </div>
                         <div class="ytm-search-row">
-                            <input type="text" id="ytm-search-input" class="ytm-search" placeholder="Search song or playlist..." onkeydown="if(event.key==='Enter') window.ytmAction('search')">
+                            <input type="text" id="ytm-search-input" class="ytm-search" placeholder="Search song or artist..." onkeydown="if(event.key==='Enter') window.ytmAction('search')">
                             <button onclick="window.ytmAction('playlist')" class="ytm-btn">Playlist</button>
                         </div>
                     </div>
                     <div class="ytm-player-box">
                         <iframe id="ytm-frame" src="https://www.youtube.com/embed?enablejsapi=1&listType=search&list=music&autoplay=1" allow="autoplay; encrypted-media"></iframe>
-                    </div>
-                    <div class="ytm-controls">
-                        <div class="flex flex-col items-center mb-1">
-                             <div id="ytm-status" class="text-[11px] font-bold text-white truncate w-full text-center">Ready to Play</div>
-                        </div>
-                        <div class="flex items-center justify-center gap-8">
-                             <button class="text-white opacity-50 text-xl" onclick="window.ytmAction('prev')">⏮</button>
-                             <button id="ytm-play-btn" class="text-white text-3xl" onclick="window.ytmAction('play')">⏯</button>
-                             <button class="text-white opacity-50 text-xl" onclick="window.ytmAction('next')">⏭</button>
-                        </div>
-                        <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-red-600 w-1/3 animate-pulse"></div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -339,20 +388,9 @@
         window.ytmAction = (type) => {
             const input = document.getElementById('ytm-search-input');
             const frame = document.getElementById('ytm-frame');
-            const status = document.getElementById('ytm-status');
             if (!frame) return;
-
-            if (type === 'search') {
-                status.innerText = `Searching for: ${input.value}`;
-                frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(input.value)}&autoplay=1`;
-            } else if (type === 'playlist') {
-                status.innerText = `Loading Playlist: ${input.value || 'Music'}`;
-                // This forces YouTube to treat the search as a playlist type
-                frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(input.value + " playlist")}&autoplay=1`;
-            } else if (type === 'play') {
-                 const cur = frame.src;
-                 frame.src = cur.includes('autoplay=1') ? cur.replace('autoplay=1', 'autoplay=0') : cur.replace('autoplay=0', 'autoplay=1');
-            }
+            const val = input.value.trim();
+            if (type === 'search') frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(val)}&autoplay=1`;
         };
 
         function createWindow(appId, title, url, icon, customHtml = null) {
@@ -362,9 +400,8 @@
             win.id = winId; win.className = 'window';
             state.z++; win.style.zIndex = state.z;
             
-            const isMusic = appId === 'ytmusic';
-            win.style.width = isMusic ? '380px' : '850px';
-            win.style.height = isMusic ? '600px' : '550px';
+            win.style.width = appId === 'ytmusic' ? '380px' : '850px';
+            win.style.height = appId === 'ytmusic' ? '600px' : '550px';
             win.style.left = '100px'; win.style.top = '50px';
 
             win.innerHTML = `
@@ -402,12 +439,11 @@
             }
         };
 
-        window.toggleMaximize = (id) => {
-            document.getElementById(id).classList.toggle('maximized');
-        };
+        window.toggleMaximize = (id) => document.getElementById(id).classList.toggle('maximized');
 
         window.closeWin = (appId) => {
-            document.getElementById('win_' + appId).remove();
+            const win = document.getElementById('win_' + appId);
+            if (win) win.remove();
             delete state.windows[appId];
             updateDock();
         };
@@ -455,28 +491,18 @@
         };
 
         function openSettings() {
-            const html = `<div class="p-8 text-white"><h2 class="text-3xl font-black mb-8 italic text-blue-500">SYSTEM SETTINGS</h2><div class="space-y-8"><section class="bg-zinc-900/50 p-6 rounded-2xl border border-white/5"><h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Desktop Customization</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="space-y-2"><label class="text-[10px] font-black uppercase text-zinc-500">URL Source</label><input type="text" id="wall-input" class="w-full bg-black border border-white/10 p-3 rounded-xl text-sm outline-none focus:border-blue-500" placeholder="Paste image link here..."></div><div class="space-y-2"><label class="text-[10px] font-black uppercase text-zinc-500">iPad Photo Picker</label><label for="wall-file" class="flex items-center justify-center w-full bg-zinc-800 border border-white/10 p-3 rounded-xl text-sm font-bold cursor-pointer hover:bg-zinc-700 transition">Choose from Gallery</label><input type="file" id="wall-file" class="hidden" accept="image/*" onchange="window.handleFileWall(event)"></div></div><button onclick="window.saveWall()" class="w-full mt-6 bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition shadow-lg shadow-blue-900/20">APPLY CHANGES</button></section></div></div>`;
+            const currentWall = localStorage.getItem('crib_wall') || '';
+            const html = `<div class="p-8"><h2 class="text-3xl font-black mb-8 italic text-blue-500 uppercase">System Settings</h2><div class="bg-zinc-900/50 p-6 rounded-2xl border border-white/5"><h3 class="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Desktop Background</h3><input type="text" id="wall-input" class="w-full bg-black border border-white/10 p-4 rounded-xl text-sm mb-4 outline-none focus:border-blue-500" placeholder="Image URL..." value="${currentWall}"><button onclick="window.saveWall()" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition">Apply Wallpaper</button></div></div>`;
             createWindow('settings', 'Settings', null, '/storage/photos/settings.png', html);
         }
 
-        window.handleFileWall = (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const base64 = event.target.result;
-                document.getElementById('wall-input').value = base64;
-                document.getElementById('desktop').style.backgroundImage = `url('${base64}')`;
-            };
-            reader.readAsDataURL(file);
-        };
-
         window.saveWall = () => {
             const url = document.getElementById('wall-input').value;
-            if (!url) return;
             localStorage.setItem('crib_wall', url);
             document.getElementById('desktop').style.backgroundImage = `url('${url}')`;
         };
 
+        applySavedWallpaper();
         setTimeout(() => {
             document.getElementById('boot-screen').style.opacity = '0';
             setTimeout(() => {
