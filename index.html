@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Game Dungeon | CribOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: black; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: black; touch-action: manipulation; }
         
         /* Boot & Login */
         #boot-screen { position: fixed; inset: 0; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
@@ -15,51 +15,49 @@
         
         /* Desktop */
         #desktop { width: 100vw; height: 100vh; background-size: cover; background-position: center; position: relative; display: none; }
-        .app-icon { width: 80px; display: flex; flex-direction: column; align-items: center; cursor: pointer; margin: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: 0.2s; }
-        .app-icon:hover { background: rgba(255,255,255,0.1); border-radius: 8px; }
-        .app-icon img { width: 50px; height: 50px; border-radius: 12px; margin-bottom: 4px; pointer-events: none; }
+        .app-icon { width: 85px; display: flex; flex-direction: column; align-items: center; cursor: pointer; margin: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        .app-icon:hover { background: rgba(255,255,255,0.1); border-radius: 12px; }
+        .app-icon img { width: 55px; height: 55px; border-radius: 14px; margin-bottom: 6px; pointer-events: none; object-fit: cover; }
         .app-label { color: white; font-size: 11px; text-align: center; font-weight: 500; pointer-events: none; }
 
         /* Window Management */
-        .window { position: absolute; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; z-index: 10; }
-        .window-header { background: #262626; height: 35px; display: flex; align-items: center; padding: 0 10px; cursor: move; user-select: none; border-bottom: 1px solid #333; }
+        .window { position: absolute; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; z-index: 10; min-width: 300px; min-height: 200px; }
+        .window-header { background: #262626; height: 40px; display: flex; align-items: center; padding: 0 12px; cursor: move; user-select: none; border-bottom: 1px solid #333; }
         .window-controls { display: flex; gap: 8px; width: 60px; }
         .control-btn { width: 13px; height: 13px; border-radius: 50%; cursor: pointer; border: none; transition: 0.2s; }
-        .close { background: #ff5f56; } .close:hover { background: #e04e46; }
-        .min { background: #ffbd2e; } .min:hover { background: #e0a526; }
-        .max { background: #27c93f; } .max:hover { background: #1fa533; }
+        .close { background: #ff5f56; } .min { background: #ffbd2e; } .max { background: #27c93f; }
         .window-title { flex-grow: 1; text-align: center; color: #aaa; font-size: 12px; font-weight: 600; margin-right: 60px; }
-        .window-content { flex-grow: 1; background: #000; position: relative; }
+        .window-content { flex-grow: 1; background: #000; position: relative; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; }
 
         /* Taskbar */
-        #taskbar { position: absolute; bottom: 0; width: 100%; height: 45px; background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(15px); display: flex; align-items: center; padding: 0 10px; z-index: 9999; border-top: 1px solid rgba(255,255,255,0.05); }
-        .start-btn { width: 32px; height: 32px; cursor: pointer; margin-right: 15px; }
-        #scroll-notif { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: 12px; right: 85px; display: none; box-shadow: 0 0 10px #ef4444; }
+        #taskbar { position: absolute; bottom: 0; width: 100%; height: 48px; background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 12px; z-index: 9999; border-top: 1px solid rgba(255,255,255,0.1); }
+        .start-btn { width: 34px; height: 34px; cursor: pointer; margin-right: 15px; transition: transform 0.2s; }
+        .start-btn:active { transform: scale(0.9); }
+        #scroll-notif { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; position: absolute; top: 10px; right: 85px; display: none; box-shadow: 0 0 12px #ef4444; border: 2px solid #000; }
 
         /* Custom UI */
-        .scroll-item { background: #222; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 10px; transition: 0.2s; position: relative; }
-        .scroll-item:hover { border-color: #444; background: #262626; }
+        .scroll-item { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 12px; transition: 0.2s; position: relative; }
+        .scroll-item:hover { border-color: #3b82f6; }
+        .scroll-unread { border-left: 4px solid #3b82f6; background: #1e293b; }
         
-        input, textarea { transition: all 0.2s ease; }
-        input:focus, textarea:focus { transform: scale(1.01); border-color: #3b82f6 !important; }
+        input, textarea { transition: all 0.2s ease; outline: none !important; }
+        input:focus, textarea:focus { transform: scale(1.01); border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
         .google-btn {
-            background: white;
-            color: #374151;
-            font-weight: 600;
-            padding: 12px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            font-size: 14px;
-            transition: 0.2s;
-            border: 1px solid #e5e7eb;
+            background: white; color: #374151; font-weight: 600; padding: 12px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+            font-size: 14px; transition: 0.2s; border: 1px solid #e5e7eb;
         }
         .google-btn:hover { background: #f9fafb; transform: translateY(-1px); }
+
+        /* Animations */
+        @keyframes blickAnimation {
+            0% { transform: scale(1); filter: grayscale(0); }
+            50% { transform: scale(1.05); filter: grayscale(1); }
+            100% { transform: scale(1); filter: grayscale(0); }
+        }
+        .blicked-text { animation: blickAnimation 3s infinite ease-in-out; }
     </style>
 </head>
 <body>
@@ -67,78 +65,78 @@
     <!-- Boot Sequence -->
     <div id="boot-screen">
         <img src="/storage/photos/tgdtc.png" id="boot-logo" class="w-24 mb-6 animate-pulse">
-        <div id="boot-text" class="text-xs font-mono tracking-widest opacity-40 uppercase">System Loading...</div>
+        <div id="boot-text" class="text-xs font-mono tracking-widest opacity-40 uppercase">Initializing CribOS v1.2...</div>
+    </div>
+
+    <!-- Blicked Screen -->
+    <div id="blicked-screen" class="hidden fixed inset-0 bg-black text-white flex flex-col items-center justify-center z-[10001]">
+        <h1 class="text-7xl font-black mb-6 italic blicked-text">BLICKED.</h1>
+        <p class="text-xl opacity-70 tracking-widest font-mono">ACCESS DENIED BY THE CRIB ADMINS</p>
+        <p class="mt-4 text-xs opacity-30">UID: <span id="blicked-uid">---</span></p>
     </div>
 
     <!-- Login Screen -->
     <div id="login-screen">
-        <div id="login-card" class="bg-zinc-900/50 p-10 rounded-3xl border border-white/10 w-96 text-center shadow-2xl backdrop-blur-xl">
-            <img id="login-avatar" src="/storage/photos/user.png" class="w-24 h-24 rounded-full mx-auto mb-6 border-2 border-blue-500 shadow-lg object-cover">
-            <h2 id="welcome-msg" class="text-2xl font-bold mb-8 italic text-blue-400">CribOS</h2>
+        <div id="login-card" class="bg-zinc-900/60 p-10 rounded-[32px] border border-white/10 w-[400px] text-center shadow-2xl backdrop-blur-2xl">
+            <img id="login-avatar" src="/storage/photos/user.png" class="w-24 h-24 rounded-full mx-auto mb-6 border-2 border-blue-500 shadow-xl object-cover">
+            <h2 id="welcome-msg" class="text-3xl font-bold mb-8 italic text-blue-400 tracking-tight">CribOS</h2>
             
             <div id="user-input-section">
-                <input type="text" id="username-field" placeholder="Username or Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 outline-none focus:border-blue-500 text-center text-white">
+                <input type="text" id="username-field" placeholder="Username or Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 text-center text-white">
                 <button onclick="handleIdentityNext()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4">CONTINUE</button>
-                <div class="border-t border-white/5 pt-4">
-                    <button onclick="showSignUp()" class="text-xs text-blue-400 hover:underline font-semibold uppercase tracking-wider">Create Account</button>
+                <div class="border-t border-white/10 pt-4">
+                    <button onclick="showSignUp()" class="w-full py-3 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs font-bold uppercase tracking-widest transition-all">Create Crib Account</button>
                 </div>
             </div>
 
             <div id="pass-input-section" class="hidden">
-                <input type="password" id="pass-field" placeholder="Password" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 outline-none focus:border-blue-500 text-center text-white">
+                <input type="password" id="pass-field" placeholder="Password" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 text-center text-white">
                 <button onclick="verifyCribPassword()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4">UNLATCH</button>
-                <button onclick="resetLoginView()" class="text-[10px] opacity-40 hover:opacity-100 uppercase">Back to Username</button>
+                <button onclick="resetLoginView()" class="text-[10px] opacity-40 hover:opacity-100 uppercase tracking-widest">Back to Start</button>
             </div>
 
             <div id="signup-section" class="hidden text-left">
-                <label class="text-[10px] uppercase font-bold opacity-40 ml-2">Display Name</label>
-                <input type="text" id="signup-name" placeholder="Alex" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-3 outline-none focus:border-blue-500 text-white">
-                <label class="text-[10px] uppercase font-bold opacity-40 ml-2">Crib Password</label>
-                <input type="password" id="signup-pass" placeholder="Create Password" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-4 outline-none focus:border-blue-500 text-white">
-                <button onclick="finalizeSignUp()" class="w-full bg-green-600 hover:bg-green-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4">CREATE ACCOUNT</button>
-                <button onclick="resetLoginView()" class="w-full text-center text-[10px] opacity-40 hover:opacity-100 uppercase">Back to Login</button>
+                <label class="text-[10px] uppercase font-bold opacity-40 ml-2 mb-1 block">Display Name</label>
+                <input type="text" id="signup-name" placeholder="Alex" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-3 text-white">
+                <label class="text-[10px] uppercase font-bold opacity-40 ml-2 mb-1 block">Crib Password</label>
+                <input type="password" id="signup-pass" placeholder="Create Password" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-4 text-white">
+                <button onclick="finalizeSignUp()" class="w-full bg-green-600 hover:bg-green-500 py-4 rounded-xl font-bold tracking-wide shadow-lg transition-all mb-4 uppercase">Confirm & Enter</button>
+                <button onclick="resetLoginView()" class="w-full text-center text-[10px] opacity-40 hover:opacity-100 uppercase tracking-widest">Return to Login</button>
             </div>
 
             <div id="auth-extras">
                 <div id="social-divider" class="flex items-center my-6">
                     <div class="flex-grow border-t border-white/10"></div>
-                    <span class="mx-4 text-xs opacity-40 uppercase">FAST PASS</span>
+                    <span class="mx-4 text-[10px] opacity-40 uppercase tracking-widest font-bold">Fast Pass</span>
                     <div class="flex-grow border-t border-white/10"></div>
                 </div>
-
                 <button id="google-btn-main" onclick="googleFastPass()" class="google-btn">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
                     GOOGLE FAST PASS
                 </button>
             </div>
             
-            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden">Access Denied. Check credentials.</p>
+            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden font-medium">Access Denied. Check credentials.</p>
         </div>
     </div>
 
-    <!-- Blicked Screen -->
-    <div id="blicked-screen" style="display:none; position:fixed; inset:0; background:black; color:white; flex-direction:column; align-items:center; justify-content:center; z-index:10001;">
-        <h1 class="text-7xl font-black mb-6 italic">BLICKED.</h1>
-        <p class="text-xl opacity-70">Access Denied by The Game Dungeon Admin.</p>
-    </div>
-
-    <!-- Main Desktop -->
+    <!-- Desktop -->
     <div id="desktop">
-        <div id="icon-layer" class="flex flex-col flex-wrap h-full p-4 items-start"></div>
+        <div id="icon-layer" class="flex flex-col flex-wrap h-[calc(100%-48px)] p-6 items-start gap-2"></div>
         
         <div id="taskbar">
             <img src="/storage/photos/tgdtc.png" class="start-btn" title="Crib Start">
-            <div id="open-apps" class="flex gap-2"></div>
+            <div id="open-apps-tray" class="flex gap-2"></div>
             <div class="flex-grow"></div>
             <div id="scroll-notif"></div>
-            <div id="system-time" class="text-[11px] font-bold opacity-70 mr-4"></div>
+            <div id="system-time" class="text-[11px] font-bold opacity-70 mr-4 font-mono"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, where, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         (function(){ emailjs.init("B27WRyM1IvaQI_Ysy"); })();
 
@@ -157,14 +155,14 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
         const appId = "cribos-v1";
-        const admins = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
+        const ADMIN_EMAILS = ["open.it.out.fortnite@gmail.com", "awilson02341@outlook.com", "thegamedungeon.thecrib@gmail.com"];
 
         let state = {
             user: null,
             cribAccount: null,
             installed: JSON.parse(localStorage.getItem('crib_installed')) || ['browser', 'scrolls', 'store', 'settings'],
             wallpaper: localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80',
-            pfp: '/storage/photos/user.png'
+            activeWindows: []
         };
 
         const APP_DB = {
@@ -185,28 +183,36 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         state.user = user;
+                        const blicked = await getDoc(doc(db, "artifacts", appId, "public", "data", "blicked", user.uid));
+                        if (blicked.exists()) {
+                            document.getElementById('blicked-uid').innerText = user.uid;
+                            document.getElementById('boot-screen').style.display = 'none';
+                            document.getElementById('blicked-screen').classList.remove('hidden');
+                            return;
+                        }
                         const userDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", user.uid));
                         if (userDoc.exists()) {
                             state.cribAccount = userDoc.data();
                             showPassEntry(state.cribAccount.displayName, state.cribAccount.pfp);
                             listenForScrolls();
                         } else {
-                            showSignUp(user.displayName, user.photoURL);
+                            resetLoginView();
                         }
                     } else {
-                        const localName = localStorage.getItem('crib_last_user');
-                        if (localName) document.getElementById('username-field').value = localName;
+                        const localUser = localStorage.getItem('crib_last_user');
+                        if (localUser) document.getElementById('username-field').value = localUser;
+                        resetLoginView();
                     }
                     document.getElementById('boot-screen').style.display = 'none';
                     document.getElementById('login-screen').style.display = 'flex';
                 });
-            }, 1200);
+            }, 1500);
             setInterval(updateTime, 1000);
             document.getElementById('desktop').style.backgroundImage = `url(${state.wallpaper})`;
         }
 
-        // --- Auth Logic ---
-        window.resetLoginView = function() {
+        // --- AUTH ---
+        window.resetLoginView = () => {
             document.getElementById('welcome-msg').innerText = "CribOS";
             document.getElementById('login-avatar').src = '/storage/photos/user.png';
             document.getElementById('user-input-section').classList.remove('hidden');
@@ -216,63 +222,63 @@
             document.getElementById('error-msg').classList.add('hidden');
         };
 
-        window.handleIdentityNext = async function() {
+        window.handleIdentityNext = () => {
             const input = document.getElementById('username-field').value.trim();
             if (!input) return;
             showPassEntry(input, '/storage/photos/user.png');
         };
 
-        window.showPassEntry = function(name, pfp) {
+        window.showPassEntry = (name, pfp) => {
             document.getElementById('welcome-msg').innerText = `Welcome, ${name}`;
             document.getElementById('login-avatar').src = pfp || '/storage/photos/user.png';
             document.getElementById('user-input-section').classList.add('hidden');
-            document.getElementById('signup-section').classList.add('hidden');
             document.getElementById('pass-input-section').classList.remove('hidden');
             document.getElementById('auth-extras').classList.add('hidden');
         };
 
-        window.showSignUp = function(preName = "", prePfp = "") {
-            document.getElementById('welcome-msg').innerText = "Register Crib Account";
-            document.getElementById('login-avatar').src = prePfp || "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=Crib+User";
-            document.getElementById('user-input-section').classList.add('hidden');
-            document.getElementById('pass-input-section').classList.add('hidden');
+        window.showSignUp = (preName = "") => {
+            document.getElementById('welcome-msg').innerText = "Join the Crib";
             document.getElementById('signup-section').classList.remove('hidden');
+            document.getElementById('user-input-section').classList.add('hidden');
             document.getElementById('auth-extras').classList.add('hidden');
             if (preName) document.getElementById('signup-name').value = preName;
         };
 
-        window.finalizeSignUp = async function() {
+        window.googleFastPass = async () => { try { await signInWithPopup(auth, provider); } catch(e) { console.error(e); } };
+
+        window.finalizeSignUp = async () => {
             const name = document.getElementById('signup-name').value.trim();
             const pass = document.getElementById('signup-pass').value.trim();
             if (!name || !pass) return;
             if (!state.user) state.user = (await signInAnonymously(auth)).user;
-            const pfp = state.user.photoURL || `https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=${name}`;
-            const userData = { uid: state.user.uid, displayName: name, pfp: pfp, cribPass: pass, email: state.user.email || 'anonymous', createdAt: new Date().toISOString() };
+            const userData = {
+                uid: state.user.uid,
+                displayName: name,
+                pfp: state.user.photoURL || `https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=${name}`,
+                cribPass: pass,
+                email: state.user.email || 'anonymous',
+                createdAt: new Date().toISOString()
+            };
             await setDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", state.user.uid), userData);
             state.cribAccount = userData;
             enterDesktop();
         };
 
-        window.verifyCribPassword = async function() {
+        window.verifyCribPassword = async () => {
             const pass = document.getElementById('pass-field').value;
             if (state.user) {
                 const userDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "crib_users", state.user.uid));
                 if (userDoc.exists() && userDoc.data().cribPass === pass) {
-                    const blickDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "blicked", state.user.uid));
-                    if (blickDoc.exists()) {
-                        document.getElementById('login-screen').style.display = 'none';
-                        document.getElementById('blicked-screen').style.display = 'flex';
-                        return;
-                    }
                     enterDesktop();
                     return;
                 }
             }
             if (pass === "crib123") enterDesktop();
-            else document.getElementById('error-msg').classList.remove('hidden');
+            else {
+                document.getElementById('error-msg').classList.remove('hidden');
+                setTimeout(() => document.getElementById('error-msg').classList.add('hidden'), 3000);
+            }
         };
-
-        window.googleFastPass = async () => { try { await signInWithPopup(auth, provider); } catch(e) { console.error(e); } };
 
         function enterDesktop() {
             if (state.cribAccount) localStorage.setItem('crib_last_user', state.cribAccount.displayName);
@@ -282,16 +288,16 @@
             listenForScrolls();
         }
 
-        // --- Dungeon Scrolls Logic ---
+        // --- MESSAGING ---
         function listenForScrolls() {
             if (!state.user) return;
-            const q = collection(db, "artifacts", appId, "users", state.user.uid, "scrolls");
-            onSnapshot(q, (snapshot) => {
+            const q = query(collection(db, "artifacts", appId, "users", state.user.uid, "scrolls"));
+            onSnapshot(q, (snap) => {
                 let unread = 0;
-                snapshot.forEach(doc => { if (!doc.data().read) unread++; });
+                snap.forEach(d => { if (!d.data().read) unread++; });
                 document.getElementById('scroll-notif').style.display = unread > 0 ? 'block' : 'none';
                 if (document.getElementById('scroll-list-container')) renderScrollList();
-            }, (err) => console.error(err));
+            });
         }
 
         async function renderScrollList() {
@@ -301,133 +307,59 @@
             let scrolls = [];
             snap.forEach(d => scrolls.push({ id: d.id, ...d.data() }));
             scrolls.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
-
-            container.innerHTML = scrolls.length ? scrolls.map(s => `
-                <div class="scroll-item ${s.read ? 'opacity-60' : 'border-blue-500'}">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-bold text-blue-400">FROM: ${s.fromName}</span>
-                        <span class="text-[10px] opacity-40">${new Date(s.sentAt).toLocaleDateString()}</span>
+            container.innerHTML = scrolls.map(s => `
+                <div class="scroll-item ${!s.read ? 'scroll-unread' : ''}">
+                    <div class="flex justify-between text-[10px] font-bold opacity-40 mb-1">
+                        <span>FROM: ${s.fromName.toUpperCase()}</span>
+                        <span>${new Date(s.sentAt).toLocaleDateString()}</span>
                     </div>
-                    <p class="text-sm text-zinc-300 mb-3">${s.message}</p>
+                    <p class="text-sm mb-3">${s.message}</p>
                     <div class="flex gap-2">
-                        ${!s.read ? `<button onclick="markRead('${s.id}')" class="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-1 rounded">Mark Read</button>` : ''}
-                        <button onclick="deleteScroll('${s.id}')" class="text-[10px] bg-red-600/20 text-red-400 px-2 py-1 rounded">Burn Scroll</button>
+                        ${!s.read ? `<button onclick="markRead('${s.id}')" class="text-[10px] text-blue-400 font-bold uppercase">Read</button>` : ''}
+                        <button onclick="deleteScroll('${s.id}')" class="text-[10px] text-red-500 font-bold uppercase">Burn</button>
                     </div>
                 </div>
-            `).join('') : `<div class="text-center opacity-30 mt-10">No scrolls in your dungeon...</div>`;
+            `).join('') || '<div class="opacity-20 text-center py-10 italic">Empty Dungeon...</div>';
         }
 
-        window.markRead = async (id) => {
-            await updateDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id), { read: true });
-            renderScrollList();
-        };
+        window.markRead = async (id) => { await updateDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id), { read: true }); renderScrollList(); };
+        window.deleteScroll = async (id) => { await deleteDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id)); renderScrollList(); };
 
-        window.deleteScroll = async (id) => {
-            await deleteDoc(doc(db, "artifacts", appId, "users", state.user.uid, "scrolls", id));
-            renderScrollList();
-        };
-
-        window.sendScroll = async function() {
-            const toEmail = document.getElementById('scroll-to').value.trim();
+        window.sendScroll = async () => {
+            const to = document.getElementById('scroll-to').value.trim();
             const msg = document.getElementById('scroll-msg').value.trim();
             const isGlobal = document.getElementById('scroll-global')?.checked;
-            
-            if (!msg || (!toEmail && !isGlobal)) return;
+            if (!msg || (!to && !isGlobal)) return;
 
-            const isAdmin = admins.includes(state.user.email);
-            const senderName = state.cribAccount?.displayName || state.user.displayName || "Unknown Wanderer";
-
-            if (isGlobal && isAdmin) {
-                const usersSnap = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
-                usersSnap.forEach(async (uDoc) => {
-                    await addDoc(collection(db, "artifacts", appId, "users", uDoc.id, "scrolls"), {
-                        fromName: senderName,
-                        fromEmail: state.user.email,
-                        message: msg,
-                        sentAt: new Date().toISOString(),
-                        read: false,
-                        type: 'global'
+            const sender = state.cribAccount?.displayName || "Ghost";
+            if (isGlobal && ADMIN_EMAILS.includes(state.user.email)) {
+                const users = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
+                users.forEach(async u => {
+                    await addDoc(collection(db, "artifacts", appId, "users", u.id, "scrolls"), {
+                        fromName: `[GLOBAL] ${sender}`, message: msg, sentAt: new Date().toISOString(), read: false
                     });
                 });
             } else {
-                const usersSnap = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
-                let targetUser = null;
-                usersSnap.forEach(u => {
-                    if (u.data().email === toEmail || u.data().displayName === toEmail) targetUser = u.id;
-                });
-
-                if (targetUser) {
-                    await addDoc(collection(db, "artifacts", appId, "users", targetUser, "scrolls"), {
-                        fromName: senderName,
-                        fromEmail: state.user.email,
-                        message: msg,
-                        sentAt: new Date().toISOString(),
-                        read: false
+                const users = await getDocs(collection(db, "artifacts", appId, "public", "data", "crib_users"));
+                let target = null;
+                users.forEach(u => { if (u.data().email === to || u.data().displayName === to) target = u.id; });
+                if (target) {
+                    await addDoc(collection(db, "artifacts", appId, "users", target, "scrolls"), {
+                        fromName: sender, message: msg, sentAt: new Date().toISOString(), read: false
                     });
-
-                    emailjs.send("service_n2hsxcf", "template_rip4cmz", {
-                        to_name: toEmail,
-                        from_name: senderName,
-                        message: msg,
-                        to_email: toEmail.includes('@') ? toEmail : 'thegamedungeon.thecrib@gmail.com'
-                    });
-                } else {
-                    alert("Wanderer not found in the Crib.");
-                    return;
-                }
+                } else alert("Wanderer not found.");
             }
-            
-            document.getElementById('scroll-msg').value = '';
             alert("Scroll dispatched.");
-            closeWin(document.querySelector('.window:has(.window-title:contains("New Scroll"))')?.id);
+            closeWin(document.getElementById('scroll-msg').closest('.window').id);
         };
 
-        function openScrolls() {
-            const html = `
-                <div class="flex flex-col h-full bg-zinc-950 text-white">
-                    <div class="p-4 border-b border-white/5 flex justify-between items-center bg-zinc-900">
-                        <h2 class="font-bold italic text-blue-400 tracking-tighter">DUNGEON SCROLLS</h2>
-                        <button onclick="openNewScroll()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-full font-bold transition">COMPOSE</button>
-                    </div>
-                    <div id="scroll-list-container" class="flex-grow overflow-y-auto p-4">
-                        Loading scrolls...
-                    </div>
-                </div>
-            `;
-            createWindow('Dungeon Scrolls', null, html);
-            renderScrollList();
-        }
-
-        window.openNewScroll = function() {
-            const isAdmin = admins.includes(state.user.email);
-            const html = `
-                <div class="p-6 bg-zinc-900 h-full">
-                    <div class="mb-4">
-                        <label class="text-[10px] uppercase font-bold opacity-40 mb-1 block">Recipient (Email or User)</label>
-                        <input type="text" id="scroll-to" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-sm text-white outline-none">
-                    </div>
-                    ${isAdmin ? `
-                    <div class="mb-4 flex items-center gap-2">
-                        <input type="checkbox" id="scroll-global" class="w-4 h-4 bg-zinc-800 rounded">
-                        <label for="scroll-global" class="text-xs font-bold text-red-400">SEND AS GLOBAL SCROLL (ADMIN)</label>
-                    </div>
-                    ` : ''}
-                    <div class="mb-6">
-                        <label class="text-[10px] uppercase font-bold opacity-40 mb-1 block">Your Message</label>
-                        <textarea id="scroll-msg" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-sm text-white h-32 outline-none resize-none" placeholder="Type your scroll..."></textarea>
-                    </div>
-                    <button onclick="sendScroll()" class="w-full bg-blue-600 py-4 rounded-xl font-bold hover:bg-blue-500 transition-all">DISPATCH SCROLL</button>
-                </div>
-            `;
-            createWindow('New Scroll', null, html);
-        }
-
-        // --- System UI ---
+        // --- WINDOWS & APPS ---
         function renderIcons() {
             const container = document.getElementById('icon-layer');
             container.innerHTML = '';
             state.installed.forEach(id => {
                 const app = APP_DB[id];
+                if (!app) return;
                 const div = document.createElement('div');
                 div.className = 'app-icon';
                 div.onclick = () => launchApp(id);
@@ -436,7 +368,7 @@
             });
         }
 
-        window.launchApp = function(id) {
+        window.launchApp = (id) => {
             const app = APP_DB[id];
             if (app.internal === 'store') return openStore();
             if (app.internal === 'settings') return openSettings();
@@ -448,81 +380,131 @@
             const id = 'win_' + Math.random().toString(36).substr(2, 9);
             const win = document.createElement('div');
             win.id = id; win.className = 'window';
-            win.style.width = '65%'; win.style.height = '65%';
-            win.style.left = '17.5%'; win.style.top = '10%';
+            win.style.width = window.innerWidth < 600 ? '90%' : '70%';
+            win.style.height = '75%';
+            win.style.left = '5%'; win.style.top = '10%';
             win.innerHTML = `
-                <div class="window-header" onmousedown="startDrag(event, '${id}')">
+                <div class="window-header" onmousedown="startDrag(event, '${id}')" ontouchstart="startDrag(event, '${id}')">
                     <div class="window-controls">
                         <button class="control-btn close" onclick="closeWin('${id}')"></button>
-                        <button class="control-btn min" onclick="minWin('${id}')"></button>
                         <button class="control-btn max" onclick="toggleFull('${id}')"></button>
                     </div>
                     <div class="window-title">${title}</div>
                 </div>
-                <div class="window-content">${contentHtml ? contentHtml : `<iframe src="${url}"></iframe>`}</div>
+                <div class="window-content">${contentHtml || `<iframe src="${url}"></iframe>`}</div>
             `;
             document.getElementById('desktop').appendChild(win);
         }
 
         window.closeWin = (id) => document.getElementById(id)?.remove();
-        window.startDrag = function(e, id) {
+        window.toggleFull = (id) => {
             const el = document.getElementById(id);
-            if (!el) return;
-            let ox = e.clientX - el.offsetLeft, oy = e.clientY - el.offsetTop;
-            function move(e) { el.style.left = (e.clientX-ox)+'px'; el.style.top = (e.clientY-oy)+'px'; }
-            function stop() { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop); }
+            if (el.style.width === '100%') { el.style.width = '70%'; el.style.height = '75%'; el.style.left = '15%'; el.style.top = '10%'; }
+            else { el.style.width = '100%'; el.style.height = 'calc(100% - 48px)'; el.style.left = '0'; el.style.top = '0'; }
+        };
+
+        window.startDrag = (e, id) => {
+            const el = document.getElementById(id);
+            let clientX = e.clientX || e.touches[0].clientX;
+            let clientY = e.clientY || e.touches[0].clientY;
+            let ox = clientX - el.offsetLeft, oy = clientY - el.offsetTop;
+            const move = (ev) => {
+                let cx = ev.clientX || ev.touches[0].clientX;
+                let cy = ev.clientY || ev.touches[0].clientY;
+                el.style.left = (cx - ox) + 'px'; el.style.top = (cy - oy) + 'px';
+            };
+            const stop = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop); window.removeEventListener('touchmove', move); window.removeEventListener('touchend', stop); };
             window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+            window.addEventListener('touchmove', move); window.addEventListener('touchend', stop);
         };
 
         function openStore() {
-            const storeHtml = `<div class="p-8 bg-zinc-900 h-full overflow-y-auto"><h2 class="text-2xl font-bold mb-6 italic">CRIB STORE</h2><div class="grid grid-cols-2 gap-4">${Object.keys(APP_DB).filter(k => !APP_DB[k].essential).map(k => `<div class="bg-zinc-800 p-4 rounded-2xl flex items-center justify-between border border-white/5"><div class="flex items-center gap-4"><img src="${APP_DB[k].icon}" class="w-12 h-12 rounded-lg"><span class="font-bold">${APP_DB[k].name}</span></div><button onclick="installApp('${k}')" class="bg-blue-600 px-5 py-2 rounded-full text-xs font-bold hover:bg-blue-500">${state.installed.includes(k) ? 'INSTALLED' : 'GET'}</button></div>`).join('')}</div></div>`;
-            createWindow('Crib Store', null, storeHtml);
+            const html = `
+                <div class="p-8 bg-zinc-950 h-full overflow-y-auto">
+                    <h2 class="text-3xl font-black mb-8 italic italic tracking-tighter">CRIB STORE</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${Object.keys(APP_DB).filter(k => !APP_DB[k].essential).map(k => `
+                            <div class="bg-zinc-900 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <img src="${APP_DB[k].icon}" class="w-14 h-14 rounded-xl">
+                                    <span class="font-bold">${APP_DB[k].name}</span>
+                                </div>
+                                <button onclick="installApp('${k}')" class="bg-blue-600 px-6 py-2 rounded-full text-xs font-bold ${state.installed.includes(k) ? 'opacity-50 pointer-events-none' : ''}">
+                                    ${state.installed.includes(k) ? 'INSTALLED' : 'GET'}
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            createWindow('Crib Store', null, html);
         }
 
-        window.installApp = function(k) {
-            if(!state.installed.includes(k)) {
+        window.installApp = (k) => {
+            if (!state.installed.includes(k)) {
                 state.installed.push(k);
                 localStorage.setItem('crib_installed', JSON.stringify(state.installed));
                 renderIcons();
-                const current = Array.from(document.querySelectorAll('.window-title')).find(t => t.innerText === "Crib Store")?.closest('.window');
-                if(current) closeWin(current.id);
-                openStore();
+                alert(`${APP_DB[k].name} installed to desktop.`);
             }
         };
 
-        function openSettings() {
-            const settingsHtml = `
-                <div class="settings-container">
-                    <div class="settings-sidebar">
-                        <img src="${state.cribAccount?.pfp || state.pfp}" class="w-20 h-20 rounded-full mb-4 border-2 border-blue-500 object-cover">
-                        <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest text-center">${state.cribAccount?.displayName || 'Crib User'}</span>
+        function openScrolls() {
+            const html = `
+                <div class="flex flex-col h-full bg-black">
+                    <div class="p-4 bg-zinc-900 border-b border-white/10 flex justify-between items-center">
+                        <span class="font-black italic text-blue-400">DUNGEON SCROLLS</span>
+                        <button onclick="openNewScroll()" class="bg-blue-600 px-4 py-2 rounded-lg text-xs font-bold">NEW SCROLL</button>
                     </div>
-                    <div class="settings-main">
-                        <h2 class="text-xl font-bold mb-6 italic">SETTINGS</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="text-xs opacity-60 mb-1 block">Desktop Wallpaper</label>
-                                <input type="text" id="wall-input" class="w-full bg-zinc-800 p-2 rounded border border-white/10 text-xs text-white" value="${state.wallpaper}">
-                                <button onclick="changeWall()" class="mt-2 bg-blue-600 px-4 py-1 rounded text-[10px] font-bold">APPLY</button>
-                            </div>
-                            <div class="pt-6 border-t border-white/5 flex gap-2">
-                                <button onclick="auth.signOut().then(() => location.reload())" class="bg-zinc-700 px-4 py-2 rounded text-[10px] font-bold">LOGOUT</button>
-                                <button onclick="factoryReset()" class="bg-red-900/40 px-4 py-2 rounded text-[10px] border border-red-500/50">FACTORY RESET</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            createWindow('Settings', null, settingsHtml);
+                    <div id="scroll-list-container" class="flex-grow overflow-y-auto p-4">Loading...</div>
+                </div>
+            `;
+            createWindow('Scrolls', null, html);
+            renderScrollList();
         }
 
-        window.changeWall = function() {
-            const url = document.getElementById('wall-input').value;
+        window.openNewScroll = () => {
+            const isAdmin = ADMIN_EMAILS.includes(state.user?.email);
+            const html = `
+                <div class="p-6 bg-zinc-900 h-full">
+                    <input type="text" id="scroll-to" placeholder="Recipient Name/Email" class="w-full bg-black border border-white/10 p-4 rounded-xl mb-4 text-white">
+                    ${isAdmin ? `<div class="mb-4 flex items-center gap-2"><input type="checkbox" id="scroll-global"><label class="text-[10px] text-red-500 font-bold">GLOBAL SCROLL (ADMIN)</label></div>` : ''}
+                    <textarea id="scroll-msg" placeholder="Write your message..." class="w-full h-40 bg-black border border-white/10 p-4 rounded-xl mb-4 text-white"></textarea>
+                    <button onclick="sendScroll()" class="w-full bg-blue-600 py-4 rounded-xl font-bold uppercase">Dispatch</button>
+                </div>
+            `;
+            createWindow('Compose Scroll', null, html);
+        };
+
+        function openSettings() {
+            const html = `
+                <div class="p-10 bg-zinc-950 h-full flex gap-10">
+                    <div class="w-1/3 flex flex-col items-center">
+                        <img src="${state.cribAccount?.pfp || '/storage/photos/user.png'}" class="w-32 h-32 rounded-full border-4 border-blue-600 mb-4 object-cover">
+                        <span class="text-xl font-bold italic">${state.cribAccount?.displayName || 'Guest'}</span>
+                    </div>
+                    <div class="flex-grow space-y-6">
+                        <div>
+                            <label class="text-[10px] uppercase font-bold opacity-30">Wallpaper URL</label>
+                            <input type="text" id="wall-url" value="${state.wallpaper}" class="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl mt-1 text-white text-xs">
+                        </div>
+                        <button onclick="updateWall()" class="bg-blue-600 px-6 py-2 rounded-lg text-xs font-bold">APPLY WALLPAPER</button>
+                        <div class="pt-10 border-t border-white/10 flex gap-4">
+                            <button onclick="signOut(auth).then(() => location.reload())" class="bg-zinc-800 px-4 py-2 rounded-lg text-[10px] font-bold">LOGOUT</button>
+                            <button onclick="localStorage.clear(); location.reload();" class="text-red-500 text-[10px] font-bold">FACTORY RESET</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            createWindow('Settings', null, html);
+        }
+
+        window.updateWall = () => {
+            const url = document.getElementById('wall-url').value;
             state.wallpaper = url;
             localStorage.setItem('crib_wall', url);
             document.getElementById('desktop').style.backgroundImage = `url(${url})`;
         };
-
-        window.factoryReset = () => { if(confirm("Nuke everything?")) { localStorage.clear(); location.reload(); } };
 
         function updateTime() {
             const now = new Date();
