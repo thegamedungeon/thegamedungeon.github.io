@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>The Game Dungeon | CribOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root {
             --taskbar-height: 70px;
@@ -75,22 +74,10 @@
             overflow: hidden; transition: opacity 0.2s, transform 0.2s;
             min-width: 300px; min-height: 200px;
         }
-        .window.minimized {
-            transform: scale(0.8) translateY(100px);
-            opacity: 0;
-            pointer-events: none;
-        }
-        .window.maximized {
-            top: 0 !important; left: 0 !important;
-            width: 100vw !important; height: calc(100svh - var(--taskbar-height) - 10px) !important;
-            border-radius: 0;
-        }
+        .window.minimized { transform: scale(0.8) translateY(100px); opacity: 0; pointer-events: none; }
+        .window.maximized { top: 0 !important; left: 0 !important; width: 100vw !important; height: calc(100svh - var(--taskbar-height) - 10px) !important; border-radius: 0; }
 
-        .window-header { 
-            background: #222; height: 45px; display: flex; align-items: center; 
-            padding: 0 15px; cursor: move; user-select: none; border-bottom: 1px solid #333;
-            touch-action: none;
-        }
+        .window-header { background: #222; height: 45px; display: flex; align-items: center; padding: 0 15px; cursor: move; user-select: none; border-bottom: 1px solid #333; touch-action: none; }
         .window-controls { display: flex; gap: 8px; }
         .control-btn { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: none; }
         .close { background: #ff5f56; } 
@@ -110,88 +97,39 @@
             gap: 10px;
         }
         
-        .taskbar-item { 
-            width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            transition: 0.2s; border-radius: 12px; position: relative;
-        }
+        .taskbar-item { width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 12px; position: relative; }
         .taskbar-item:active { transform: scale(0.8); }
         .taskbar-item img { width: 38px; height: 38px; border-radius: 10px; }
-        .taskbar-item.active::after {
-            content: ''; position: absolute; bottom: -5px; width: 4px; height: 4px; background: #3b82f6; border-radius: 50%;
-        }
+        .taskbar-item.active::after { content: ''; position: absolute; bottom: -5px; width: 4px; height: 4px; background: #3b82f6; border-radius: 50%; }
 
         #clock { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; margin-left: 5px; color: rgba(255,255,255,0.7); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
         
-        /* DUNGEON SCROLLS STYLES */
-        .scroll-pill {
-            background: #2a2a2a;
-            border-radius: 20px;
-            padding: 12px 18px;
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
-        }
-        .scroll-pill:hover { background: #333; transform: translateX(5px); }
-        
-        .avatar-main { width: 42px; height: 42px; border-radius: 14px; background: #444; overflow: hidden; object-fit: cover; }
-
-        .chat-bubble {
-            padding: 10px 14px;
-            border-radius: 16px;
-            max-width: 85%;
-            word-wrap: break-word;
-            font-size: 13px;
-            position: relative;
-            line-height: 1.4;
-        }
-        .bubble-sent { background: #3b82f6; color: white; border-bottom-right-radius: 2px; align-self: flex-end; }
-        .bubble-received { background: #2a2a2a; color: #eee; border-bottom-left-radius: 2px; align-self: flex-start; border: 1px solid #333; }
-
-        .tab-btn {
-            flex: 1; padding: 12px; text-align: center; font-weight: 800; font-size: 11px; letter-spacing: 1px;
-            color: rgba(255,255,255,0.4); border-bottom: 2px solid transparent; transition: 0.3s;
-        }
-        .tab-btn.active { color: #32ff32; border-bottom: 2px solid #32ff32; background: rgba(50, 255, 50, 0.05); }
-
-        .blick-overlay {
-            position: fixed; inset: 0; background: black; z-index: 20000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
-        }
+        .blick-overlay { position: fixed; inset: 0; background: black; z-index: 20000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Boot Sequence -->
     <div id="boot-screen">
         <img src="/storage/photos/tgdtc.png" class="w-20 mb-4 animate-pulse" onerror="this.src='https://thegamedungeon.github.io/logo.png'">
-        <div class="text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">CribOS Core v2.5.0</div>
+        <div class="text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">CribOS Core v2.5.1</div>
     </div>
 
-    <!-- Login/Resident Entry -->
     <div id="login-screen">
         <div class="login-card">
             <div class="login-avatar-wrapper">
                 <img src="/storage/photos/user.png" id="login-avatar" onerror="this.src='https://ui-avatars.com/api/?name=Crib&background=3b82f6&color=fff'">
             </div>
-            <h2 id="login-greeting" class="text-xl font-bold mb-6 italic text-blue-400">Welcome to the Crib</h2>
+            <h2 class="text-xl font-bold mb-6 italic text-blue-400">Welcome to the Crib</h2>
             
             <div id="login-form" class="w-full space-y-3">
                 <input type="text" id="username-field" placeholder="Choose a Resident Name" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
-                <input type="password" id="pass-field" placeholder="Passkey (Optional)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
-                
-                <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">ENTER CRIB</button>
-                
+                <button id="login-btn" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">ENTER CRIB</button>
                 <div class="flex items-center gap-2 py-2">
                     <div class="flex-grow h-[1px] bg-white/10"></div>
                     <span class="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instant Access</span>
                     <div class="flex-grow h-[1px] bg-white/10"></div>
                 </div>
-
-                <button onclick="googleFastpass()" class="w-full bg-white text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <button id="google-btn" class="w-full bg-white text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
                     <span>Google Fastpass</span>
                 </button>
@@ -199,11 +137,8 @@
         </div>
     </div>
 
-    <!-- Main Desktop Environment -->
     <div id="desktop">
         <div id="icon-layer" class="flex flex-col flex-wrap h-[calc(100svh-100px)] p-6 items-start gap-2"></div>
-        
-        <!-- Taskbar -->
         <div id="taskbar">
             <div class="taskbar-item" onclick="toggleMenu('start-menu')">
                 <img src="/storage/photos/tgdtc.png" onerror="this.src='https://thegamedungeon.github.io/logo.png'">
@@ -211,8 +146,6 @@
             <div class="flex items-center gap-2" id="running-apps-dock"></div>
             <div id="clock">00:00</div>
         </div>
-
-        <!-- Start Menu -->
         <div id="start-menu" class="fixed bottom-24 left-1/2 -translate-x-1/2 w-[340px] bg-zinc-900/95 border border-white/10 rounded-[24px] p-5 hidden flex-col z-[100001] backdrop-blur-3xl shadow-2xl">
             <div class="flex items-center gap-4 mb-6 p-2 border-b border-white/10 pb-5">
                 <img src="/storage/photos/user.png" class="w-12 h-12 rounded-full border-2 border-blue-500" id="menu-avatar" onerror="this.src='https://ui-avatars.com/api/?name=Resident&background=3b82f6&color=fff'">
@@ -224,15 +157,15 @@
             <div class="grid grid-cols-1 gap-1" id="start-list"></div>
             <div class="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
                 <button onclick="location.reload()" class="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">Restart CribOS</button>
-                <span class="text-[10px] text-zinc-700">Ver 2.5.0-SPA</span>
+                <span class="text-[10px] text-zinc-700">Ver 2.5.1-SPA</span>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -249,21 +182,16 @@
         const provider = new GoogleAuthProvider();
         const globalAppId = 'the-crib-v2';
 
-        let state = {
+        window.state = {
             z: 100,
             windows: {},
             currentUser: null,
-            installed: ['browser', 'scrolls', 'ytmusic', 'cc', 'gd', 'kts', 'minecraft', 'polytrack', 'rh', 'settings'],
-            scrolls: {
-                currentTab: 'private', 
-                chats: {} 
-            }
+            installed: ['browser', 'ytmusic', 'cc', 'gd', 'kts', 'minecraft', 'polytrack', 'rh', 'settings']
         };
 
         const APPS = {
             browser: { name: 'ProxiCrib', icon: '/storage/photos/proxicrib.png', type: 'browser' },
-            scrolls: { name: 'Scrolls', icon: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png', type: 'scrolls' },
-            ytmusic: { name: 'YT Music', icon: '/storage/photos/ytmusic.png', type: 'ytm' },
+            ytmusic: { name: 'YT Music', icon: '/storage/photos/ytmusic.png', url: 'https://music.youtube.com' },
             settings: { name: 'Settings', icon: '/storage/photos/settings.png' },
             cc: { name: 'Cookie Clicker', icon: '/storage/photos/cc.png', url: '/storage/cookieclick-main/index.html' },
             gd: { name: 'Geometry Dash', icon: '/storage/photos/gd.png', url: '/storage/gdl-main/index.html' },
@@ -273,105 +201,69 @@
             rh: { name: 'Ragdoll Hit', icon: '/storage/photos/rh.png', url: '/storage/ragdoll-hit-main/index.html' }
         };
 
-        onAuthStateChanged(auth, (user) => {
-            state.currentUser = user;
-            if (user) {
-                const displayName = user.displayName || localStorage.getItem('crib_username') || "Resident";
-                document.getElementById('stat-name').innerText = displayName;
-                const profilePic = user.photoURL || `https://ui-avatars.com/api/?name=${displayName}&background=3b82f6&color=fff`;
-                document.getElementById('menu-avatar').src = profilePic;
-                document.getElementById('login-avatar').src = profilePic;
-                setupScrollHistoryListener();
-            }
-        });
-
-        // BLICK CHECKER
         async function checkBlickStatus(user) {
-            if (!user) return;
-            // Clean the username/email for comparison
-            const rawId = user.email || user.displayName || user.uid;
-            const cleanedId = rawId.split('@')[0].toLowerCase();
-
-            const blickDoc = await getDoc(doc(db, 'artifacts', globalAppId, 'public', 'blicked', cleanedId));
-            
-            if (blickDoc.exists()) {
-                const data = blickDoc.data();
-                const now = Date.now();
-                if (data.expiry > now) {
-                    showBlickedScreen(data.expiry);
-                    return true;
+            if (!user) return false;
+            try {
+                const rawId = user.email || user.displayName || user.uid;
+                const cleanedId = rawId.split('@')[0].toLowerCase();
+                const blickDoc = await getDoc(doc(db, 'artifacts', globalAppId, 'public', 'blicked', cleanedId));
+                if (blickDoc.exists()) {
+                    const data = blickDoc.data();
+                    if (data.expiry > Date.now()) {
+                        showBlickedScreen(data.expiry);
+                        return true;
+                    }
                 }
-            }
+            } catch(e) { console.error("Blick check failed", e); }
             return false;
         }
 
         function showBlickedScreen(expiry) {
-            const date = new Date(expiry).toLocaleDateString();
-            document.body.innerHTML = `
-                <div class="blick-overlay">
-                    <img src="/storage/photos/tgdtc.png" class="w-32 mb-8 grayscale opacity-50">
-                    <h1 class="text-4xl font-black text-red-600 italic mb-2 tracking-tighter">YOU'VE BEEN BLICKED</h1>
-                    <p class="text-zinc-500 uppercase font-bold tracking-[0.3em] text-xs mb-10">Dungeon Safety Enforcement</p>
-                    <div class="bg-red-600/10 border border-red-600/30 p-6 rounded-2xl max-w-sm">
-                        <p class="text-white font-medium mb-2">Access to the Crib has been restricted by an Admin.</p>
-                        <p class="text-red-500 text-[10px] uppercase font-black">Release Date: ${date}</p>
-                    </div>
-                    <button onclick="location.reload()" class="mt-10 text-zinc-700 font-bold hover:text-white transition">RETRY ACCESS</button>
-                </div>
-            `;
-            // Simulate redirect to /blicked/ (Since we are an SPA, we just replace the view)
-            history.pushState(null, "", "/blicked/");
+            document.body.innerHTML = `<div class="blick-overlay"><h1 class="text-4xl font-black text-red-600 italic mb-2">YOU'VE BEEN BLICKED</h1><p class="text-zinc-500 uppercase font-bold text-xs mb-10">Dungeon Safety Enforcement</p><p class="text-white">Access restricted until ${new Date(expiry).toLocaleDateString()}</p><button onclick="location.reload()" class="mt-10 text-zinc-700">RETRY</button></div>`;
         }
 
-        window.googleFastpass = async () => {
-            try { 
-                const res = await signInWithPopup(auth, provider); 
-                const isBlicked = await checkBlickStatus(res.user);
-                if (!isBlicked) enterDesktop(); 
-            } 
-            catch (e) { 
-                const res = await signInAnonymously(auth); 
-                enterDesktop(); 
-            }
+        const enterDesktop = () => {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('desktop').style.display = 'block';
+            renderIcons();
+            const wall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop';
+            document.getElementById('desktop').style.backgroundImage = `url('${wall}')`;
+            startClock();
         };
 
-        window.doLogin = async () => {
+        document.getElementById('login-btn').onclick = async () => {
             const userVal = document.getElementById('username-field').value.trim();
             const res = await signInAnonymously(auth);
             localStorage.setItem('crib_username', userVal || "Wanderer");
-            
-            const isBlicked = await checkBlickStatus(auth.currentUser);
-            if (!isBlicked) enterDesktop();
+            if (!(await checkBlickStatus(res.user))) enterDesktop();
         };
 
-        function enterDesktop() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('desktop').style.display = 'block';
-            renderIcons(); startClock();
-            const wall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop';
-            document.getElementById('desktop').style.backgroundImage = `url('${wall}')`;
-        }
-
-        function startClock() {
-            setInterval(() => {
-                const clockEl = document.getElementById('clock');
-                if (clockEl) clockEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            }, 1000);
-        }
-
-        window.toggleMenu = (id) => {
-            const m = document.getElementById(id);
-            if (!m) return;
-            m.classList.toggle('hidden');
-            m.classList.toggle('flex');
+        document.getElementById('google-btn').onclick = async () => {
+            try {
+                const res = await signInWithPopup(auth, provider);
+                if (!(await checkBlickStatus(res.user))) enterDesktop();
+            } catch (e) {
+                const res = await signInAnonymously(auth);
+                enterDesktop();
+            }
         };
+
+        onAuthStateChanged(auth, (user) => {
+            window.state.currentUser = user;
+            if (user) {
+                const name = user.displayName || localStorage.getItem('crib_username') || "Resident";
+                document.getElementById('stat-name').innerText = name;
+                const pic = user.photoURL || `https://ui-avatars.com/api/?name=${name}&background=3b82f6&color=fff`;
+                document.getElementById('menu-avatar').src = pic;
+                document.getElementById('login-avatar').src = pic;
+            }
+        });
 
         function renderIcons() {
             const layer = document.getElementById('icon-layer');
             const startList = document.getElementById('start-list');
             layer.innerHTML = ''; startList.innerHTML = '';
-            
-            state.installed.forEach(id => {
+            window.state.installed.forEach(id => {
                 const app = APPS[id];
                 const div = document.createElement('div');
                 div.className = 'app-icon';
@@ -380,7 +272,7 @@
                 layer.appendChild(div);
 
                 const sItem = document.createElement('div');
-                sItem.className = 'flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl cursor-pointer text-white text-sm transition';
+                sItem.className = 'flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl cursor-pointer text-white text-sm';
                 sItem.innerHTML = `<img src="${app.icon}" class="w-8 h-8 rounded-lg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3064/3064197.png'"><span>${app.name}</span>`;
                 sItem.onclick = () => { launchApp(id); toggleMenu('start-menu'); };
                 startList.appendChild(sItem);
@@ -390,375 +282,125 @@
         window.launchApp = (id) => {
             const app = APPS[id];
             if (id === 'settings') return openSettings();
-            if (app.type === 'browser') return openBrowser();
-            if (app.type === 'scrolls') return openScrolls();
+            if (id === 'browser') return openBrowser();
             createWindow(id, app.name, app.url, app.icon);
         };
 
-        // --- DUNGEON SCROLLS ---
-        function openScrolls() {
-            const html = `
-                <div class="bg-[#111] h-full flex flex-col font-sans overflow-hidden">
-                    <div class="flex bg-[#1a1a1a] border-b border-white/5">
-                        <div id="tab-private" class="tab-btn active" onclick="window.switchScrollTab('private')">PRIVATE SCROLLS</div>
-                        <div id="tab-global" class="tab-btn" onclick="window.switchScrollTab('global')">GLOBAL CHANNEL</div>
-                    </div>
-
-                    <div id="scroll-main-view" class="flex-grow flex flex-col overflow-hidden relative">
-                        <div id="private-view" class="flex-grow overflow-y-auto p-4 flex flex-col">
-                            <button onclick="window.startNewScroll()" class="bg-blue-600/20 border border-blue-500/50 text-blue-400 p-4 rounded-2xl mb-4 font-bold text-xs uppercase tracking-widest active:scale-95 transition">+ Start New Scroll</button>
-                            <div id="private-chats-list"></div>
-                        </div>
-
-                        <div id="global-view" class="hidden flex-grow flex flex-col">
-                            <div id="global-messages" class="flex-grow p-4 overflow-y-auto flex flex-col gap-3"></div>
-                            <div class="p-4 bg-zinc-900 flex gap-2 border-t border-white/5">
-                                <input type="text" id="global-msg-input" class="flex-1 bg-black rounded-xl px-4 py-3 text-white outline-none border border-white/10 text-sm" placeholder="Message global channel...">
-                                <button onclick="window.sendGlobalMsg()" class="bg-[#32ff32] text-black w-10 h-10 rounded-xl flex items-center justify-center font-bold">➤</button>
-                            </div>
-                        </div>
-
-                        <div id="scroll-chat-overlay" class="absolute inset-0 bg-[#0a0a0a] hidden flex-col z-20">
-                            <div class="p-4 border-b border-white/5 flex items-center justify-between bg-[#111]">
-                                <div class="flex items-center gap-3">
-                                    <button onclick="window.closeScrollChat()" class="text-zinc-500 font-bold text-xl px-2">←</button>
-                                    <img id="target-avatar" src="" class="w-9 h-9 rounded-xl">
-                                    <div class="flex flex-col">
-                                        <span id="target-name" class="text-white font-bold text-sm"></span>
-                                        <span class="text-[9px] text-blue-400 uppercase font-black tracking-widest">Resident</span>
-                                    </div>
-                                </div>
-                                <button onclick="window.attachPhoto()" class="text-blue-400 text-xs font-bold uppercase tracking-tighter border border-blue-500/20 px-3 py-1 rounded-lg">+ Photo</button>
-                            </div>
-                            <div id="target-messages" class="flex-grow p-4 overflow-y-auto flex flex-col gap-3"></div>
-                            <div class="p-4 bg-zinc-900 flex gap-2 items-center">
-                                <div id="attachment-preview" class="hidden text-[10px] text-blue-400 font-black uppercase whitespace-nowrap bg-blue-500/10 px-2 py-1 rounded">IMG+</div>
-                                <input type="text" id="target-msg-input" class="flex-1 bg-black rounded-xl px-4 py-3 text-white outline-none border border-white/10 text-sm" placeholder="Cast message...">
-                                <button onclick="window.sendPrivateMsg()" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center font-bold">➤</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            createWindow('scrolls', 'Dungeon Scrolls', null, 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png', html);
-            renderPrivateList();
-            setupGlobalScrollListener();
-        }
-
-        window.switchScrollTab = (tab) => {
-            state.scrolls.currentTab = tab;
-            document.getElementById('tab-private').classList.toggle('active', tab === 'private');
-            document.getElementById('tab-global').classList.toggle('active', tab === 'global');
-            document.getElementById('private-view').style.display = tab === 'private' ? 'flex' : 'none';
-            document.getElementById('global-view').style.display = tab === 'global' ? 'flex' : 'none';
+        window.toggleMenu = (id) => {
+            const m = document.getElementById(id);
+            if(m) m.classList.toggle('hidden');
         };
 
-        let currentTargetId = '';
-        let privateUnsub = null;
-        let pendingImage = false;
+        window.triggerWallUpload = () => document.getElementById('wall-file-input').click();
 
-        function setupScrollHistoryListener() {
-            if (!state.currentUser) return;
-            const q = query(collection(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls'));
-            onSnapshot(q, (snap) => {
-                state.scrolls.chats = {}; 
-                snap.forEach(doc => {
-                    state.scrolls.chats[doc.id] = doc.data();
-                });
-                renderPrivateList();
-            });
-        }
-
-        function renderPrivateList() {
-            const list = document.getElementById('private-chats-list');
-            if (!list) return;
-            list.innerHTML = '';
-            const allTargets = Object.values(state.scrolls.chats);
-            if (allTargets.length === 0) {
-                list.innerHTML = `<div class="text-zinc-600 text-[10px] text-center mt-10 uppercase font-black tracking-[0.2em]">No Scrolls Discovered</div>`;
-                return;
-            }
-            allTargets.forEach(chat => {
-                const div = document.createElement('div');
-                div.className = 'scroll-pill';
-                div.onclick = () => window.openPrivateChat(chat.id, chat.name, chat.avatar || `https://ui-avatars.com/api/?name=${chat.name}`);
-                let displayMsg = "HIDDEN FOR SAFETY";
-                if (chat.hasImage) displayMsg += " <attached_image>";
-                div.innerHTML = `<img src="${chat.avatar || ''}" class="avatar-main" onerror="this.src='https://ui-avatars.com/api/?name=${chat.name}'"><div class="flex flex-col flex-1 overflow-hidden"><span class="text-white font-bold text-sm uppercase">${chat.name}</span><span class="text-blue-500/50 text-[9px] font-black italic tracking-widest truncate uppercase">${displayMsg}</span></div>`;
-                list.appendChild(div);
-            });
-        }
-
-        window.startNewScroll = () => {
-            const name = prompt("Enter Resident Name or ID:");
-            if(name) {
-                const id = name.toLowerCase().replace(/\s/g, '_');
-                window.openPrivateChat(id, name);
-            }
-        };
-
-        window.attachPhoto = () => {
-            pendingImage = true;
-            document.getElementById('attachment-preview').classList.remove('hidden');
-        };
-
-        window.openPrivateChat = (id, name, avatar) => {
-            currentTargetId = id;
-            const overlay = document.getElementById('scroll-chat-overlay');
-            if (!overlay) return;
-            overlay.classList.remove('hidden'); overlay.classList.add('flex');
-            document.getElementById('target-name').innerText = name;
-            document.getElementById('target-avatar').src = avatar || `https://ui-avatars.com/api/?name=${name}`;
-            if(privateUnsub) privateUnsub();
-            const q = query(collection(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls', id, 'messages'), orderBy('timestamp', 'asc'));
-            privateUnsub = onSnapshot(q, (snap) => {
-                const area = document.getElementById('target-messages');
-                if(!area) return;
-                area.innerHTML = '';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const isMe = d.sender === state.currentUser.uid;
-                    const msg = document.createElement('div');
-                    msg.className = `chat-bubble ${isMe ? 'bubble-sent' : 'bubble-received'}`;
-                    let content = d.text;
-                    if (d.hasImage) content += "\n<attached_image>";
-                    msg.innerText = content;
-                    area.appendChild(msg);
-                });
-                area.scrollTop = area.scrollHeight;
-            });
-        };
-
-        window.closeScrollChat = () => {
-            document.getElementById('scroll-chat-overlay').classList.add('hidden');
-            if(privateUnsub) privateUnsub();
-            pendingImage = false;
-        };
-
-        window.sendPrivateMsg = async () => {
-            const input = document.getElementById('target-msg-input');
-            const text = input.value.trim();
-            if((!text && !pendingImage) || !state.currentUser) return;
-            const msgData = { text, sender: state.currentUser.uid, timestamp: serverTimestamp(), hasImage: pendingImage };
-            await addDoc(collection(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls', currentTargetId, 'messages'), msgData);
-            await setDoc(doc(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls', currentTargetId), {
-                name: document.getElementById('target-name').innerText,
-                id: currentTargetId,
-                lastMessage: text || "(Image)",
-                hasImage: pendingImage,
-                lastUpdate: serverTimestamp()
-            }, { merge: true });
-            input.value = ''; pendingImage = false;
-            document.getElementById('attachment-preview').classList.add('hidden');
-        };
-
-        function setupGlobalScrollListener() {
-            const q = query(collection(db, 'artifacts', globalAppId, 'public', 'data', 'global_scrolls'), orderBy("timestamp", "asc"), limit(50));
-            onSnapshot(q, (snap) => {
-                const area = document.getElementById('global-messages');
-                if(!area) return;
-                area.innerHTML = '';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const isMe = d.uid === state.currentUser?.uid;
-                    const msg = document.createElement('div');
-                    msg.className = `chat-bubble ${isMe ? 'bubble-sent' : 'bubble-received'}`;
-                    msg.innerHTML = `<div class="text-[9px] opacity-40 font-bold mb-1">${d.user}</div>${d.text}`;
-                    area.appendChild(msg);
-                });
-                area.scrollTop = area.scrollHeight;
-            });
-        }
-
-        window.sendGlobalMsg = async () => {
-            const input = document.getElementById('global-msg-input');
-            const text = input.value.trim();
-            if(!text || !state.currentUser) return;
-            await addDoc(collection(db, 'artifacts', globalAppId, 'public', 'data', 'global_scrolls'), {
-                text, user: localStorage.getItem('crib_username') || "Resident", uid: state.currentUser.uid, timestamp: serverTimestamp()
-            });
-            input.value = '';
-        };
-
-        function openBrowser() {
-            const html = `<div class="flex flex-col h-full bg-[#111]"><div class="p-2 bg-[#222] flex gap-2 items-center"><input type="text" id="br-input" class="flex-1 bg-black border border-zinc-700 rounded-lg p-2 text-white outline-none" placeholder="Enter URL..."><button onclick="window.goBrowse()" class="bg-blue-600 px-4 py-2 rounded-lg font-bold">GO</button></div><iframe id="br-frame" class="flex-grow bg-white"></iframe></div>`;
-            createWindow('browser', 'ProxiCrib', null, '/storage/photos/proxicrib.png', html);
-        }
-
-        window.goBrowse = () => {
-            const input = document.getElementById('br-input');
-            const frame = document.getElementById('br-frame');
-            let q = input.value.trim();
-            if(!q) return;
-            if(!q.includes('.') || q.includes(' ')) q = `https://www.google.com/search?q=${encodeURIComponent(q)}&igu=1`;
-            if(!q.startsWith('http')) q = 'https://' + q;
-            frame.src = q;
-        };
-
-        function createWindow(appId, title, url, icon, customHtml = null) {
-            if (state.windows[appId]) return window.toggleMinimize(appId);
-            const winId = 'win_' + appId;
-            const win = document.createElement('div');
-            win.id = winId; win.className = 'window';
-            state.z++; win.style.zIndex = state.z;
-            win.style.width = '800px'; win.style.height = '500px'; win.style.left = '100px'; win.style.top = '100px';
-            if (window.innerWidth < 800) { win.style.width = '95vw'; win.style.left = '2.5vw'; }
-
-            win.innerHTML = `
-                <div class="window-header" onmousedown="window.initDrag(event, '${winId}')" ontouchstart="window.initDrag(event, '${winId}')">
-                    <div class="window-controls"><button class="control-btn close" onclick="window.closeWin('${appId}')"></button><button class="control-btn min" onclick="window.toggleMinimize('${appId}')"></button><button class="control-btn max" onclick="window.toggleMaximize('${winId}')"></button></div>
-                    <div class="window-title">${title}</div>
-                </div>
-                <div class="window-content" onmousedown="window.bringToFront('${winId}')">
-                    ${customHtml ? customHtml : `<iframe src="${url}"></iframe>`}
-                    <div class="absolute inset-0 bg-transparent pointer-events-none" id="cover_${winId}"></div>
-                </div>
-            `;
-            document.getElementById('desktop').appendChild(win);
-            state.windows[appId] = { id: winId, title, icon };
-            updateDock();
-        }
-
-        window.initDrag = (e, id) => {
-            const el = document.getElementById(id);
-            window.bringToFront(id);
-            if (el.classList.contains('maximized')) return;
-            const covers = document.querySelectorAll('[id^="cover_"]');
-            covers.forEach(c => c.style.pointerEvents = 'auto');
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            let startL = el.offsetLeft, startT = el.offsetTop;
-            const move = (ev) => {
-                const cx = ev.type.includes('touch') ? ev.touches[0].clientX : ev.clientX;
-                const cy = ev.type.includes('touch') ? ev.touches[0].clientY : ev.clientY;
-                el.style.left = (startL + cx - startX) + 'px';
-                el.style.top = (startT + cy - startY) + 'px';
-            };
-            const stop = () => {
-                covers.forEach(c => c.style.pointerEvents = 'none');
-                window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop);
-                window.removeEventListener('touchmove', move); window.removeEventListener('touchend', stop);
-            };
-            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-            window.addEventListener('touchmove', move, { passive: false }); window.addEventListener('touchend', stop);
-        };
-
-        window.closeWin = (id) => { 
-            const el = document.getElementById('win_'+id);
-            if (el) el.remove(); 
-            delete state.windows[id]; 
-            updateDock(); 
-        };
-        window.toggleMinimize = (id) => {
-            const el = document.getElementById('win_'+id);
-            if(!el) return;
-            el.classList.toggle('minimized');
-            if (!el.classList.contains('minimized')) window.bringToFront('win_'+id);
-        };
-        window.toggleMaximize = (id) => document.getElementById(id).classList.toggle('maximized');
-        window.bringToFront = (id) => { state.z++; if(document.getElementById(id)) document.getElementById(id).style.zIndex = state.z; };
-
-        function updateDock() {
-            const dock = document.getElementById('running-apps-dock');
-            if (!dock) return;
-            dock.innerHTML = '';
-            Object.keys(state.windows).forEach(id => {
-                const app = state.windows[id];
-                const div = document.createElement('div');
-                div.className = 'taskbar-item active';
-                div.onclick = () => window.toggleMinimize(id);
-                div.innerHTML = `<img src="${app.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3064/3064197.png'">`;
-                dock.appendChild(div);
-            });
-        }
-
-        window.doBlick = async () => {
-            const target = document.getElementById('blick-target').value.trim().split('@')[0].toLowerCase();
-            const days = parseInt(document.getElementById('blick-days').value) || 1;
-            if(!target) return;
-            
-            const expiry = Date.now() + (days * 24 * 60 * 60 * 1000);
-            await setDoc(doc(db, 'artifacts', globalAppId, 'public', 'blicked', target), {
-                target,
-                expiry,
-                by: state.currentUser?.uid || 'Admin'
-            });
-            
-            document.getElementById('blick-status').innerText = `Blicked ${target} for ${days} days.`;
-            document.getElementById('blick-target').value = '';
-        };
-
-        // --- WALLPAPER PICKER LOGIC ---
-        window.triggerWallUpload = () => {
-            document.getElementById('wall-file-input').click();
-        };
-
-        window.handleWallUpload = (event) => {
-            const file = event.target.files[0];
+        window.handleWallUpload = (e) => {
+            const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const b64 = e.target.result;
-                localStorage.setItem('crib_wall', b64);
-                document.getElementById('desktop').style.backgroundImage = `url('${b64}')`;
+            reader.onload = (event) => {
+                const b64 = event.target.result;
+                try {
+                    localStorage.setItem('crib_wall', b64);
+                    document.getElementById('desktop').style.backgroundImage = `url('${b64}')`;
+                } catch(err) {
+                    alert("Image too large for browser storage. Try a smaller one!");
+                }
             };
             reader.readAsDataURL(file);
         };
 
         function openSettings() {
-            const currentWall = localStorage.getItem('crib_wall') || '';
+            const wall = localStorage.getItem('crib_wall') || '';
             const html = `
-                <div class="p-8 space-y-8 overflow-y-auto h-full">
+                <div class="p-8 space-y-8 h-full overflow-y-auto">
                     <section>
-                        <h2 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Wallpaper Lab</h2>
-                        <div class="space-y-4">
-                            <input type="text" id="wall-in" class="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-white outline-none" placeholder="Paste image URL here..." value="${currentWall.startsWith('http') ? currentWall : ''}">
-                            
-                            <div class="flex items-center gap-2">
-                                <div class="flex-grow h-[1px] bg-white/5"></div>
-                                <span class="text-[9px] text-zinc-700 font-bold uppercase">Or Upload From iPad</span>
-                                <div class="flex-grow h-[1px] bg-white/5"></div>
-                            </div>
-
-                            <input type="file" id="wall-file-input" class="hidden" accept="image/*" onchange="window.handleWallUpload(event)">
-                            <button onclick="window.triggerWallUpload()" class="w-full bg-zinc-800 border border-white/10 p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-700 transition active:scale-95">
-                                <span>📸 Select Photo</span>
-                            </button>
-
-                            <button onclick="const val = document.getElementById('wall-in').value; if(val) { localStorage.setItem('crib_wall', val); location.reload(); }" class="w-full bg-blue-600 p-4 rounded-xl font-bold active:scale-95 transition">Apply Changes</button>
-                        </div>
-                    </section>
-
-                    <section class="border-t border-white/5 pt-8">
-                        <h2 class="text-xs font-black uppercase tracking-widest text-red-600 mb-4">Blick Chamber (Admin)</h2>
-                        <div class="space-y-3">
-                            <input type="text" id="blick-target" placeholder="Email prefix or Username" class="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-white outline-none">
-                            <input type="number" id="blick-days" placeholder="Duration (Days)" class="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-white outline-none">
-                            <button onclick="window.doBlick()" class="w-full bg-red-600 p-4 rounded-xl font-bold active:scale-95 transition">CAST INTO THE ABYSS</button>
-                            <p id="blick-status" class="text-[10px] text-zinc-500 italic text-center"></p>
-                        </div>
-                    </section>
-
-                    <section class="border-t border-white/5 pt-8">
-                        <div class="text-zinc-600 text-[10px] uppercase font-bold">Resident ID: ${state.currentUser?.uid || 'Unknown'}</div>
+                        <h2 class="text-xs font-black uppercase text-zinc-500 mb-4">Wallpaper</h2>
+                        <input type="text" id="wall-url" class="w-full bg-zinc-900 p-4 rounded-xl mb-4" placeholder="Wallpaper URL..." value="${wall.startsWith('http') ? wall : ''}">
+                        <input type="file" id="wall-file-input" class="hidden" accept="image/*" onchange="window.handleWallUpload(event)">
+                        <button onclick="window.triggerWallUpload()" class="w-full bg-zinc-800 p-4 rounded-xl mb-4 font-bold">📸 Upload from iPad</button>
+                        <button onclick="const v = document.getElementById('wall-url').value; if(v) { localStorage.setItem('crib_wall', v); location.reload(); }" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Save Changes</button>
                     </section>
                 </div>
             `;
             createWindow('settings', 'Settings', null, '/storage/photos/settings.png', html);
         }
 
+        function openBrowser() {
+            const html = `<div class="flex flex-col h-full"><div class="p-2 bg-[#222] flex gap-2"><input type="text" id="br-in" class="flex-1 bg-black p-2 rounded" placeholder="URL..."><button onclick="document.getElementById('br-fr').src = document.getElementById('br-in').value" class="bg-blue-600 px-4 rounded">GO</button></div><iframe id="br-fr" class="flex-grow bg-white"></iframe></div>`;
+            createWindow('browser', 'ProxiCrib', null, '/storage/photos/proxicrib.png', html);
+        }
+
+        function createWindow(appId, title, url, icon, customHtml = null) {
+            if (window.state.windows[appId]) return window.toggleMinimize(appId);
+            const winId = 'win_' + appId;
+            const win = document.createElement('div');
+            win.id = winId; win.className = 'window';
+            window.state.z++; win.style.zIndex = window.state.z;
+            win.style.width = '800px'; win.style.height = '500px'; win.style.left = '50px'; win.style.top = '50px';
+            if (window.innerWidth < 800) win.style.width = '90vw';
+
+            win.innerHTML = `
+                <div class="window-header" onmousedown="window.initDrag(event, '${winId}')" ontouchstart="window.initDrag(event, '${winId}')">
+                    <div class="window-controls"><button class="control-btn close" onclick="window.closeWin('${appId}')"></button><button class="control-btn min" onclick="window.toggleMinimize('${appId}')"></button></div>
+                    <div class="window-title">${title}</div>
+                </div>
+                <div class="window-content">${customHtml ? customHtml : `<iframe src="${url}"></iframe>`}</div>
+            `;
+            document.getElementById('desktop').appendChild(win);
+            window.state.windows[appId] = { id: winId, title, icon };
+            updateDock();
+        }
+
+        window.closeWin = (id) => { document.getElementById('win_'+id).remove(); delete window.state.windows[id]; updateDock(); };
+        window.toggleMinimize = (id) => { 
+            const el = document.getElementById('win_'+id); 
+            el.classList.toggle('minimized'); 
+            if(!el.classList.contains('minimized')) { window.state.z++; el.style.zIndex = window.state.z; }
+        };
+        window.initDrag = (e, id) => {
+            const el = document.getElementById(id);
+            window.state.z++; el.style.zIndex = window.state.z;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const startL = el.offsetLeft, startT = el.offsetTop;
+            const move = (ev) => {
+                const cx = ev.type.includes('touch') ? ev.touches[0].clientX : ev.clientX;
+                const cy = ev.type.includes('touch') ? ev.touches[0].clientY : ev.clientY;
+                el.style.left = (startL + cx - startX) + 'px';
+                el.style.top = (startT + cy - startY) + 'px';
+            };
+            const stop = () => { window.removeEventListener('mousemove', move); window.removeEventListener('touchmove', move); };
+            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+            window.addEventListener('touchmove', move); window.addEventListener('touchend', stop);
+        };
+
+        function updateDock() {
+            const dock = document.getElementById('running-apps-dock');
+            dock.innerHTML = '';
+            Object.keys(window.state.windows).forEach(id => {
+                const app = window.state.windows[id];
+                const div = document.createElement('div');
+                div.className = 'taskbar-item active';
+                div.onclick = () => window.toggleMinimize(id);
+                div.innerHTML = `<img src="${app.icon}">`;
+                dock.appendChild(div);
+            });
+        }
+
+        function startClock() {
+            setInterval(() => {
+                document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }, 1000);
+        }
+
         window.onload = () => {
             setTimeout(() => {
-                const boot = document.getElementById('boot-screen');
-                if (boot) {
-                    boot.style.opacity = '0';
-                    setTimeout(() => {
-                        boot.style.display = 'none';
-                        const login = document.getElementById('login-screen');
-                        if (login) login.style.display = 'flex';
-                    }, 500);
-                }
-            }, 1200);
+                document.getElementById('boot-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('login-screen').style.display = 'flex';
+                }, 500);
+            }, 1000);
         };
     </script>
 </body>
