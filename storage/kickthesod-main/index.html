@@ -3,344 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kick the Sod: V3.6 (Noodle Limbs Update)</title>
+    <title>Sod Sandbox: Daimyan Strength Update</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Segoe UI', sans-serif; touch-action: none; -webkit-user-select: none; user-select: none; } [cite: 1, 2]
-        canvas { display: block; } [cite: 3, 4]
-        
-        #start-screen {
-            position: fixed;
-            inset: 0; [cite: 4, 5]
-            background: radial-gradient(circle, #1a1a1a 0%, #050505 100%);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        } [cite: 6]
-        #logo-img {
-            max-width: 300px;
-            filter: drop-shadow(0 0 20px #e74c3c); [cite: 6, 7]
-            margin-bottom: 20px;
+        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
+        canvas { display: block; }
+        .controls { 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            z-index: 20; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; 
+            background: rgba(0,0,0,0.9); padding: 10px; border-radius: 15px; border: 2px solid #e74c3c;
         }
-        .play-btn {
-            background: #e74c3c;
-            color: white; [cite: 7, 8]
-            padding: 15px 50px;
-            font-size: 24px;
-            font-weight: 900;
-            border-radius: 50px;
-            cursor: pointer;
-            border: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-transform: uppercase; [cite: 8, 9]
-            letter-spacing: 2px;
-        }
-        .play-btn:active { transform: scale(0.95); } [cite: 9, 10]
-
-        #game-ui { display: none; } [cite: 10]
-        .ui-overlay { position: absolute; top: 100px; left: 20px; z-index: 10; pointer-events: none; } [cite: 11]
-        
-        .controls { position: absolute;
-        top: 20px; left: 50%; transform: translateX(-50%); z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: rgba(0,0,0,0.9); padding: 12px; [cite: 12, 13]
-        border-radius: 20px; border: 2px solid #e74c3c; pointer-events: auto; } [cite: 14]
-        .btn { width: 45px;
-        height: 45px; border-radius: 10px; border: none; background: #1a1a1a; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; [cite: 14, 15]
-        }
-        .btn.active { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; } [cite: 16]
-        
-        #oink-overlay { display: none;
-        position: fixed; inset: 0; background: black; z-index: 999; flex-direction: column; align-items: center; justify-content: center; color: red; font-weight: 900; text-align: center; [cite: 17, 18]
-        }
+        .btn { width: 42px; height: 42px; border-radius: 8px; background: #1a1a1a; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: none; }
+        .btn.active { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
     </style>
 </head>
 <body>
-    <div id="start-screen">
-        <img id="logo-img" src="/storage/photos/kts.png" alt="Kick the Sod" onerror="this.src='https://via.placeholder.com/300x150?text=KICK+THE+SOD'">
-        <button class="play-btn" onclick="startGame()">Play</button>
-        <p class="text-white mt-6 font-bold uppercase tracking-widest text-xs">V3.6 Noodle Limbs Update</p> [cite: 19]
-    </div>
-
-    <div id="oink-overlay">
-        <h1 class="text-6xl mb-4">OINK OINK</h1>
-        <p class="text-2xl">BOT-BRAINED BEHAVIOR DETECTED</p>
-        <p class="text-xl mt-4">YOU'RE BLICKED.</p>
-        <span class="text-8xl mt-8">🐷</span> [cite: 19, 20]
-    </div>
-
-    <div id="game-ui">
-        <div class="controls">
-            <button class="btn active" id="grab-tool" title="Grab">🖐️</button>
-            <button class="btn" id="slap-tool" title="Slap">👊</button>
-            <button class="btn" id="sword-tool" title="Sword">🗡️</button>
-            <button class="btn" id="fork-tool" title="Fork Test">🍴</button>
-            <button class="btn" id="tnt-tool" title="TNT">💣</button>
-            <button class="btn" id="gravity-tool">🌀</button> [cite: 20, 21]
-            <button class="btn" id="clear-tool">🧹</button>
-            <button class="btn" id="add-sod-btn" style="background: #27ae60;">➕</button>
-            <button class="btn" id="reset-btn">🔄</button>
-        </div>
-
-        <div class="ui-overlay">
-            <h1 class="text-red-600 text-2xl font-black italic tracking-tighter mb-2">KICK THE SODS</h1>
-            <p class="text-gray-300 font-bold text-sm mb-2">Total Score: <span id="total-score" class="text-white">0</span></p> [cite: 21, 22]
-            <p id="sod-count-display" class="text-red-500 font-bold text-xs uppercase tracking-widest">Active Sods: 0</p>
-        </div>
+    <div class="controls">
+        <button class="btn active" id="grab-tool">🖐️</button>
+        <button class="btn" id="slap-tool">👊</button>
+        <button class="btn" id="sword-tool">🗡️</button>
+        <button class="btn" id="car-tool">🚗</button>
+        <button class="btn" id="slow-mo-btn">⏳</button>
+        <button class="btn" id="add-sod-btn" style="background: #27ae60;">➕</button>
     </div>
 
     <script>
-        const { Engine, Render, Runner, World, Bodies, Body, Constraint, MouseConstraint, Mouse, Composite, Vector, Events } = Matter; [cite: 22]
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
-
-        function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); } [cite: 23, 24]
-
-        function playSound(type) {
-            if (!audioCtx || audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator(); [cite: 24, 25]
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-            if (type === 'hit') { [cite: 25, 26]
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(150, now); [cite: 26, 27]
-                osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.12);
-                osc.start(); osc.stop(now + 0.12);
-            } else if (type === 'slice') { [cite: 27, 28]
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(1200, now); [cite: 28, 29]
-                osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(); osc.stop(now + 0.1);
-            } else if (type === 'boom') { [cite: 29, 30]
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(80, now); [cite: 30, 31]
-                osc.frequency.exponentialRampToValueAtTime(10, now + 0.6);
-                gain.gain.setValueAtTime(0.6, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.6);
-                osc.start(); osc.stop(now + 0.6);
-            }
-        }
-
-        const engine = Engine.create({ positionIterations: 5, velocityIterations: 5 }); [cite: 32]
+        const { Engine, Render, Runner, World, Bodies, Body, Constraint, MouseConstraint, Mouse, Composite, Vector, Events } = Matter;
+        const engine = Engine.create();
         const world = engine.world;
-        const totalScoreEl = document.getElementById('total-score');
-        const sodCountEl = document.getElementById('sod-count-display');
-        const oinkOverlay = document.getElementById('oink-overlay'); [cite: 33]
-        const gameUI = document.getElementById('game-ui');
-        const startScreen = document.getElementById('start-screen'); [cite: 34]
-        
-        let totalScore = 0; let currentTool = 'grab'; let gravityState = 1; let bloodParticles = []; [cite: 34]
-        const MAX_AURA = 500000; 
+        let currentTool = 'grab', sodInstances = [];
 
         const render = Render.create({ 
-            element: document.body, 
-            engine: engine, 
-            options: { width: window.innerWidth, height: window.innerHeight, wireframes: false, background: '#0a0a0a' } 
-        }); [cite: 35]
-        function startGame() {
-            initAudio();
-            startScreen.style.display = 'none';
-            gameUI.style.display = 'block'; [cite: 36, 37]
-            updateBoundaries();
-            Render.run(render);
-            Runner.run(Runner.create(), engine);
-            createSodInstance();
-        }
-
-        let walls = []; [cite: 37]
-        function updateBoundaries() {
-            if (walls.length > 0) World.remove(world, walls); [cite: 38]
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            const thickness = 600; [cite: 39]
-            walls = [
-                Bodies.rectangle(w / 2, h + thickness / 2, w * 10, thickness, { isStatic: true, label: 'ground', friction: 1, render: { fillStyle: '#111' } }),
-                Bodies.rectangle(w / 2, -thickness / 2, w * 10, thickness, { isStatic: true, label: 'wall' }),
-                Bodies.rectangle(-thickness / 2, h / 2, thickness, h * 10, { isStatic: true, label: 'wall' }), [cite: 40, 41]
-                Bodies.rectangle(w + thickness / 2, h / 2, thickness, h * 10, { isStatic: true, label: 'wall' })
-            ];
-            World.add(world, walls); [cite: 42]
-        }
-
-        window.addEventListener('resize', () => {
-            render.options.width = window.innerWidth;
-            render.options.height = window.innerHeight;
-            render.canvas.width = window.innerWidth;
-            render.canvas.height = window.innerHeight;
-            updateBoundaries();
-        }); [cite: 42]
-        let sodInstances = []; [cite: 43]
-
-        function createSodInstance() {
-            const id = Math.random().toString(36).substr(2, 6); [cite: 43]
-            const x = (window.innerWidth / 2) + (Math.random() - 0.5) * 100; [cite: 44]
-            const y = (window.innerHeight / 2) + (Math.random() - 0.5) * 100; [cite: 45]
-            const head = Bodies.circle(x, y - 80, 22, { render: { fillStyle: '#f1c40f' }, label: 'head', sodId: id, friction: 0.1 }); [cite: 46]
-            const torso = Bodies.rectangle(x, y, 35, 65, { render: { fillStyle: '#e74c3c' }, label: 'chest', sodId: id, friction: 0.1 }); [cite: 47]
-            const lArmUpper = Bodies.rectangle(x - 25, y - 10, 10, 25, { render: { fillStyle: '#f1c40f' }, sodId: id }); [cite: 48]
-            const lArmLower = Bodies.rectangle(x - 25, y + 10, 10, 25, { render: { fillStyle: '#f1c40f' }, sodId: id }); [cite: 49]
-            const rArmUpper = Bodies.rectangle(x + 25, y - 10, 10, 25, { render: { fillStyle: '#f1c40f' }, sodId: id }); [cite: 50]
-            const rArmLower = Bodies.rectangle(x + 25, y + 10, 10, 25, { render: { fillStyle: '#f1c40f' }, sodId: id }); [cite: 51]
-            const lLegUpper = Bodies.rectangle(x - 12, y + 45, 12, 30, { render: { fillStyle: '#2c3e50' }, sodId: id }); [cite: 52]
-            const lLegLower = Bodies.rectangle(x - 12, y + 70, 12, 30, { render: { fillStyle: '#2c3e50' }, sodId: id }); [cite: 53]
-            const rLegUpper = Bodies.rectangle(x + 12, y + 45, 12, 30, { render: { fillStyle: '#2c3e50' }, sodId: id }); [cite: 54]
-            const rLegLower = Bodies.rectangle(x + 12, y + 70, 12, 30, { render: { fillStyle: '#2c3e50' }, sodId: id }); [cite: 55]
-            const group = Composite.create();
-            Composite.add(group, [head, torso, lArmUpper, lArmLower, rArmUpper, rArmLower, lLegUpper, lLegLower, rLegUpper, rLegLower]); [cite: 56]
-            
-            const jointStiffness = 0.08;
-            const joints = [
-                Constraint.create({ bodyA: head, bodyB: torso, pointA: {x:0, y:20}, pointB: {x:0, y:-32}, stiffness: jointStiffness, length: 5, render: {visible: false} }), [cite: 57]
-                Constraint.create({ bodyA: torso, bodyB: lArmUpper, pointA: {x:-18, y:-20}, pointB: {x:0, y:-10}, stiffness: jointStiffness, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: lArmUpper, bodyB: lArmLower, pointA: {x:0, y:12}, pointB: {x:0, y:-12}, stiffness: jointStiffness, length: 2, render: {visible: false} }), [cite: 58]
-                Constraint.create({ bodyA: torso, bodyB: rArmUpper, pointA: {x:18, y:-20}, pointB: {x:0, y:-10}, stiffness: jointStiffness, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: rArmUpper, bodyB: rArmLower, pointA: {x:0, y:12}, pointB: {x:0, y:-12}, stiffness: jointStiffness, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: torso, bodyB: lLegUpper, pointA: {x:-10, y:32}, pointB: {x:0, y:-15}, stiffness: jointStiffness, length: 2, render: {visible: false} }), [cite: 59]
-                Constraint.create({ bodyA: lLegUpper, bodyB: lLegLower, pointA: {x:0, y:15}, pointB: {x:0, y:-15}, stiffness: jointStiffness, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: torso, bodyB: rLegUpper, pointA: {x:10, y:32}, pointB: {x:0, y:-15}, stiffness: jointStiffness, length: 2, render: {visible: false} }),
-                Constraint.create({ bodyA: rLegUpper, bodyB: rLegLower, pointA: {x:0, y:15}, pointB: {x:0, y:-15}, stiffness: jointStiffness, length: 2, render: {visible: false} }) [cite: 60]
-            ];
-            Composite.add(group, joints); [cite: 61]
-
-            World.add(world, group);
-            sodInstances.push({ id, composite: group, aura: MAX_AURA, isDead: false, parts: { head, torso } });
-            updateSodCounter(); [cite: 61]
-        }
-
-        function updateSodCounter() {
-            sodCountEl.innerText = `Active Sods: ${sodInstances.filter(s => !s.isDead).length}`; [cite: 62]
-        }
-
-        function damageSod(instance, amt) {
-            if (instance.isDead) return;
-            instance.aura = Math.max(0, instance.aura - amt); [cite: 63, 64]
-            totalScore += Math.floor(amt / 100); totalScoreEl.innerText = totalScore.toLocaleString();
-            if (instance.aura <= 0) { [cite: 64, 65]
-                instance.isDead = true;
-                updateSodCounter(); [cite: 66]
-                setTimeout(() => {
-                    Composite.clear(instance.composite, false); World.remove(world, instance.composite);
-                    sodInstances = sodInstances.filter(s => s.id !== instance.id);
-                    if (sodInstances.filter(s => !s.isDead).length === 0) createSodInstance();
-                    updateSodCounter(); [cite: 66]
-                }, 4000); [cite: 67]
-            } [cite: 68]
-        }
-
-        Events.on(engine, 'collisionStart', (event) => {
-            event.pairs.forEach(pair => {
-                const bodies = [pair.bodyA, pair.bodyB];
-                const sodPart = bodies.find(b => b.sodId);
-                const other = bodies.find(b => !b.sodId); [cite: 68]
-                
-                if (sodPart && other) {
-                    const inst = sodInstances.find(s => s.id === sodPart.sodId);
-                    if (inst && !inst.isDead) { [cite: 69]
-                        const relVel = Vector.magnitude(Vector.sub(pair.bodyA.velocity, pair.bodyB.velocity)); [cite: 70]
-                        if ((other.label === 'ground' || other.label === 'wall') && relVel > 12) { 
-                            damageSod(inst, Math.floor(relVel * 450)); [cite: 70]
-                            spawnBlood(sodPart.position.x, sodPart.position.y, 4); [cite: 71]
-                            playSound('hit');
-                        } else if (relVel > 3 && other.label !== 'ground' && other.label !== 'wall') { [cite: 71]
-                            let type = 'hit'; let mult = 100; [cite: 72]
-                            if (other.label === 'sword-item') { mult = 300;
-                            type = 'slice'; } [cite: 72, 73]
-                            else if (other.label === 'fork') { mult = 1000;
-                            type = 'slice'; } [cite: 73, 74]
-                            damageSod(inst, Math.floor(relVel * mult));
-                            spawnBlood(sodPart.position.x, sodPart.position.y, 2); [cite: 74, 75]
-                            playSound(type);
-                        }
-                    }
-                }
-            });
-        }); [cite: 76]
-
-        Events.on(render, 'afterRender', () => {
-            const context = render.context;
-            sodInstances.forEach(inst => {
-                const { head } = inst.parts;
-                if (!head) return;
-                const pct = inst.aura / MAX_AURA; [cite: 76]
-                context.fillStyle = 'rgba(0,0,0,0.5)'; context.fillRect(head.position.x - 30, head.position.y - 50, 60, 6); [cite: 77]
-                context.fillStyle = pct > 0.5 ? '#2ecc71' : '#e74c3c'; context.fillRect(head.position.x - 30, head.position.y - 50, 60 * pct, 6);
-                context.save(); context.translate(head.position.x, head.position.y); context.rotate(head.angle);
-                context.font = '24px Arial'; context.textAlign = 'center'; [cite: 77]
-                context.fillText(inst.isDead ? '💀' : (inst.aura < 200000 ? '🥴' : '😤'), 0, 8); [cite: 78]
-                context.restore();
-            });
-            bloodParticles.forEach((p, i) => {
-                context.fillStyle = `rgba(200, 0, 0, ${p.opacity})`; context.beginPath(); [cite: 78]
-                context.arc(p.x, p.y, p.size, 0, Math.PI * 2); context.fill(); [cite: 79]
-                p.opacity -= 0.02;
-                if (p.opacity <= 0) bloodParticles.splice(i, 1); [cite: 80]
-            });
+            element: document.body, engine: engine, 
+            options: { width: window.innerWidth, height: window.innerHeight, wireframes: false, background: '#080808' } 
         });
 
-        function spawnPhysicalSword(x, y) { World.add(world, Bodies.rectangle(x, y, 40, 80, { label: 'sword-item', density: 0.1, render: { sprite: { texture: 'https://em-content.zobj.net/source/apple/354/crossed-swords_2694-fe0f.png', xScale: 0.5, yScale: 0.5 } } })); } [cite: 80]
-        function spawnFork(x, y) { 
-            const f = Bodies.rectangle(x, y, 40, 10, { label: 'fork', frictionAir: 0, render: { fillStyle: '#ccc' } }); [cite: 81]
-            Body.setVelocity(f, { x: (Math.random()-0.5)*15, y: 30 }); World.add(world, f);  [cite: 82]
-        }
-        function spawnBlood(x, y, count) { for (let i = 0; i < count; i++) bloodParticles.push({ x, y, size: Math.random()*3+1, opacity: 1 }); } [cite: 82]
+        // --- DAIMYAN STRENGTH SOD FACTORY ---
+        function createSodInstance() {
+            const id = Math.random().toString(36).substr(2, 5);
+            const x = window.innerWidth / 2, y = 200;
+            
+            // Higher density (0.005 instead of default) makes him feel "heavy"
+            const head = Bodies.circle(x, y, 22, { label: 'head', sodId: id, density: 0.008, render: { fillStyle: '#f1c40f' } });
+            const torso = Bodies.rectangle(x, y + 45, 35, 60, { label: 'chest', sodId: id, density: 0.01, render: { fillStyle: '#e74c3c' } });
+            
+            // Stiffness at 0.6 makes him stand tall like he's actually tuff
+            const neck = Constraint.create({ 
+                bodyA: head, bodyB: torso, 
+                pointA: {x:0, y:18}, pointB: {x:0, y:-30}, 
+                stiffness: 0.6, length: 2, render: {visible: false} 
+            });
 
+            const body = Composite.create();
+            Composite.add(body, [head, torso, neck]);
+            World.add(world, body);
+            sodInstances.push({ id, composite: body, aura: 800000, isDead: false, head });
+        }
+
+        // --- DAIMYAN-LEVEL PUNCH LOGIC ---
         function triggerAction(clientX, clientY) {
-            const rect = render.canvas.getBoundingClientRect(); [cite: 83]
-            const x = clientX - rect.left; const y = clientY - rect.top; [cite: 84]
-            if (currentTool === 'sword') spawnPhysicalSword(x, y); [cite: 84]
-            if (currentTool === 'fork') spawnFork(x, y); [cite: 85]
+            const rect = render.canvas.getBoundingClientRect();
+            const x = clientX - rect.left, y = clientY - rect.top;
+
             if (currentTool === 'slap') {
-                playSound('hit'); [cite: 85]
                 sodInstances.forEach(inst => {
                     Composite.allBodies(inst.composite).forEach(b => {
-                        if (Vector.magnitude(Vector.sub(b.position, {x, y})) < 200) {
-                            Body.applyForce(b, b.position, Vector.mult(Vector.normalise(Vector.sub(b.position, {x, y})), 0.8)); [cite: 86]
-                            damageSod(inst, 5000); [cite: 87]
+                        const dist = Vector.magnitude(Vector.sub(b.position, {x, y}));
+                        if (dist < 150) {
+                            // High-impact impulse (0.9 force) - The Daimyan Punch
+                            const forceDirection = Vector.normalise(Vector.sub(b.position, {x, y}));
+                            Body.applyForce(b, b.position, Vector.mult(forceDirection, 1.2));
+                            
+                            // Only take damage if the punch is actually "tuff"
+                            const impactDmg = (150 - dist) * 250;
+                            if (impactDmg > 5000) damageSod(inst, impactDmg);
                         }
                     });
                 });
-            } [cite: 88]
-            if (currentTool === 'tnt') {
-                playSound('boom'); [cite: 88]
-                Composite.allBodies(world).forEach(b => {
-                    if (b.isStatic) return; [cite: 89]
-                    const dir = Vector.sub(b.position, {x, y}); const dist = Vector.magnitude(dir);
-                    if (dist < 500) { [cite: 89]
-                        Body.applyForce(b, b.position, Vector.mult(Vector.normalise(dir), (500 - dist) * 0.06)); [cite: 90]
-                        if (b.sodId) damageSod(sodInstances.find(s => s.id === b.sodId), 8000); [cite: 90]
-                    }
-                });
-            } [cite: 91]
+            }
+            if (currentTool === 'car') {
+                const car = Bodies.rectangle(x, y, 120, 50, { density: 0.05, render: { fillStyle: '#34495e' } });
+                World.add(world, car);
+            }
         }
 
-        render.canvas.addEventListener('mousedown', (e) => triggerAction(e.clientX, e.clientY)); [cite: 91]
-        render.canvas.addEventListener('touchstart', (e) => { 
-            if (currentTool !== 'grab') e.preventDefault(); 
-            const t = e.touches[0]; triggerAction(t.clientX, t.clientY); 
-        }, { passive: false }); [cite: 92]
-        const tools = ['grab', 'slap', 'sword', 'fork', 'tnt']; [cite: 93]
-        tools.forEach(t => document.getElementById(t + '-tool').addEventListener('click', () => {
-            currentTool = t; document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(t + '-tool').classList.add('active'); mouseConstraint.enabled = (t === 'grab');
-        })); [cite: 93]
-        document.getElementById('gravity-tool').addEventListener('click', () => { gravityState *= -1; world.gravity.y = gravityState; }); [cite: 94]
-        document.getElementById('clear-tool').addEventListener('click', () => {
-            Composite.allBodies(world).forEach(b => { if (b.label === 'sword-item' || b.label === 'fork') World.remove(world, b); }); [cite: 95]
-        });
-        document.getElementById('add-sod-btn').addEventListener('click', createSodInstance); [cite: 96]
-        document.getElementById('reset-btn').addEventListener('click', () => location.reload()); [cite: 96]
+        function damageSod(inst, amt) {
+            if (!inst || inst.isDead) return;
+            inst.aura -= amt;
+            if (inst.aura <= 0) {
+                inst.isDead = true;
+                // Collapse joints on death
+                inst.composite.constraints.forEach(c => c.stiffness = 0.01);
+            }
+        }
 
-        const mouse = Mouse.create(render.canvas); [cite: 96]
-        const mouseConstraint = MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.15, render: { visible: false } } }); [cite: 97]
-        World.add(world, mouseConstraint); [cite: 97]
-    </script> [cite: 98]
+        // --- UI & INPUT ---
+        render.canvas.addEventListener('mousedown', (e) => triggerAction(e.clientX, e.clientY));
+        document.getElementById('add-sod-btn').onclick = createSodInstance;
+        document.getElementById('slow-mo-btn').onclick = () => engine.timing.timeScale = engine.timing.timeScale === 1 ? 0.2 : 1;
+        
+        ['grab', 'slap', 'sword', 'car'].forEach(t => {
+            document.getElementById(t+'-tool').onclick = () => {
+                currentTool = t;
+                document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(t+'-tool').classList.add('active');
+            };
+        });
+
+        World.add(world, Bodies.rectangle(window.innerWidth/2, window.innerHeight+30, window.innerWidth*2, 60, { isStatic: true }));
+        Render.run(render);
+        Runner.run(Runner.create(), engine);
+        createSodInstance();
+    </script>
 </body>
 </html>
