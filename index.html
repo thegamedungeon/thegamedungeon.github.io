@@ -157,6 +157,10 @@
         }
         .tab-btn.active { color: #32ff32; border-bottom: 2px solid #32ff32; background: rgba(50, 255, 50, 0.05); }
 
+        .blick-overlay {
+            position: fixed; inset: 0; background: black; z-index: 20000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -228,9 +232,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // APP CONFIG (The Game Dungeon Official)
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
             authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
@@ -282,16 +285,63 @@
             }
         });
 
+        // BLICK CHECKER
+        async function checkBlickStatus(user) {
+            if (!user) return;
+            // Clean the username/email for comparison
+            const rawId = user.email || user.displayName || user.uid;
+            const cleanedId = rawId.split('@')[0].toLowerCase();
+
+            const blickDoc = await getDoc(doc(db, 'artifacts', globalAppId, 'public', 'blicked', cleanedId));
+            
+            if (blickDoc.exists()) {
+                const data = blickDoc.data();
+                const now = Date.now();
+                if (data.expiry > now) {
+                    showBlickedScreen(data.expiry);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function showBlickedScreen(expiry) {
+            const date = new Date(expiry).toLocaleDateString();
+            document.body.innerHTML = `
+                <div class="blick-overlay">
+                    <img src="/storage/photos/tgdtc.png" class="w-32 mb-8 grayscale opacity-50">
+                    <h1 class="text-4xl font-black text-red-600 italic mb-2 tracking-tighter">YOU'VE BEEN BLICKED</h1>
+                    <p class="text-zinc-500 uppercase font-bold tracking-[0.3em] text-xs mb-10">Dungeon Safety Enforcement</p>
+                    <div class="bg-red-600/10 border border-red-600/30 p-6 rounded-2xl max-w-sm">
+                        <p class="text-white font-medium mb-2">Access to the Crib has been restricted by an Admin.</p>
+                        <p class="text-red-500 text-[10px] uppercase font-black">Release Date: ${date}</p>
+                    </div>
+                    <button onclick="location.reload()" class="mt-10 text-zinc-700 font-bold hover:text-white transition">RETRY ACCESS</button>
+                </div>
+            `;
+            // Simulate redirect to /blicked/ (Since we are an SPA, we just replace the view)
+            history.pushState(null, "", "/blicked/");
+        }
+
         window.googleFastpass = async () => {
-            try { await signInWithPopup(auth, provider); enterDesktop(); } 
-            catch (e) { await signInAnonymously(auth); enterDesktop(); }
+            try { 
+                const res = await signInWithPopup(auth, provider); 
+                const isBlicked = await checkBlickStatus(res.user);
+                if (!isBlicked) enterDesktop(); 
+            } 
+            catch (e) { 
+                const res = await signInAnonymously(auth); 
+                enterDesktop(); 
+            }
         };
 
         window.doLogin = async () => {
-            const user = document.getElementById('username-field').value.trim();
-            await signInAnonymously(auth);
-            localStorage.setItem('crib_username', user || "Wanderer");
-            enterDesktop();
+            const userVal = document.getElementById('username-field').value.trim();
+            const res = await signInAnonymously(auth);
+            localStorage.setItem('crib_username', userVal || "Wanderer");
+            
+            const isBlicked = await checkBlickStatus(auth.currentUser);
+            if (!isBlicked) enterDesktop();
         };
 
         function enterDesktop() {
@@ -304,12 +354,14 @@
 
         function startClock() {
             setInterval(() => {
-                document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const clockEl = document.getElementById('clock');
+                if (clockEl) clockEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }, 1000);
         }
 
         window.toggleMenu = (id) => {
             const m = document.getElementById(id);
+            if (!m) return;
             m.classList.toggle('hidden');
             m.classList.toggle('flex');
         };
@@ -414,39 +466,25 @@
                     state.scrolls.chats[doc.id] = doc.data();
                 });
                 renderPrivateList();
-            }, (err) => console.log("Scroll sync error:", err));
+            });
         }
 
         function renderPrivateList() {
             const list = document.getElementById('private-chats-list');
             if (!list) return;
             list.innerHTML = '';
-            
             const allTargets = Object.values(state.scrolls.chats);
-
             if (allTargets.length === 0) {
                 list.innerHTML = `<div class="text-zinc-600 text-[10px] text-center mt-10 uppercase font-black tracking-[0.2em]">No Scrolls Discovered</div>`;
                 return;
             }
-
             allTargets.forEach(chat => {
                 const div = document.createElement('div');
                 div.className = 'scroll-pill';
                 div.onclick = () => window.openPrivateChat(chat.id, chat.name, chat.avatar || `https://ui-avatars.com/api/?name=${chat.name}`);
-                
-                // DUNGEON SAFETY: Hide the real message text behind a watermark in the list
                 let displayMsg = "HIDDEN FOR SAFETY";
-                if (chat.hasImage) {
-                    displayMsg += " <attached_image>";
-                }
-
-                div.innerHTML = `
-                    <img src="${chat.avatar || ''}" class="avatar-main" onerror="this.src='https://ui-avatars.com/api/?name=${chat.name}'">
-                    <div class="flex flex-col flex-1 overflow-hidden">
-                        <span class="text-white font-bold text-sm uppercase">${chat.name}</span>
-                        <span class="text-blue-500/50 text-[9px] font-black italic tracking-widest truncate uppercase">${displayMsg}</span>
-                    </div>
-                `;
+                if (chat.hasImage) displayMsg += " <attached_image>";
+                div.innerHTML = `<img src="${chat.avatar || ''}" class="avatar-main" onerror="this.src='https://ui-avatars.com/api/?name=${chat.name}'"><div class="flex flex-col flex-1 overflow-hidden"><span class="text-white font-bold text-sm uppercase">${chat.name}</span><span class="text-blue-500/50 text-[9px] font-black italic tracking-widest truncate uppercase">${displayMsg}</span></div>`;
                 list.appendChild(div);
             });
         }
@@ -471,9 +509,7 @@
             overlay.classList.remove('hidden'); overlay.classList.add('flex');
             document.getElementById('target-name').innerText = name;
             document.getElementById('target-avatar').src = avatar || `https://ui-avatars.com/api/?name=${name}`;
-            
             if(privateUnsub) privateUnsub();
-            
             const q = query(collection(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls', id, 'messages'), orderBy('timestamp', 'asc'));
             privateUnsub = onSnapshot(q, (snap) => {
                 const area = document.getElementById('target-messages');
@@ -484,8 +520,6 @@
                     const isMe = d.sender === state.currentUser.uid;
                     const msg = document.createElement('div');
                     msg.className = `chat-bubble ${isMe ? 'bubble-sent' : 'bubble-received'}`;
-                    
-                    // Inside the chat, it's safe to see!
                     let content = d.text;
                     if (d.hasImage) content += "\n<attached_image>";
                     msg.innerText = content;
@@ -505,16 +539,8 @@
             const input = document.getElementById('target-msg-input');
             const text = input.value.trim();
             if((!text && !pendingImage) || !state.currentUser) return;
-
-            const msgData = {
-                text,
-                sender: state.currentUser.uid,
-                timestamp: serverTimestamp(),
-                hasImage: pendingImage
-            };
-
+            const msgData = { text, sender: state.currentUser.uid, timestamp: serverTimestamp(), hasImage: pendingImage };
             await addDoc(collection(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls', currentTargetId, 'messages'), msgData);
-
             await setDoc(doc(db, 'artifacts', globalAppId, 'users', state.currentUser.uid, 'scrolls', currentTargetId), {
                 name: document.getElementById('target-name').innerText,
                 id: currentTargetId,
@@ -522,9 +548,7 @@
                 hasImage: pendingImage,
                 lastUpdate: serverTimestamp()
             }, { merge: true });
-
-            input.value = '';
-            pendingImage = false;
+            input.value = ''; pendingImage = false;
             document.getElementById('attachment-preview').classList.add('hidden');
         };
 
@@ -566,9 +590,9 @@
             const frame = document.getElementById('br-frame');
             let q = input.value.trim();
             if(!q) return;
-            if(!q.includes('.') || q.includes(' ')) q = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+            if(!q.includes('.') || q.includes(' ')) q = `https://www.google.com/search?q=${encodeURIComponent(q)}&igu=1`;
             if(!q.startsWith('http')) q = 'https://' + q;
-            frame.src = `https://nodeunbl0cker.vercel.app/proxy/https:/${q.replace(/^https?:\/\//, '')}`;
+            frame.src = q;
         };
 
         function createWindow(appId, title, url, icon, customHtml = null) {
@@ -619,7 +643,12 @@
             window.addEventListener('touchmove', move, { passive: false }); window.addEventListener('touchend', stop);
         };
 
-        window.closeWin = (id) => { document.getElementById('win_'+id).remove(); delete state.windows[id]; updateDock(); };
+        window.closeWin = (id) => { 
+            const el = document.getElementById('win_'+id);
+            if (el) el.remove(); 
+            delete state.windows[id]; 
+            updateDock(); 
+        };
         window.toggleMinimize = (id) => {
             const el = document.getElementById('win_'+id);
             if(!el) return;
@@ -627,10 +656,11 @@
             if (!el.classList.contains('minimized')) window.bringToFront('win_'+id);
         };
         window.toggleMaximize = (id) => document.getElementById(id).classList.toggle('maximized');
-        window.bringToFront = (id) => { state.z++; document.getElementById(id).style.zIndex = state.z; };
+        window.bringToFront = (id) => { state.z++; if(document.getElementById(id)) document.getElementById(id).style.zIndex = state.z; };
 
         function updateDock() {
             const dock = document.getElementById('running-apps-dock');
+            if (!dock) return;
             dock.innerHTML = '';
             Object.keys(state.windows).forEach(id => {
                 const app = state.windows[id];
@@ -642,13 +672,76 @@
             });
         }
 
+        window.doBlick = async () => {
+            const target = document.getElementById('blick-target').value.trim().split('@')[0].toLowerCase();
+            const days = parseInt(document.getElementById('blick-days').value) || 1;
+            if(!target) return;
+            
+            const expiry = Date.now() + (days * 24 * 60 * 60 * 1000);
+            await setDoc(doc(db, 'artifacts', globalAppId, 'public', 'blicked', target), {
+                target,
+                expiry,
+                by: state.currentUser?.uid || 'Admin'
+            });
+            
+            document.getElementById('blick-status').innerText = `Blicked ${target} for ${days} days.`;
+            document.getElementById('blick-target').value = '';
+        };
+
+        // --- WALLPAPER PICKER LOGIC ---
+        window.triggerWallUpload = () => {
+            document.getElementById('wall-file-input').click();
+        };
+
+        window.handleWallUpload = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const b64 = e.target.result;
+                localStorage.setItem('crib_wall', b64);
+                document.getElementById('desktop').style.backgroundImage = `url('${b64}')`;
+            };
+            reader.readAsDataURL(file);
+        };
+
         function openSettings() {
+            const currentWall = localStorage.getItem('crib_wall') || '';
             const html = `
-                <div class="p-8">
-                    <h2 class="text-2xl font-bold mb-4">Wallpaper URL</h2>
-                    <input type="text" id="wall-in" class="w-full bg-zinc-800 p-4 rounded-xl text-white outline-none mb-4" placeholder="Enter wallpaper URL...">
-                    <button onclick="localStorage.setItem('crib_wall', document.getElementById('wall-in').value); location.reload()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Save & Refresh</button>
-                    <div class="mt-8 text-zinc-600 text-xs">Resident ID: ${state.currentUser?.uid || 'Unknown'}</div>
+                <div class="p-8 space-y-8 overflow-y-auto h-full">
+                    <section>
+                        <h2 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Wallpaper Lab</h2>
+                        <div class="space-y-4">
+                            <input type="text" id="wall-in" class="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-white outline-none" placeholder="Paste image URL here..." value="${currentWall.startsWith('http') ? currentWall : ''}">
+                            
+                            <div class="flex items-center gap-2">
+                                <div class="flex-grow h-[1px] bg-white/5"></div>
+                                <span class="text-[9px] text-zinc-700 font-bold uppercase">Or Upload From iPad</span>
+                                <div class="flex-grow h-[1px] bg-white/5"></div>
+                            </div>
+
+                            <input type="file" id="wall-file-input" class="hidden" accept="image/*" onchange="window.handleWallUpload(event)">
+                            <button onclick="window.triggerWallUpload()" class="w-full bg-zinc-800 border border-white/10 p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-700 transition active:scale-95">
+                                <span>📸 Select Photo</span>
+                            </button>
+
+                            <button onclick="const val = document.getElementById('wall-in').value; if(val) { localStorage.setItem('crib_wall', val); location.reload(); }" class="w-full bg-blue-600 p-4 rounded-xl font-bold active:scale-95 transition">Apply Changes</button>
+                        </div>
+                    </section>
+
+                    <section class="border-t border-white/5 pt-8">
+                        <h2 class="text-xs font-black uppercase tracking-widest text-red-600 mb-4">Blick Chamber (Admin)</h2>
+                        <div class="space-y-3">
+                            <input type="text" id="blick-target" placeholder="Email prefix or Username" class="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-white outline-none">
+                            <input type="number" id="blick-days" placeholder="Duration (Days)" class="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-white outline-none">
+                            <button onclick="window.doBlick()" class="w-full bg-red-600 p-4 rounded-xl font-bold active:scale-95 transition">CAST INTO THE ABYSS</button>
+                            <p id="blick-status" class="text-[10px] text-zinc-500 italic text-center"></p>
+                        </div>
+                    </section>
+
+                    <section class="border-t border-white/5 pt-8">
+                        <div class="text-zinc-600 text-[10px] uppercase font-bold">Resident ID: ${state.currentUser?.uid || 'Unknown'}</div>
+                    </section>
                 </div>
             `;
             createWindow('settings', 'Settings', null, '/storage/photos/settings.png', html);
@@ -657,11 +750,14 @@
         window.onload = () => {
             setTimeout(() => {
                 const boot = document.getElementById('boot-screen');
-                boot.style.opacity = '0';
-                setTimeout(() => {
-                    boot.style.display = 'none';
-                    document.getElementById('login-screen').style.display = 'flex';
-                }, 500);
+                if (boot) {
+                    boot.style.opacity = '0';
+                    setTimeout(() => {
+                        boot.style.display = 'none';
+                        const login = document.getElementById('login-screen');
+                        if (login) login.style.display = 'flex';
+                    }, 500);
+                }
             }, 1200);
         };
     </script>
