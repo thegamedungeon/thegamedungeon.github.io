@@ -2,434 +2,297 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>The Game Dungeon | CribOS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE GAME DUNGEON</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --taskbar-height: 70px;
+            --dungeon-green: #00ff41;
+            --dark-grey: #0a0a0a; /* Almost black */
         }
 
-        body, html { 
-            margin: 0; padding: 0; 
-            height: 100svh; 
-            overflow: hidden; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: black; 
-            touch-action: none; 
-            color: white;
-            user-select: none;
-        }
-        
-        #boot-screen { position: fixed; inset: 0; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-        
-        #login-screen { 
-            position: fixed; inset: 0; 
-            background: rgba(0,0,0,0.95); 
-            z-index: 9000; display: none; align-items: center; justify-content: center; 
-            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-        }
-        
-        #desktop { 
-            width: 100vw; 
-            height: 100svh; 
-            background-size: cover; 
-            background-position: center; 
-            position: relative; 
-            display: none; 
-            overflow-y: auto; /* Re-enabled scrolling for apps */
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .login-card {
-            background: #0a0a0a;
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 40px; border-radius: 2.5rem; 
-            width: 90%; max-width: 380px;
-            text-align: center; box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .login-avatar-wrapper {
-            width: 100px; height: 100px;
-            margin-bottom: 24px;
-            border-radius: 50%;
-            border: 3px solid #3b82f6;
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            flex-shrink: 0;
-            background: #1a1a1a;
+            background-color: var(--dark-grey);
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--dungeon-green);
+            user-select: none;
+            touch-action: none; 
         }
-        .login-avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
-        .app-icon { 
-            width: 90px; display: flex; flex-direction: column; align-items: center; cursor: pointer; margin: 12px; 
-            transition: 0.2s; -webkit-tap-highlight-color: transparent; 
+        /* Splash Screen */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.8s ease;
+            background-color: var(--dark-grey);
         }
-        .app-icon:active { transform: scale(0.9); }
-        .app-icon .icon-img { width: 65px; height: 65px; border-radius: 16px; margin-bottom: 8px; pointer-events: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); object-fit: cover; }
-        .app-label { color: white; font-size: 11px; text-align: center; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 
-        /* Custom SC Icon Style */
-        .sc-icon-bg {
-            width: 65px; height: 65px; background: black; border-radius: 16px; 
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 8px;
+        .logo {
+            width: 220px;
+            height: auto;
+            margin-bottom: 2rem;
+            filter: drop-shadow(0 0 15px rgba(0, 255, 65, 0.4));
         }
-        .sc-bubble {
-            width: 40px; height: 32px; background: #22c55e; border-radius: 12px 12px 12px 0;
-            display: flex; align-items: center; justify-content: center;
+
+        .glitch-text {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.6rem;
+            margin-bottom: 1rem;
+            color: var(--dungeon-green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .swipe-hint {
+            font-size: 1.3rem;
+            opacity: 0.8;
+            animation: pulse 1.5s infinite;
+            text-transform: lowercase;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-10px); }
+        }
+
+        /* Disintegration effect - flying UP to the middle */
+        .disintegrate {
+            transform: translateY(-50%) scale(0.8);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Library Grid */
+        #game-library {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            height: 100vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: translateY(100px);
+            transition: opacity 1s ease 0.4s, transform 0.8s ease 0.4s;
+            touch-action: auto; 
+        }
+
+        .library-visible {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .game-card {
+            border: 2px solid rgba(0, 255, 65, 0.3);
+            background: rgba(0, 255, 65, 0.03);
+            padding: 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .game-card:hover {
+            border-color: var(--dungeon-green);
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.4);
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        .game-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            border-radius: 15px;
+            object-fit: cover;
+            border: 1px solid var(--dungeon-green);
+        }
+
+        /* Modal "Rising from the Grave" to the MIDDLE */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0);
+            display: none;
+            justify-content: center;
+            align-items: center; /* Changed to center to hit the middle */
+            z-index: 200;
+            transition: background 0.5s ease;
+        }
+
+        #game-modal {
+            width: 90%;
+            max-width: 1200px;
+            height: 75%;
+            background: #000;
+            border: 2px solid var(--dungeon-green);
+            border-radius: 20px;
             position: relative;
+            /* Start way below the screen */
+            transform: translateY(150%); 
+            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.4);
         }
-        .sc-text { color: black; font-weight: 900; font-size: 14px; letter-spacing: -1px; }
 
-        .window { 
-            position: absolute; background: #161616; border: 1px solid #333; border-radius: 16px; 
-            box-shadow: 0 30px 60px rgba(0,0,0,0.7); display: flex; flex-direction: column; 
-            overflow: hidden; transition: opacity 0.2s, transform 0.2s;
-            min-width: 300px; min-height: 200px;
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2.5rem;
+            color: var(--dungeon-green);
+            cursor: pointer;
+            z-index: 210;
+            background: rgba(0,0,0,0.8);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid var(--dungeon-green);
+            transition: all 0.2s;
         }
-        .window.minimized { transform: scale(0.8) translateY(100px); opacity: 0; pointer-events: none; }
-        .window.maximized { top: 0 !important; left: 0 !important; width: 100vw !important; height: calc(100svh - var(--taskbar-height) - 10px) !important; border-radius: 0; }
 
-        .window-header { background: #222; height: 45px; display: flex; align-items: center; padding: 0 15px; cursor: move; user-select: none; border-bottom: 1px solid #333; touch-action: none; }
-        .window-controls { display: flex; gap: 8px; }
-        .control-btn { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: none; }
-        .close { background: #ff5f56; } 
-        .min { background: #ffbd2e; }
-        .max { background: #27c93f; }
-        
-        .window-title { flex-grow: 1; text-align: center; color: #eee; font-size: 12px; font-weight: 600; pointer-events: none; }
-        .window-content { flex-grow: 1; background: #000; position: relative; overflow: auto; }
-        iframe { width: 100%; height: 100%; border: none; }
-
-        #taskbar { 
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); 
-            width: auto; height: var(--taskbar-height); 
-            background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            display: flex; align-items: center; padding: 0 15px; z-index: 99999;
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 24px;
-            gap: 10px;
+        .close-btn:hover {
+            background: var(--dungeon-green);
+            color: black;
+            box-shadow: 0 0 15px var(--dungeon-green);
         }
-        
-        .taskbar-item { width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 12px; position: relative; }
-        .taskbar-item:active { transform: scale(0.8); }
-        .taskbar-item .icon-dock { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; }
-        .taskbar-item.active::after { content: ''; position: absolute; bottom: -5px; width: 4px; height: 4px; background: #3b82f6; border-radius: 50%; }
 
-        #clock { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; margin-left: 5px; color: rgba(255,255,255,0.7); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
-        
-        .blick-overlay { position: fixed; inset: 0; background: black; z-index: 20000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Scrollbar hack */
+        #game-library::-webkit-scrollbar {
+            width: 6px;
+        }
+        #game-library::-webkit-scrollbar-thumb {
+            background: var(--dungeon-green);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="boot-screen">
-        <img src="/storage/photos/tgdtc.png" class="w-20 mb-4 animate-pulse" onerror="this.src='https://thegamedungeon.github.io/logo.png'">
-        <div class="text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">CribOS Core v2.5.2</div>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <img src="/storage/photos/tgdtc.png" alt="Dungeon Logo" class="logo" onerror="this.src='https://via.placeholder.com/200?text=DUNGEON'">
+        <h1 class="glitch-text">THE GAME DUNGEON</h1>
+        <p class="swipe-hint">Swipe up to play</p>
     </div>
 
-    <div id="login-screen">
-        <div class="login-card">
-            <div class="login-avatar-wrapper">
-                <img src="/storage/photos/user.png" id="login-avatar" onerror="this.src='https://ui-avatars.com/api/?name=Crib&background=3b82f6&color=fff'">
-            </div>
-            <h2 class="text-xl font-bold mb-6 italic text-blue-400">Welcome to the Crib</h2>
-            
-            <div id="login-form" class="w-full space-y-3">
-                <input type="text" id="username-field" placeholder="Choose a Resident Name" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-white outline-none focus:border-blue-500 transition">
-                <button id="login-btn" class="w-full bg-blue-600 py-4 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-blue-900/20">ENTER CRIB</button>
-                <div class="flex items-center gap-2 py-2">
-                    <div class="flex-grow h-[1px] bg-white/10"></div>
-                    <span class="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instant Access</span>
-                    <div class="flex-grow h-[1px] bg-white/10"></div>
-                </div>
-                <button id="google-btn" class="w-full bg-white text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
-                    <span>Google Fastpass</span>
-                </button>
-            </div>
+    <!-- Main Game Grid -->
+    <div id="game-library">
+        <div class="game-card" onclick="openGame('Cookie Clicker', '/storage/cookieclick-main/index.html')">
+            <img src="/storage/photos/cc.png" class="game-icon" alt="icon">
+            <h2 class="text-xl font-bold">COOKIE CLICKER</h2>
+        </div>
+
+        <div class="game-card" onclick="openGame('Geometry Dash', '/storage/gdl-main/index.html')">
+            <img src="/storage/photos/gd.png" class="game-icon" alt="icon">
+            <h2 class="text-xl font-bold">GEOMETRY DASH</h2>
+        </div>
+
+        <div class="game-card" onclick="openGame('Kick The Sod', '/storage/kickthesod-main/index.html')">
+            <img src="/storage/photos/kts.png" class="game-icon" alt="icon">
+            <h2 class="text-xl font-bold">KICK THE SOD</h2>
+        </div>
+
+        <div class="game-card" onclick="openGame('Minecraft', '/storage/minecraft-main/index.html')">
+            <img src="/storage/photos/minecraft.png" class="game-icon" alt="icon">
+            <h2 class="text-xl font-bold">MINECRAFT</h2>
+        </div>
+
+        <div class="game-card" onclick="openGame('Polytrack', '/storage/polytrack-0.5.2-clean-main/index.html')">
+            <img src="/storage/photos/polytrack.png" class="game-icon" alt="icon">
+            <h2 class="text-xl font-bold">POLYTRACK</h2>
+        </div>
+
+        <div class="game-card" onclick="openGame('Ragdoll Hit', '/storage/ragdoll-hit-main/index.html')">
+            <img src="/storage/photos/rh.png" class="game-icon" alt="icon">
+            <h2 class="text-xl font-bold">RAGDOLL HIT</h2>
         </div>
     </div>
 
-    <div id="desktop">
-        <div id="icon-layer" class="flex flex-row flex-wrap p-6 items-start gap-2"></div>
-        <div id="taskbar">
-            <div class="taskbar-item" onclick="toggleMenu('start-menu')">
-                <img src="/storage/photos/tgdtc.png" class="icon-dock" onerror="this.src='https://thegamedungeon.github.io/logo.png'">
-            </div>
-            <div class="flex items-center gap-2" id="running-apps-dock"></div>
-            <div id="clock">00:00</div>
-        </div>
-        <div id="start-menu" class="fixed bottom-24 left-1/2 -translate-x-1/2 w-[340px] bg-zinc-900/95 border border-white/10 rounded-[24px] p-5 hidden flex-col z-[100001] backdrop-blur-3xl shadow-2xl">
-            <div class="flex items-center gap-4 mb-6 p-2 border-b border-white/10 pb-5">
-                <img src="/storage/photos/user.png" class="w-12 h-12 rounded-full border-2 border-blue-500" id="menu-avatar" onerror="this.src='https://ui-avatars.com/api/?name=Resident&background=3b82f6&color=fff'">
-                <div class="flex flex-col">
-                    <span id="stat-name" class="font-bold text-white text-lg">Wanderer</span>
-                    <span class="text-[10px] text-blue-400 uppercase font-black tracking-widest">Crib Resident</span>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 gap-1" id="start-list"></div>
-            <div class="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
-                <button onclick="location.reload()" class="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">Restart CribOS</button>
-                <span class="text-[10px] text-zinc-700">Ver 2.5.2-SPA</span>
-            </div>
+    <!-- The Grave Modal -->
+    <div id="modal-overlay" onclick="closeGame()">
+        <div id="game-modal" onclick="event.stopPropagation()">
+            <div class="close-btn" onclick="closeGame()">&times;</div>
+            <iframe id="game-frame" src="about:blank"></iframe>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script>
+        const splash = document.getElementById('splash-screen');
+        const library = document.getElementById('game-library');
+        const overlay = document.getElementById('modal-overlay');
+        const modal = document.getElementById('game-modal');
+        const frame = document.getElementById('game-frame');
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-            projectId: "the-game-dungeon-4d75d",
-            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-            messagingSenderId: "533459716906",
-            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
-        };
+        let touchStartY = 0;
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
-        const globalAppId = 'the-crib-v2';
+        // Swipe UP Detection
+        window.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
 
-        window.state = {
-            z: 100,
-            windows: {},
-            currentUser: null,
-            installed: ['browser', 'scrolls', 'ytmusic', 'cc', 'gd', 'kts', 'minecraft', 'polytrack', 'rh', 'settings']
-        };
-
-        const APPS = {
-            browser: { name: 'ProxiCrib', icon: '/storage/photos/proxicrib.png', type: 'browser' },
-            scrolls: { name: 'Scrolls', icon: 'custom_sc', url: '/storage/scrolls-main/index.html' },
-            ytmusic: { name: 'YT Music', icon: '/storage/photos/ytmusic.png', url: 'https://music.youtube.com' },
-            settings: { name: 'Settings', icon: '/storage/photos/settings.png' },
-            cc: { name: 'Cookie Clicker', icon: '/storage/photos/cc.png', url: '/storage/cookieclick-main/index.html' },
-            gd: { name: 'Geometry Dash', icon: '/storage/photos/gd.png', url: '/storage/gdl-main/index.html' },
-            kts: { name: 'Kick the Sod', icon: '/storage/photos/kts.png', url: '/storage/kickthesod-main/index.html' },
-            minecraft: { name: 'Minecraft', icon: '/storage/photos/minecraft.png', url: '/storage/minecraft-main/index.html' },
-            polytrack: { name: 'Polytrack', icon: '/storage/photos/polytrack.png', url: '/storage/polytrack-0.5.2-clean-main/index.html' },
-            rh: { name: 'Ragdoll Hit', icon: '/storage/photos/rh.png', url: '/storage/ragdoll-hit-main/index.html' }
-        };
-
-        async function checkBlickStatus(user) {
-            if (!user) return false;
-            try {
-                const rawId = user.email || user.displayName || user.uid;
-                const cleanedId = rawId.split('@')[0].toLowerCase();
-                const blickDoc = await getDoc(doc(db, 'artifacts', globalAppId, 'public', 'blicked', cleanedId));
-                if (blickDoc.exists()) {
-                    const data = blickDoc.data();
-                    if (data.expiry > Date.now()) {
-                        showBlickedScreen(data.expiry);
-                        return true;
-                    }
-                }
-            } catch(e) { console.error("Blick check failed", e); }
-            return false;
-        }
-
-        function showBlickedScreen(expiry) {
-            document.body.innerHTML = `<div class="blick-overlay"><h1 class="text-4xl font-black text-red-600 italic mb-2">YOU'VE BEEN BLICKED</h1><p class="text-zinc-500 uppercase font-bold text-xs mb-10">Dungeon Safety Enforcement</p><p class="text-white">Access restricted until ${new Date(expiry).toLocaleDateString()}</p><button onclick="location.reload()" class="mt-10 text-zinc-700">RETRY</button></div>`;
-        }
-
-        const enterDesktop = () => {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('desktop').style.display = 'block';
-            renderIcons();
-            const wall = localStorage.getItem('crib_wall') || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop';
-            document.getElementById('desktop').style.backgroundImage = `url('${wall}')`;
-            startClock();
-        };
-
-        document.getElementById('login-btn').onclick = async () => {
-            const userVal = document.getElementById('username-field').value.trim();
-            const res = await signInAnonymously(auth);
-            localStorage.setItem('crib_username', userVal || "Wanderer");
-            if (!(await checkBlickStatus(res.user))) enterDesktop();
-        };
-
-        document.getElementById('google-btn').onclick = async () => {
-            try {
-                const res = await signInWithPopup(auth, provider);
-                if (!(await checkBlickStatus(res.user))) enterDesktop();
-            } catch (e) {
-                const res = await signInAnonymously(auth);
-                enterDesktop();
+        window.addEventListener('touchend', e => {
+            if (splash.classList.contains('disintegrate')) return;
+            const touchEndY = e.changedTouches[0].clientY;
+            if (touchEndY < touchStartY - 60) {
+                enterDungeon();
             }
-        };
+        }, { passive: true });
 
-        onAuthStateChanged(auth, (user) => {
-            window.state.currentUser = user;
-            if (user) {
-                const name = user.displayName || localStorage.getItem('crib_username') || "Resident";
-                document.getElementById('stat-name').innerText = name;
-                const pic = user.photoURL || `https://ui-avatars.com/api/?name=${name}&background=3b82f6&color=fff`;
-                document.getElementById('menu-avatar').src = pic;
-                document.getElementById('login-avatar').src = pic;
+        // Desktop Scroll Detection
+        window.addEventListener('wheel', e => {
+            if (e.deltaY > 0 && !splash.classList.contains('disintegrate')) {
+                enterDungeon();
             }
         });
 
-        function renderIcons() {
-            const layer = document.getElementById('icon-layer');
-            const startList = document.getElementById('start-list');
-            layer.innerHTML = ''; startList.innerHTML = '';
-            window.state.installed.forEach(id => {
-                const app = APPS[id];
-                const div = document.createElement('div');
-                div.className = 'app-icon';
-                div.onclick = () => launchApp(id);
-                
-                let iconContent = `<img src="${app.icon}" class="icon-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3064/3064197.png'">`;
-                if(app.icon === 'custom_sc') {
-                    iconContent = `<div class="sc-icon-bg"><div class="sc-bubble"><span class="sc-text">SC</span></div></div>`;
-                }
-
-                div.innerHTML = `${iconContent}<span class="app-label">${app.name}</span>`;
-                layer.appendChild(div);
-
-                const sItem = document.createElement('div');
-                sItem.className = 'flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl cursor-pointer text-white text-sm';
-                let listIcon = `<img src="${app.icon}" class="w-8 h-8 rounded-lg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3064/3064197.png'">`;
-                if(app.icon === 'custom_sc') listIcon = `<div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center border border-white/10"><div class="w-5 h-4 bg-green-500 rounded-sm flex items-center justify-center"><span class="text-[8px] font-black text-black">SC</span></div></div>`;
-                
-                sItem.innerHTML = `${listIcon}<span>${app.name}</span>`;
-                sItem.onclick = () => { launchApp(id); toggleMenu('start-menu'); };
-                startList.appendChild(sItem);
-            });
+        function enterDungeon() {
+            splash.classList.add('disintegrate');
+            library.classList.add('library-visible');
         }
 
-        window.launchApp = (id) => {
-            const app = APPS[id];
-            if (id === 'settings') return openSettings();
-            if (id === 'browser') return openBrowser();
-            createWindow(id, app.name, app.url, app.icon);
-        };
-
-        window.toggleMenu = (id) => {
-            const m = document.getElementById(id);
-            if(m) m.classList.toggle('hidden');
-        };
-
-        window.triggerWallUpload = () => document.getElementById('wall-file-input').click();
-
-        window.handleWallUpload = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const b64 = event.target.result;
-                try {
-                    localStorage.setItem('crib_wall', b64);
-                    document.getElementById('desktop').style.backgroundImage = `url('${b64}')`;
-                } catch(err) {
-                    alert("Image too large for browser storage. Try a smaller one!");
-                }
-            };
-            reader.readAsDataURL(file);
-        };
-
-        function openSettings() {
-            const wall = localStorage.getItem('crib_wall') || '';
-            const html = `
-                <div class="p-8 space-y-8 h-full overflow-y-auto">
-                    <section>
-                        <h2 class="text-xs font-black uppercase text-zinc-500 mb-4">Wallpaper</h2>
-                        <input type="text" id="wall-url" class="w-full bg-zinc-900 p-4 rounded-xl mb-4" placeholder="Wallpaper URL..." value="${wall.startsWith('http') ? wall : ''}">
-                        <input type="file" id="wall-file-input" class="hidden" accept="image/*" onchange="window.handleWallUpload(event)">
-                        <button onclick="window.triggerWallUpload()" class="w-full bg-zinc-800 p-4 rounded-xl mb-4 font-bold">📸 Upload from iPad</button>
-                        <button onclick="const v = document.getElementById('wall-url').value; if(v) { localStorage.setItem('crib_wall', v); location.reload(); }" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Save Changes</button>
-                    </section>
-                </div>
-            `;
-            createWindow('settings', 'Settings', null, '/storage/photos/settings.png', html);
-        }
-
-        function openBrowser() {
-            const html = `<div class="flex flex-col h-full"><div class="p-2 bg-[#222] flex gap-2"><input type="text" id="br-in" class="flex-1 bg-black p-2 rounded" placeholder="URL..."><button onclick="document.getElementById('br-fr').src = document.getElementById('br-in').value" class="bg-blue-600 px-4 rounded">GO</button></div><iframe id="br-fr" class="flex-grow bg-white"></iframe></div>`;
-            createWindow('browser', 'ProxiCrib', null, '/storage/photos/proxicrib.png', html);
-        }
-
-        function createWindow(appId, title, url, icon, customHtml = null) {
-            if (window.state.windows[appId]) return window.toggleMinimize(appId);
-            const winId = 'win_' + appId;
-            const win = document.createElement('div');
-            win.id = winId; win.className = 'window';
-            window.state.z++; win.style.zIndex = window.state.z;
-            win.style.width = '800px'; win.style.height = '500px'; win.style.left = '50px'; win.style.top = '50px';
-            if (window.innerWidth < 800) win.style.width = '90vw';
-
-            win.innerHTML = `
-                <div class="window-header" onmousedown="window.initDrag(event, '${winId}')" ontouchstart="window.initDrag(event, '${winId}')">
-                    <div class="window-controls"><button class="control-btn close" onclick="window.closeWin('${appId}')"></button><button class="control-btn min" onclick="window.toggleMinimize('${appId}')"></button></div>
-                    <div class="window-title">${title}</div>
-                </div>
-                <div class="window-content">${customHtml ? customHtml : `<iframe src="${url}"></iframe>`}</div>
-            `;
-            document.getElementById('desktop').appendChild(win);
-            window.state.windows[appId] = { id: winId, title, icon };
-            updateDock();
-        }
-
-        window.closeWin = (id) => { document.getElementById('win_'+id).remove(); delete window.state.windows[id]; updateDock(); };
-        window.toggleMinimize = (id) => { 
-            const el = document.getElementById('win_'+id); 
-            el.classList.toggle('minimized'); 
-            if(!el.classList.contains('minimized')) { window.state.z++; el.style.zIndex = window.state.z; }
-        };
-        window.initDrag = (e, id) => {
-            const el = document.getElementById(id);
-            window.state.z++; el.style.zIndex = window.state.z;
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            const startL = el.offsetLeft, startT = el.offsetTop;
-            const move = (ev) => {
-                const cx = ev.type.includes('touch') ? ev.touches[0].clientX : ev.clientX;
-                const cy = ev.type.includes('touch') ? ev.touches[0].clientY : ev.clientY;
-                el.style.left = (startL + cx - startX) + 'px';
-                el.style.top = (startT + cy - startY) + 'px';
-            };
-            const stop = () => { window.removeEventListener('mousemove', move); window.removeEventListener('touchmove', move); };
-            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-            window.addEventListener('touchmove', move); window.addEventListener('touchend', stop);
-        };
-
-        function updateDock() {
-            const dock = document.getElementById('running-apps-dock');
-            dock.innerHTML = '';
-            Object.keys(window.state.windows).forEach(id => {
-                const app = window.state.windows[id];
-                const div = document.createElement('div');
-                div.className = 'taskbar-item active';
-                div.onclick = () => window.toggleMinimize(id);
-                
-                let iconHtml = `<img src="${app.icon}" class="icon-dock">`;
-                if(app.icon === 'custom_sc') iconHtml = `<div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center border border-white/10"><div class="w-5 h-4 bg-green-500 rounded-sm flex items-center justify-center"><span class="text-[8px] font-black text-black">SC</span></div></div>`;
-                
-                div.innerHTML = iconHtml;
-                dock.appendChild(div);
-            });
-        }
-
-        function startClock() {
-            setInterval(() => {
-                document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            }, 1000);
-        }
-
-        window.onload = () => {
+        function openGame(title, url) {
+            frame.src = url;
+            overlay.style.display = 'flex';
             setTimeout(() => {
-                document.getElementById('boot-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('boot-screen').style.display = 'none';
-                    document.getElementById('login-screen').style.display = 'flex';
-                }, 500);
-            }, 1000);
-        };
+                overlay.style.background = 'rgba(0, 0, 0, 0.8)'; // Darkness = 80%
+                modal.style.transform = 'translateY(0)'; // Rises to its centered position
+            }, 10);
+        }
+
+        function closeGame() {
+            modal.style.transform = 'translateY(150%)'; // Buries it back underground
+            overlay.style.background = 'rgba(0, 0, 0, 0)';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                frame.src = 'about:blank';
+            }, 800);
+        }
     </script>
 </body>
 </html>
