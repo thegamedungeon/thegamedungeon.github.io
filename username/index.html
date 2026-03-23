@@ -41,22 +41,47 @@
             background: rgba(0, 255, 65, 0.05);
         }
 
-        .blicked {
+        .edit-input {
+            background: #111;
+            border: 1px solid var(--dungeon-green);
+            color: var(--dungeon-green);
+            padding: 4px 8px;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        /* 404 / BLICKED Styles */
+        .blicked-state {
             color: var(--terminal-red) !important;
             border-color: var(--terminal-red) !important;
-            text-shadow: 0 0 10px rgba(255, 49, 49, 0.5);
+            text-shadow: 0 0 10px rgba(255, 49, 49, 0.8);
+        }
+
+        #error-screen {
+            position: fixed;
+            inset: 0;
+            background: #050000;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
         }
 
         #loading-overlay {
             position: fixed;
             inset: 0;
             background: var(--dark-grey);
-            z-index: 100;
+            z-index: 300;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: opacity 0.5s ease;
         }
+
+        .hidden { display: none !important; }
 
         /* Scanline Effect */
         body::before {
@@ -74,59 +99,119 @@
 <body class="flex flex-col items-center min-h-screen p-6">
 
     <div id="loading-overlay">
-        <div class="text-2xl animate-pulse">AUTHENTICATING...</div>
+        <div class="text-2xl animate-pulse uppercase tracking-widest text-green-500">Scanning Network...</div>
     </div>
 
-    <!-- User Header -->
-    <div class="w-full max-w-2xl mt-12 mb-8 text-center">
-        <div id="avatar-ring" class="w-32 h-32 rounded-full border-4 border-green-500 mx-auto mb-6 flex items-center justify-center bg-gray-900 overflow-hidden profile-border">
-            <i data-lucide="user" class="w-16 h-16"></i>
+    <!-- 404 / Permission Denied Error Screen -->
+    <div id="error-screen" class="fade-in">
+        <h1 id="error-title" class="glitch-text blicked-state text-6xl mb-4">404</h1>
+        <h2 id="error-subtitle" class="text-2xl blicked-state mb-8 uppercase tracking-widest">Profile Blicked</h2>
+        <div class="profile-border blicked-state p-6 max-w-md bg-red-950/10">
+            <p id="error-desc" class="mb-4 text-sm">Target account does not exist in the Dungeon database or has been terminated by the Architect.</p>
+            <p id="error-code" class="text-[10px] opacity-70 uppercase">ERROR_CODE: OINK_OINK_NULL_REF</p>
         </div>
-        <h1 id="user-display-name" class="glitch-text text-4xl font-black mb-2">USERNAME</h1>
-        <p id="user-handle" class="opacity-60 text-lg">@handle</p>
+        <button onclick="window.location.href='https://thegamedungeon.qzz.io'" class="mt-12 px-8 py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all font-bold tracking-widest uppercase">
+            Return to Surface
+        </button>
     </div>
 
-    <!-- Main Profile Card -->
-    <div class="w-full max-w-2xl profile-border rounded-xl p-8 relative">
-        <div class="absolute top-4 right-4 text-[10px] opacity-30">SECURE_ACCESS_V3</div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="stat-box p-4">
-                <h3 class="text-xs opacity-50 mb-1">CURRENT RANK</h3>
-                <p id="rank-val" class="text-xl font-bold">UNRANKED</p>
-            </div>
-            <div class="stat-box p-4">
-                <h3 class="text-xs opacity-50 mb-1">VIBE STATUS</h3>
-                <p id="vibe-val" class="text-xl font-bold">NEUTRAL</p>
-            </div>
-            <div class="stat-box p-4 md:col-span-2">
-                <h3 class="text-xs opacity-50 mb-1">HELL'S THREAD TOP TRACK</h3>
-                <p id="music-val" class="text-lg font-bold">NO_AUDIO_FOUND</p>
-            </div>
+    <!-- Main Profile Content -->
+    <div id="profile-content" class="w-full flex flex-col items-center">
+        <div class="w-full max-w-2xl flex justify-end">
+            <button id="edit-btn" class="hidden text-xs border border-green-500 p-2 hover:bg-green-500 hover:text-black transition uppercase">
+                [ Edit Profile ]
+            </button>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-green-900/30">
-            <h3 class="text-xs opacity-50 mb-3">DUNGEON ACTIVITY (HOURS)</h3>
-            <div class="flex items-center gap-4">
-                <div class="flex-1 bg-green-900/20 h-4 rounded-full overflow-hidden">
-                    <div id="grind-bar" class="bg-green-500 h-full w-0 transition-all duration-1000"></div>
+        <!-- User Header -->
+        <div class="w-full max-w-2xl mt-8 mb-8 text-center">
+            <div id="avatar-ring" class="w-32 h-32 rounded-full border-4 border-green-500 mx-auto mb-6 flex items-center justify-center bg-gray-900 overflow-hidden profile-border relative">
+                <i data-lucide="user" id="avatar-icon" class="w-16 h-16"></i>
+                <img id="avatar-img" src="" class="hidden w-full h-full object-cover">
+            </div>
+            <h1 id="user-display-name" class="glitch-text text-4xl font-black mb-2">USERNAME</h1>
+            <p id="user-handle" class="opacity-60 text-lg">@handle</p>
+        </div>
+
+        <!-- Main Profile Card -->
+        <div class="w-full max-w-2xl profile-border rounded-xl p-8 relative">
+            <div class="absolute top-4 right-4 text-[10px] opacity-30">SECURE_ACCESS_V3</div>
+            
+            <div id="view-mode" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="stat-box p-4">
+                    <h3 class="text-xs opacity-50 mb-1">CURRENT RANK</h3>
+                    <p id="rank-val" class="text-xl font-bold">UNRANKED</p>
                 </div>
-                <span id="grind-text" class="text-sm">0h</span>
+                <div class="stat-box p-4">
+                    <h3 class="text-xs opacity-50 mb-1">VIBE STATUS</h3>
+                    <p id="vibe-val" class="text-xl font-bold">NEUTRAL</p>
+                </div>
+                <div class="stat-box p-4 md:col-span-2">
+                    <h3 class="text-xs opacity-50 mb-1">HELL'S THREAD TOP TRACK</h3>
+                    <p id="music-val" class="text-lg font-bold">NO_AUDIO_FOUND</p>
+                </div>
+                <div id="privacy-status-box" class="col-span-2 text-[10px] opacity-40 italic">
+                    Visibility: <span id="visibility-val">Public</span>
+                </div>
+            </div>
+
+            <!-- Edit Form (Hidden) -->
+            <div id="edit-mode" class="hidden grid grid-cols-1 gap-4">
+                <div>
+                    <label class="text-[10px] opacity-50">DISPLAY NAME</label>
+                    <input type="text" id="edit-name" class="edit-input">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] opacity-50">RANK</label>
+                        <input type="text" id="edit-rank" class="edit-input">
+                    </div>
+                    <div>
+                        <label class="text-[10px] opacity-50">VIBE</label>
+                        <input type="text" id="edit-vibe" class="edit-input">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50">IMAGE URL</label>
+                    <input type="text" id="edit-img-url" class="edit-input" placeholder="https://...">
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50">VISIBILITY</label>
+                    <select id="edit-visibility" class="edit-input">
+                        <option value="public">Everyone</option>
+                        <option value="friends">Friends Only</option>
+                        <option value="private">No One (Private)</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 mt-4">
+                    <button id="save-btn" class="flex-1 border border-green-500 p-2 bg-green-500 text-black font-bold uppercase">Save Changes</button>
+                    <button id="cancel-btn" class="flex-1 border border-red-500 p-2 text-red-500 uppercase">Cancel</button>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-green-900/30">
+                <h3 class="text-xs opacity-50 mb-3">DUNGEON ACTIVITY (HOURS)</h3>
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 bg-green-900/20 h-4 rounded-full overflow-hidden">
+                        <div id="grind-bar" class="bg-green-500 h-full w-0 transition-all duration-1000"></div>
+                    </div>
+                    <span id="grind-text" class="text-sm">0h</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Back Button -->
-    <button onclick="window.location.href='https://thegamedungeon.qzz.io'" class="mt-12 px-8 py-3 border-2 border-green-500 hover:bg-green-500 hover:text-black transition-all font-bold tracking-widest uppercase flex items-center gap-2">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to The Crib
-    </button>
+        <!-- Back Button -->
+        <button onclick="window.location.href='https://thegamedungeon.qzz.io'" class="mt-12 px-8 py-3 border-2 border-green-500 hover:bg-green-500 hover:text-black transition-all font-bold tracking-widest uppercase flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to The Crib
+        </button>
+    </div>
 
     <!-- Firebase Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ADD YOUR CONFIG HERE BRO
         const firebaseConfig = {
             apiKey: "",
             authDomain: "",
@@ -138,12 +223,25 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         async function loadProfile() {
-            // 1. Get the username from the URL path
-            // Example: /open.it.out.fortnite/
             const pathParts = window.location.pathname.split('/').filter(Boolean);
-            const username = pathParts[0] || "guest";
+            
+            // IF WORKER DOESN'T CATCH: This script checks if the path is basically empty or points to the html itself
+            let username = pathParts[0] || "guest";
+            const isDirectFileAccess = username.toLowerCase().includes("profile.html") || username === "guest";
+
+            if (isDirectFileAccess && firebaseConfig.apiKey !== "") {
+                showError("403", "DIRECT_ACCESS_DENIED", "You cannot access the Profile Engine directly. Please use a valid user route.", "SYSTEM_LOCKDOWN");
+                hideLoader();
+                return;
+            }
+
+            // Fallback for Canvas preview testing
+            if (username === "guest" || username.includes("index.html")) {
+                username = "open.it.out.fortnite"; 
+            }
 
             const nameEl = document.getElementById('user-display-name');
             const handleEl = document.getElementById('user-handle');
@@ -153,50 +251,147 @@
             const grindBar = document.getElementById('grind-bar');
             const grindText = document.getElementById('grind-text');
             const loader = document.getElementById('loading-overlay');
-            const avatarRing = document.getElementById('avatar-ring');
+            const visibilityEl = document.getElementById('visibility-val');
+            const avatarImg = document.getElementById('avatar-img');
+            const avatarIcon = document.getElementById('avatar-icon');
 
+            // --- SIMULATOR MODE FOR CANVAS ---
+            if (firebaseConfig.apiKey === "") {
+                if (username === "connor" || username === "fake_user") {
+                    showError("404", "Profile Blicked", "Target account does not exist or was terminated.", "OINK_OINK_NULL_REF");
+                } else if (username === "private_test") {
+                    showError("403", "Access Denied", "This profile is set to private. Only authorized gang members can view.", "PERMISSION_BLOCK");
+                } else {
+                    nameEl.innerText = "ALEX";
+                    handleEl.innerText = `@${username}`;
+                    rankEl.innerText = "Green Belt (5th Gup)";
+                    vibeEl.innerText = "The Architect";
+                    grindText.innerText = `85h`;
+                    document.getElementById('edit-btn').classList.remove('hidden');
+                    setTimeout(() => { grindBar.style.width = `85%`; }, 100);
+                }
+                hideLoader();
+                setupEditLogic(username);
+                return;
+            }
+
+            // --- REAL FIREBASE MODE ---
             try {
-                // 2. Query Firebase for the user
                 const userRef = doc(db, "users", username);
                 const userSnap = await getDoc(userRef);
 
                 if (userSnap.exists()) {
                     const data = userSnap.data();
-                    
-                    // Update UI with real data
-                    nameEl.innerText = data.displayName || username.toUpperCase();
-                    handleEl.innerText = `@${username}`;
-                    rankEl.innerText = data.rank || "Green Belt";
-                    vibeEl.innerText = data.vibe || "The Architect";
-                    musicEl.innerText = data.topTrack || "Hell's Thread Mix";
-                    
-                    // Animate the grind bar
-                    const hours = data.hoursPlayed || 0;
-                    grindText.innerText = `${hours}h`;
-                    setTimeout(() => {
-                        grindBar.style.width = `${Math.min(hours, 100)}%`;
-                    }, 100);
+
+                    onAuthStateChanged(auth, (user) => {
+                        const loggedInUsername = user ? user.email.split('@')[0] : null;
+                        const isOwner = (loggedInUsername === username);
+
+                        // PERMISSION CHECK
+                        if (data.visibility === 'private' && !isOwner) {
+                            showError("403", "Access Denied", "This profile is currently private. Permission required.", "AUTH_REQ_PRIVATE");
+                            return;
+                        }
+
+                        if (isOwner) document.getElementById('edit-btn').classList.remove('hidden');
+
+                        nameEl.innerText = data.displayName || username.toUpperCase();
+                        handleEl.innerText = `@${username}`;
+                        rankEl.innerText = data.rank || "UNRANKED";
+                        vibeEl.innerText = data.vibe || "NEUTRAL";
+                        musicEl.innerText = data.topTrack || "NO_AUDIO_FOUND";
+                        visibilityEl.innerText = data.visibility || "public";
+
+                        if (data.photoURL) {
+                            avatarImg.src = data.photoURL;
+                            avatarImg.classList.remove('hidden');
+                            avatarIcon.classList.add('hidden');
+                        }
+
+                        const hours = data.hoursPlayed || 0;
+                        grindText.innerText = `${hours}h`;
+                        setTimeout(() => { grindBar.style.width = `${Math.min(hours, 100)}%`; }, 100);
+                    });
 
                 } else {
-                    // 3. OINK OINK - User is fake or blicked
-                    handleEl.innerText = `@${username}`;
-                    nameEl.innerText = "USER BLICKED";
-                    nameEl.classList.add('blicked');
-                    rankEl.innerText = "ACCESS DENIED";
-                    vibeEl.innerText = "NOT IN GANG";
-                    musicEl.innerText = "Connor's Zesty Theme";
-                    avatarRing.classList.add('blicked');
-                    document.title = "404 - BLICKED";
+                    showError("404", "Profile Blicked", "Target account not found in the Dungeon database.", "USER_NOT_FOUND");
                 }
             } catch (error) {
                 console.error("Dungeon Error:", error);
-                nameEl.innerText = "DATABASE OFFLINE";
+                showError("500", "DATABASE_OFFLINE", "Connection to the Dungeon Servers timed out. Are you on school wifi?", "NET_CONN_FAIL");
             } finally {
-                // Remove loader
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 500);
-                lucide.createIcons();
+                hideLoader();
             }
+
+            setupEditLogic(username);
+        }
+
+        function showError(title, sub, desc, code) {
+            const errorScreen = document.getElementById('error-screen');
+            const profileContent = document.getElementById('profile-content');
+            
+            document.getElementById('error-title').innerText = title;
+            document.getElementById('error-subtitle').innerText = sub;
+            document.getElementById('error-desc').innerText = desc;
+            document.getElementById('error-code').innerText = `ERROR_CODE: ${code}`;
+            
+            errorScreen.style.display = 'flex';
+            profileContent.style.display = 'none';
+            document.title = `${title} - SYSTEM ERROR`;
+        }
+
+        function hideLoader() {
+            const loader = document.getElementById('loading-overlay');
+            loader.style.opacity = '0';
+            setTimeout(() => loader.style.display = 'none', 500);
+            lucide.createIcons();
+        }
+
+        function setupEditLogic(username) {
+            const editBtn = document.getElementById('edit-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const viewMode = document.getElementById('view-mode');
+            const editMode = document.getElementById('edit-mode');
+
+            if(!editBtn) return;
+
+            editBtn.onclick = () => {
+                viewMode.classList.add('hidden');
+                editMode.classList.remove('hidden');
+                document.getElementById('edit-name').value = document.getElementById('user-display-name').innerText;
+                document.getElementById('edit-rank').value = document.getElementById('rank-val').innerText;
+                document.getElementById('edit-vibe').value = document.getElementById('vibe-val').innerText;
+                document.getElementById('edit-visibility').value = document.getElementById('visibility-val').innerText;
+                document.getElementById('edit-img-url').value = document.getElementById('avatar-img').src || '';
+            };
+
+            cancelBtn.onclick = () => {
+                viewMode.classList.remove('hidden');
+                editMode.classList.add('hidden');
+            };
+
+            saveBtn.onclick = async () => {
+                if (firebaseConfig.apiKey === "") {
+                    alert("Simulator: Saved Changes!");
+                    location.reload();
+                    return;
+                }
+                const updatedData = {
+                    displayName: document.getElementById('edit-name').value,
+                    rank: document.getElementById('edit-rank').value,
+                    vibe: document.getElementById('edit-vibe').value,
+                    visibility: document.getElementById('edit-visibility').value,
+                    photoURL: document.getElementById('edit-img-url').value
+                };
+                try {
+                    const userRef = doc(db, "users", username);
+                    await updateDoc(userRef, updatedData);
+                    location.reload();
+                } catch (e) {
+                    alert("Blicked by Firewall: " + e.message);
+                }
+            };
         }
 
         window.onload = loadProfile;
