@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE DUNGEON | SCROLLS AUTH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --dungeon-green: #00ff41;
+            --dark-grey: #0a0a0a;
+            --terminal-red: #ff3131;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-grey);
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--dungeon-green);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card {
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            background: rgba(0, 255, 65, 0.02);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            color: var(--dungeon-green);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--dungeon-green);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .login-btn {
+            background: var(--dungeon-green);
+            color: black;
+            font-weight: bold;
+            padding: 0.75rem;
+            border-radius: 6px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.2s ease;
+        }
+
+        .login-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .google-btn {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem;
+            border-radius: 6px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .google-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .trust-btn {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .trust-btn.active {
+            background: var(--dungeon-green);
+            color: black;
+            border-color: var(--dungeon-green);
+        }
+
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 99;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .glitch-text {
+            text-shadow: 2px 0 var(--terminal-red), -2px 0 blue;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-card z-10">
+        <div id="auth-header" class="text-center mb-6">
+            <i data-lucide="scroll-text" class="w-10 h-10 mx-auto mb-4 opacity-80"></i>
+            <h1 id="auth-title" class="text-xl font-bold uppercase tracking-widest glitch-text">SCROLL_AUTH</h1>
+            <p id="auth-desc" class="text-[9px] opacity-70 mt-2 uppercase text-white">Log in to continue to <span class="text-[#00ff41]">"scrolls"</span></p>
+        </div>
+
+        <div id="fastpass-container" class="mb-6">
+            <button id="google-fastpass" class="google-btn text-xs">
+                <i data-lucide="log-in" class="w-4 h-4"></i> Use Google Fastpass
+            </button>
+            <div class="flex items-center my-4 opacity-20">
+                <hr class="flex-1 border-green-500">
+                <span class="px-2 text-[8px] uppercase">or use scroll ID</span>
+                <hr class="flex-1 border-green-500">
+            </div>
+        </div>
+
+        <form id="auth-form" class="space-y-4">
+            <div>
+                <label class="text-[9px] uppercase opacity-40 mb-1 block">Scroll Identity</label>
+                <div class="relative">
+                    <input type="text" id="email" required class="input-field pr-32" placeholder="yourname">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] opacity-40">@thegamedungeon.qzz.io</span>
+                </div>
+            </div>
+            <div>
+                <label class="text-[9px] uppercase opacity-40 mb-1 block">Secret Key</label>
+                <input type="password" id="password" required class="input-field" placeholder="••••••••">
+            </div>
+
+            <div class="space-y-2 mt-4">
+                <label class="text-[9px] uppercase opacity-40 block text-center">Trust this device?</label>
+                <div class="flex gap-2">
+                    <button type="button" id="trust-yes" class="trust-btn active">Trust (Always In)</button>
+                    <button type="button" id="trust-no" class="trust-btn">Skip (Session Only)</button>
+                </div>
+            </div>
+            
+            <button type="submit" id="submit-btn" class="login-btn text-xs mt-4">Initialize Link</button>
+        </form>
+
+        <div id="status-msg" class="mt-4 text-[9px] text-center uppercase hidden"></div>
+
+        <div class="mt-6 pt-4 border-t border-green-900/30 text-center">
+            <button id="toggle-auth" class="text-[9px] uppercase hover:text-white transition-colors underline decoration-dotted">
+                New Identity? Create Account
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, browserSessionPersistence, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config || '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dungeon-scrolls';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        const form = document.getElementById('auth-form');
+        const status = document.getElementById('status-msg');
+        const toggleBtn = document.getElementById('toggle-auth');
+        const submitBtn = document.getElementById('submit-btn');
+        const authTitle = document.getElementById('auth-title');
+        const googleBtn = document.getElementById('google-fastpass');
+        const trustYes = document.getElementById('trust-yes');
+        const trustNo = document.getElementById('trust-no');
+
+        let isLogin = true;
+        let isTrusted = true;
+
+        const DOMAIN = "@thegamedungeon.qzz.io";
+
+        // Since login is at /scrolls/login/, going back to /scrolls/ is just one folder up
+        const REDIRECT_TARGET = "../"; 
+
+        trustYes.onclick = () => { isTrusted = true; trustYes.classList.add('active'); trustNo.classList.remove('active'); };
+        trustNo.onclick = () => { isTrusted = false; trustNo.classList.add('active'); trustYes.classList.remove('active'); };
+
+        toggleBtn.onclick = () => {
+            isLogin = !isLogin;
+            authTitle.innerText = isLogin ? 'SCROLL_AUTH' : 'NEW_IDENTITY';
+            submitBtn.innerText = isLogin ? 'Initialize Link' : 'Forge Identity';
+            toggleBtn.innerText = isLogin ? 'New Identity? Create Account' : 'Existing Key? Login';
+        };
+
+        async function checkBlicked(uid) {
+            const blickDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'blicked_users', uid));
+            if (blickDoc.exists()) {
+                await signOut(auth);
+                showStatus("ACCESS_TERMINATED: YOUR ACCOUNT IS BLICKED", true);
+                return true;
+            }
+            return false;
+        }
+
+        async function applyPersistence() {
+            const persistenceType = isTrusted ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistenceType);
+        }
+
+        function formatEmail(input) {
+            const clean = input.trim().toLowerCase();
+            return clean.includes('@') ? clean : clean + DOMAIN;
+        }
+
+        googleBtn.onclick = async () => {
+            showStatus("CONNECTING TO GOOGLE...", false);
+            try {
+                await applyPersistence();
+                const result = await signInWithPopup(auth, googleProvider);
+                const isBlicked = await checkBlicked(result.user.uid);
+                if (!isBlicked) {
+                    showStatus("FASTPASS ACCEPTED. ENTERING SCROLLS...", false);
+                    setTimeout(() => window.location.href = REDIRECT_TARGET, 1000);
+                }
+            } catch (error) {
+                showStatus("FASTPASS_ERROR: " + error.code, true);
+            }
+        };
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const rawHandle = document.getElementById('email').value;
+            const fullEmail = formatEmail(rawHandle);
+            const password = document.getElementById('password').value;
+            showStatus("PROCESSING...", false);
+
+            try {
+                await applyPersistence();
+                let userCredential;
+                if (isLogin) {
+                    userCredential = await signInWithEmailAndPassword(auth, fullEmail, password);
+                } else {
+                    userCredential = await createUserWithEmailAndPassword(auth, fullEmail, password);
+                }
+
+                const isBlicked = await checkBlicked(userCredential.user.uid);
+                if (!isBlicked) {
+                    showStatus("SUCCESS. ENTERING SCROLLS...", false);
+                    setTimeout(() => window.location.href = REDIRECT_TARGET, 1000);
+                }
+            } catch (error) {
+                let msg = error.code.replace('auth/', '').replace(/-/g, '_').toUpperCase();
+                showStatus("ERROR: " + msg, true);
+            }
+        };
+
+        function showStatus(text, isError) {
+            status.innerText = text;
+            status.classList.remove('hidden', 'text-red-500');
+            if (isError) status.classList.add('text-red-500');
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
