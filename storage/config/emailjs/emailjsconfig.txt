@@ -1,0 +1,9 @@
+Service ID: service_n2hsxcf
+
+Template ID: template_rip4cmz
+
+Subject: New Scroll for {{to_name}} from {{from_name}}.
+
+Content: {{message}}
+
+To Email: {{to_email}}
