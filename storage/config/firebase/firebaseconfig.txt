@@ -1,0 +1,7 @@
+apiKey: AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI
+  authDomain: the-game-dungeon-4d75d.firebaseapp.com
+  projectId: the-game-dungeon-4d75d
+  storageBucket: the-game-dungeon-4d75d.firebasestorage.app
+  messagingSenderId: 533459716906
+  appId: 1:533459716906:web:377bf4ea74cf21bf8aac53
+  measurementId: G-CER9SE96MC
