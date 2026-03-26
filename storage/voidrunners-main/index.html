@@ -3,27 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Game Dungeon: VOID RUNNER</title>
-    <!-- Dependencies -->
+    <title>VOID RUNNER | The Game Dungeon</title>
+    
+    <!-- Three.js & Physics -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://mixedreality.mozilla.org/ammo.js/builds/ammo.wasm.js"></script>
     
-    <!-- External CSS in assets folder -->
+    <!-- Link to your CSS in the assets folder -->
     <link rel="stylesheet" href="assets/css/styles.css">
+    
+    <style>
+        /* Essential Overlay Styles for the Lobby */
+        #menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            color: #0f0;
+            text-align: center;
+        }
+
+        .menu-card {
+            background: #111;
+            padding: 40px;
+            border: 2px solid #0f0;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+        }
+
+        .menu-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+
+        .menu-input {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
+            width: 200px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        #party-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            color: #0f0;
+            border-radius: 10px;
+            font-family: monospace;
+            z-index: 15;
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <!-- Loading Screen -->
     <div id="loading">
         <div class="loader-text">SYNCING WITH THE VOID...</div>
         <div class="roast-text">Connor's noodle hair is a safety hazard</div>
     </div>
 
-    <div id="gui">
-        <div class="header">
-            <h1 class="title">VOID RUNNER <span class="version">DEV_BUILD</span></h1>
-            <div class="stats">SYSTEMS: ONLINE | STATUS: DRIFTING</div>
+    <!-- Multiplayer Menu -->
+    <div id="menu-overlay">
+        <div class="menu-card">
+            <h1 class="title" style="margin-bottom: 30px;">VOID RUNNER</h1>
+            
+            <div id="setup-view">
+                <button class="menu-btn" onclick="hostGame()">CREATE PARTY</button>
+                <div style="margin: 20px 0; color: #444;">— OR —</div>
+                <input type="text" id="join-code" class="menu-input" placeholder="ACCESS CODE">
+                <br>
+                <button class="menu-btn" style="background: #00ffff;" onclick="joinGame()">JOIN GANG</button>
+            </div>
         </div>
     </div>
 
+    <!-- Active Party Info -->
+    <div id="party-info">
+        LOBBY: <span id="display-code">------</span>
+        <br>
+        <small style="cursor: pointer; text-decoration: underline;" onclick="copyInvite()">COPY INVITE LINK</small>
+    </div>
+
+    <!-- HUD -->
+    <div id="gui">
+        <h1 class="title">VOID RUNNER <span class="version">V2_NET</span></h1>
+    </div>
+
+    <!-- Mobile Controls -->
     <div id="controls-container">
         <div class="control-group" id="movement-grid">
             <div></div><div class="btn" id="up">W</div><div></div>
@@ -34,7 +123,48 @@
         </div>
     </div>
 
-    <!-- The Core Engine in assets folder -->
-    <script src="assets/js/engine.js"></script>
+    <script>
+        // Global functions for the buttons to talk to the engine
+        function hostGame() {
+            document.getElementById('menu-overlay').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+            // engine.js will handle the rest via its URL listener or internal state
+            window.location.search = ''; 
+        }
+
+        function joinGame() {
+            const code = document.getElementById('join-code').value.toUpperCase().trim();
+            if (code.length < 3) return;
+            window.location.search = `?join=${code}`;
+        }
+
+        function copyInvite() {
+            const url = window.location.href;
+            const tempInput = document.createElement("input");
+            document.body.appendChild(tempInput);
+            tempInput.value = url;
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            const btn = document.querySelector('#party-info small');
+            btn.innerText = "COPIED!";
+            setTimeout(() => btn.innerText = "COPY INVITE LINK", 2000);
+        }
+
+        // Logic to show party info if we are in a lobby
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            const joinCode = params.get('join');
+            if (joinCode) {
+                document.getElementById('menu-overlay').style.display = 'none';
+                document.getElementById('display-code').innerText = joinCode;
+                document.getElementById('party-info').style.display = 'block';
+            }
+        });
+    </script>
+
+    <!-- The Engine (Loaded as a module for Firebase support) -->
+    <script type="module" src="assets/js/engine.js"></script>
 </body>
 </html>
