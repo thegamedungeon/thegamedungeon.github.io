@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://mixedreality.mozilla.org/ammo.js/builds/ammo.wasm.js"></script>
     
-    <!-- Bumped to ?v=3 to force GitHub to stop acting mid -->
-    <link rel="stylesheet" href="assets/css/styles.css?v=3">
+    <!-- Climbing up one level to find the CSS -->
+    <link rel="stylesheet" href="../assets/css/styles.css?v=folder_swap">
     
     <style>
         /* Essential Overlay Styles for the Lobby */
@@ -124,11 +124,9 @@
     </div>
 
     <script>
-        // Global functions for the buttons to talk to the engine
         function hostGame() {
             document.getElementById('menu-overlay').style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
-            // engine.js will handle the rest via its URL listener or internal state
             window.location.search = ''; 
         }
 
@@ -152,7 +150,6 @@
             setTimeout(() => btn.innerText = "COPY INVITE LINK", 2000);
         }
 
-        // Logic to show party info if we are in a lobby
         window.addEventListener('load', () => {
             const params = new URLSearchParams(window.location.search);
             const joinCode = params.get('join');
@@ -164,7 +161,7 @@
         });
     </script>
 
-    <!-- Bumped to ?v=3 to force a fresh pull of the engine -->
-    <script type="module" src="assets/js/engine.js?v=3"></script>
+    <!-- Climbing up one level to find the engine -->
+    <script type="module" src="../assets/js/engine.js?v=path_fix"></script>
 </body>
 </html>
