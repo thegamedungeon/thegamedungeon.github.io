@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Game Dungeon: VOID RUNNER</title>
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://mixedreality.mozilla.org/ammo.js/builds/ammo.wasm.js"></script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loading">
+        <div class="loader-text">SYNCING WITH THE VOID...</div>
+        <div class="roast-text">Connor's noodle hair is a safety hazard</div>
+    </div>
+
+    <div id="gui">
+        <div class="header">
+            <h1 class="title">VOID RUNNER <span class="version">DEV_BUILD</span></h1>
+            <div class="stats">SYSTEMS: ONLINE | STATUS: DRIFTING</div>
+        </div>
+    </div>
+
+    <div id="controls-container">
+        <div class="control-group" id="movement-grid">
+            <div></div><div class="btn" id="up">W</div><div></div>
+            <div class="btn" id="left">A</div><div class="btn" id="down">S</div><div class="btn" id="right">D</div>
+        </div>
+        <div class="control-group" id="action-grid">
+            <div class="btn shoot-btn" id="shoot">💥</div>
+        </div>
+    </div>
+
+    <!-- The Core Engine -->
+    <script src="engine.js"></script>
+</body>
+</html>
