@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Game Dungeon | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             font-family: 'Inter', sans-serif;
             background-color: #0f172a;
             color: #f1f5f9;
+            -webkit-tap-highlight-color: transparent;
         }
         .game-card:hover {
             transform: translateY(-5px);
@@ -26,6 +27,7 @@
             background: #020617;
             display: flex;
             transition: opacity 0.5s ease;
+            pointer-events: all;
         }
         .rotate-45 { transform: rotate(45deg); }
         @keyframes loading {
@@ -33,9 +35,14 @@
             50% { transform: translateX(100%); }
             100% { transform: translateX(-100%); }
         }
+        /* Fix for iPad touch targets */
+        button, a {
+            cursor: pointer;
+            touch-action: manipulation;
+        }
     </style>
 </head>
-<body class="min-h-screen overflow-hidden">
+<body class="min-h-screen overflow-x-hidden">
 
     <!-- Pre-check System Loader -->
     <div id="system-loader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center">
@@ -47,7 +54,7 @@
     </div>
 
     <!-- Login Overlay -->
-    <div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-95 p-4">
+    <div id="login-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-95 p-4">
         <div class="glass max-w-md w-full p-8 rounded-2xl text-center relative border-blue-500/30">
             <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-24 h-24 mx-auto mb-6 rounded-xl shadow-lg">
             <h2 class="text-3xl font-extrabold mb-2 text-blue-400">Restricted Access</h2>
@@ -55,7 +62,7 @@
             <a href="/login/" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3">
                 <i class="fas fa-sign-in-alt"></i> Sign In to The Dungeon
             </a>
-            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors">
+            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors p-2">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -71,7 +78,7 @@
                 </div>
                 <div id="user-info" class="flex items-center gap-3">
                     <span class="text-sm font-medium text-gray-400" id="user-display-id"></span>
-                    <a id="user-avatar-link" href="#" class="w-10 h-10 bg-blue-900 rounded-full border-2 border-blue-500 flex items-center justify-center overflow-hidden transition-transform hover:scale-110">
+                    <a id="user-avatar-link" href="#" class="w-10 h-10 bg-blue-900 rounded-full border-2 border-blue-500 flex items-center justify-center overflow-hidden transition-transform active:scale-95">
                         <div id="avatar-container" class="w-full h-full flex items-center justify-center">
                              <i class="fas fa-user text-blue-300"></i>
                         </div>
@@ -97,15 +104,15 @@
                             <h2 class="text-xl font-bold flex items-center gap-3">
                                 <i class="fas fa-users text-green-400"></i> The Squad
                             </h2>
-                            <button id="toggle-search" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300">
-                                <i class="fas fa-plus text-xs"></i>
+                            <button id="toggle-search" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300 active:scale-90 z-10">
+                                <i class="fas fa-plus text-sm"></i>
                             </button>
                         </div>
 
                         <!-- Search Bar -->
                         <div id="search-container" class="hidden mb-4 animate-in fade-in slide-in-from-top-2">
                             <div class="relative">
-                                <input type="text" id="friend-search-input" placeholder="Search by email..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:border-blue-500 outline-none pr-10">
+                                <input type="text" id="friend-search-input" placeholder="Search by email..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-sm focus:border-blue-500 outline-none pr-10">
                             </div>
                             <div id="search-results" class="mt-2 space-y-2"></div>
                         </div>
@@ -167,13 +174,27 @@
         const avatarContainer = document.getElementById('avatar-container');
         const avatarLink = document.getElementById('user-avatar-link');
 
-        document.getElementById('close-modal-trap').onclick = () => {
+        function cleanUpOverlays() {
+            if (loader) {
+                loader.style.opacity = '0';
+                loader.style.pointerEvents = 'none';
+                setTimeout(() => loader.remove(), 600);
+            }
+            if (loginModal) {
+                loginModal.classList.add('hidden');
+                loginModal.style.pointerEvents = 'none';
+            }
+        }
+
+        document.getElementById('close-modal-trap').onclick = (e) => {
+            e.preventDefault();
             window.close();
             document.body.innerHTML = "<div class='bg-black text-red-600 h-screen flex items-center justify-center font-bold'>OINK OINK... TAB NUKED</div>";
             setTimeout(() => { location.href = "about:blank"; }, 400);
         };
 
-        toggleSearch.onclick = () => {
+        toggleSearch.onclick = (e) => {
+            e.preventDefault();
             const isHidden = searchContainer.classList.contains('hidden');
             searchContainer.classList.toggle('hidden');
             toggleSearch.classList.toggle('rotate-45');
@@ -186,29 +207,33 @@
                 
                 let photoURL = user.photoURL;
                 if (!photoURL) {
-                    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid));
-                    if (userDoc.exists()) photoURL = userDoc.data().photoURL;
+                    try {
+                        const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid));
+                        if (userDoc.exists()) photoURL = userDoc.data().photoURL;
+                    } catch (e) { console.log("Profile fetch skipped"); }
                 }
 
                 const finalPhoto = photoURL || (avatarPlaceholder + encodeURIComponent(email));
                 avatarContainer.innerHTML = `<img src="${finalPhoto}" class="w-full h-full object-cover" onerror="this.src='${avatarPlaceholder + 'User'}'">`;
 
                 document.getElementById('user-display-id').innerText = user.email ? user.email : `ID: ${user.uid.substring(0, 8)}`;
+                
                 initDashboard(user);
                 
                 setTimeout(() => {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.classList.add('hidden'), 500);
+                    cleanUpOverlays();
                     document.body.classList.remove('overflow-hidden');
                     mainContent.classList.remove('hidden');
                     setTimeout(() => mainContent.classList.add('opacity-100'), 50);
-                }, 1000);
+                }, 800);
             } else {
                 setTimeout(() => {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.classList.add('hidden'), 500);
-                    loginModal.classList.remove('hidden');
-                    loginModal.classList.add('flex');
+                    if (loader) loader.style.opacity = '0';
+                    setTimeout(() => {
+                        if (loader) loader.classList.add('hidden');
+                        loginModal.classList.remove('hidden');
+                        loginModal.classList.add('flex');
+                    }, 500);
                 }, 1000);
             }
         });
@@ -251,8 +276,8 @@
 
                     list.innerHTML += `
                         <div class="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-white/5">
-                            <a href="${profileUrl}" class="flex items-center gap-3 group">
-                                <div class="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20 group-hover:border-blue-400 transition-colors overflow-hidden">
+                            <a href="${profileUrl}" class="flex items-center gap-3 group w-full">
+                                <div class="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20 group-hover:border-blue-400 transition-colors overflow-hidden shrink-0">
                                     <img src="${friendPhoto}" class="w-full h-full object-cover" onerror="this.src='${avatarPlaceholder + 'User'}'">
                                 </div>
                                 <div>
@@ -263,7 +288,7 @@
                         </div>
                     `;
                 });
-            });
+            }, (err) => console.log("Friends list empty or blocked"));
         }
 
         function loadPlaytime(user) {
@@ -309,7 +334,7 @@
                     stats.innerHTML = `<div class="text-gray-500 italic text-center p-4">lazy🥱</div>`;
                     totalContainer.classList.add('hidden');
                 }
-            });
+            }, (err) => console.log("Playtime blocked or empty"));
         }
 
         function initSearch() {
