@@ -29,21 +29,25 @@
             background: #020617;
             display: flex;
             transition: opacity 0.5s ease;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
         }
         @keyframes pulse-blue {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        .animate-pulse-slow { animation: pulse-blue 2s infinite; }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden">
 
     <!-- Page Loader -->
-    <div id="page-loader" class="fixed inset-0 z-[100] flex items-center justify-center">
+    <div id="page-loader">
         <div class="text-center">
             <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-blue-400 font-mono text-sm tracking-widest uppercase">Fetching Data...</p>
+            <p class="text-blue-400 font-mono text-sm tracking-widest uppercase">Syncing with The Crib...</p>
         </div>
     </div>
 
@@ -72,29 +76,23 @@
                     <i class="fas fa-chevron-left"></i> Home
                 </a>
                 <h1 class="text-xl font-black tracking-tighter">USER PROFILE</h1>
-                <div class="w-10"></div> <!-- Spacer -->
+                <div class="w-10"></div>
             </div>
         </header>
 
         <main class="max-w-4xl mx-auto px-6">
-            <!-- Profile Card -->
             <div class="glass rounded-3xl p-8 mb-8 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-600/20 to-transparent"></div>
-                
                 <div class="relative z-10">
                     <div id="pfp-container" class="w-32 h-32 mx-auto rounded-full border-4 border-blue-500 bg-slate-900 shadow-2xl overflow-hidden mb-6">
                         <i class="fas fa-user text-4xl text-slate-700 mt-10"></i>
                     </div>
                     <h2 id="display-name" class="text-3xl font-black mb-1">Loading...</h2>
                     <p id="display-email" class="text-blue-400 font-medium mb-6 text-sm"></p>
-                    
-                    <div id="action-buttons" class="flex justify-center gap-4">
-                        <!-- Buttons injected via JS -->
-                    </div>
+                    <div id="action-buttons" class="flex justify-center gap-4"></div>
                 </div>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="glass p-6 rounded-2xl">
                     <h3 class="text-gray-400 uppercase text-xs font-black tracking-widest mb-4">Total Playtime</h3>
@@ -108,15 +106,15 @@
         </main>
     </div>
 
-    <!-- Search View (Initial State if no ?user=) -->
+    <!-- Search View -->
     <div id="search-view" class="hidden p-6 pt-20">
         <div class="max-w-md mx-auto text-center">
             <h2 class="text-4xl font-black mb-8">Find the Squad</h2>
             <div class="relative mb-8">
-                <input type="text" id="main-search-input" placeholder="Enter email address..." class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-5 text-lg focus:border-blue-500 outline-none shadow-xl">
+                <input type="text" id="main-search-input" placeholder="Enter email or name..." class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-5 text-lg focus:border-blue-500 outline-none shadow-xl">
                 <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-500"></i>
             </div>
-            <div id="main-search-results" class="space-y-4"></div>
+            <div id="main-search-results" class="space-y-4 text-left"></div>
             <a href="/" class="inline-block mt-12 text-gray-500 hover:text-white transition-colors font-bold">
                 <i class="fas fa-arrow-left mr-2"></i> Nevermind, take me home
             </a>
@@ -125,23 +123,15 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-            projectId: "the-game-dungeon-4d75d",
-            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-            messagingSenderId: "533459716906",
-            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
-            measurementId: "G-CER9SE96MC"
-        };
-
+        const __firebase_config = '{"apiKey": "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI", "authDomain": "the-game-dungeon-4d75d.firebaseapp.com", "projectId": "the-game-dungeon-4d75d", "storageBucket": "the-game-dungeon-4d75d.firebasestorage.app", "messagingSenderId": "533459716906", "appId": "1:533459716906:web:377bf4ea74cf21bf8aac53"}';
+        const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = "the-game-dungeon";
+        const appId = "the-game-dungeon-4d75d";
         const avatarPlaceholder = "https://ui-avatars.com/api/?background=1e293b&color=3b82f6&bold=true&name=";
 
         const loader = document.getElementById('page-loader');
@@ -149,55 +139,64 @@
         const errorState = document.getElementById('error-state');
         const searchView = document.getElementById('search-view');
 
-        // URL Logic
         const params = new URLSearchParams(window.location.search);
         let targetUserEmail = params.get('user');
 
-        // Helper: Show Search instead of 404 immediately
         window.showSearch = () => {
             errorState.classList.add('hidden');
             profileContainer.classList.add('hidden');
             searchView.classList.remove('hidden');
-            if(loader) loader.remove();
+            if(loader) loader.classList.add('hidden');
+            initSearchLogic();
         };
 
         onAuthStateChanged(auth, async (currentUser) => {
+            if (!currentUser) {
+                await signInAnonymously(auth);
+                return; 
+            }
+
+            // If no user parameter is provided, jump straight to search
             if (!targetUserEmail) {
                 showSearch();
-                initSearchLogic();
                 return;
             }
 
-            // Translate %40 to @
             const cleanEmail = decodeURIComponent(targetUserEmail).toLowerCase();
             document.getElementById('display-email').innerText = cleanEmail;
 
             try {
-                // Find user by email in public data
-                const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                // Note: RULE 2 says no complex queries, but simple 'where' on one field is usually okay.
-                // However, we'll fetch and filter in memory to stay strictly within your rules.
+                const usersRef = collection(db, 'artifacts', appId, 'users');
                 const q = await getDocs(usersRef);
                 let foundUser = null;
                 let foundUserId = null;
 
                 q.forEach(doc => {
-                    if (doc.data().email?.toLowerCase() === cleanEmail) {
-                        foundUser = doc.data();
+                    const data = doc.data();
+                    if (data.email?.toLowerCase() === cleanEmail) {
+                        foundUser = data;
                         foundUserId = doc.id;
                     }
                 });
 
-                if (!foundUser) {
-                    throw new Error("User not found");
+                if (!foundUser && currentUser.email?.toLowerCase() === cleanEmail) {
+                    foundUserId = currentUser.uid;
+                    foundUser = {
+                        email: currentUser.email,
+                        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                        photoURL: currentUser.photoURL || null,
+                        lastActive: new Date().toISOString()
+                    };
+                    await setDoc(doc(db, 'artifacts', appId, 'users', foundUserId), foundUser);
                 }
+
+                if (!foundUser) throw new Error("User missing");
 
                 renderProfile(foundUser, foundUserId, currentUser);
 
             } catch (err) {
-                console.error(err);
-                loader.style.opacity = '0';
-                setTimeout(() => loader.remove(), 500);
+                console.error("Dungeon Logic Error:", err);
+                if(loader) loader.classList.add('hidden');
                 errorState.classList.remove('hidden');
             }
         });
@@ -207,67 +206,71 @@
             document.getElementById('pfp-container').innerHTML = `<img src="${pfp}" class="w-full h-full object-cover">`;
             document.getElementById('display-name').innerText = userData.displayName || userData.email.split('@')[0];
 
-            // Load extra stats
-            const playtimeRef = collection(db, 'artifacts', appId, 'users', uid, 'playtime');
-            const playtimeSnap = await getDocs(playtimeRef);
-            let totalSecs = 0;
-            playtimeSnap.forEach(d => totalSecs += (d.data().seconds || 0));
-            document.getElementById('profile-playtime').innerText = (totalSecs / 3600).toFixed(1) + 'h';
+            try {
+                const playtimeRef = collection(db, 'artifacts', appId, 'users', uid, 'playtime');
+                const playtimeSnap = await getDocs(playtimeRef);
+                let totalSecs = 0;
+                playtimeSnap.forEach(d => totalSecs += (d.data().seconds || 0));
+                document.getElementById('profile-playtime').innerText = (totalSecs / 3600).toFixed(1) + 'h';
 
-            const friendsRef = collection(db, 'artifacts', appId, 'users', uid, 'friends');
-            const friendsSnap = await getDocs(friendsRef);
-            document.getElementById('squad-count').innerText = friendsSnap.size + ' Friends';
+                const friendsRef = collection(db, 'artifacts', appId, 'users', uid, 'friends');
+                const friendsSnap = await getDocs(friendsRef);
+                document.getElementById('squad-count').innerText = friendsSnap.size + ' Friends';
+            } catch (e) { console.log("Stats fetch blocked"); }
 
-            // Action Buttons (Add Friend if not self)
             const actions = document.getElementById('action-buttons');
             if (currentUser && currentUser.uid !== uid) {
-                actions.innerHTML = `
-                    <button class="btn-primary px-8 py-3 rounded-xl font-bold flex items-center gap-2">
-                        <i class="fas fa-user-plus"></i> Add Friend
-                    </button>
-                `;
+                actions.innerHTML = `<button class="btn-primary px-8 py-3 rounded-xl font-bold flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Friend</button>`;
             } else if (currentUser && currentUser.uid === uid) {
-                actions.innerHTML = `
-                    <button class="bg-slate-700 px-8 py-3 rounded-xl font-bold flex items-center gap-2">
-                        <i class="fas fa-edit"></i> Edit Profile
-                    </button>
-                `;
+                actions.innerHTML = `<button class="bg-slate-700 px-8 py-3 rounded-xl font-bold flex items-center gap-2"><i class="fas fa-edit"></i> Edit Profile</button>`;
             }
 
-            // Show it
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.remove();
-                profileContainer.classList.remove('hidden');
-                setTimeout(() => profileContainer.classList.add('opacity-100'), 50);
-            }, 500);
+            if(loader) loader.classList.add('hidden');
+            profileContainer.classList.remove('hidden');
+            setTimeout(() => profileContainer.classList.add('opacity-100'), 50);
         }
 
-        function initSearchLogic() {
+        let searchInitialized = false;
+        async function initSearchLogic() {
+            if (searchInitialized) return;
+            searchInitialized = true;
+            
             const input = document.getElementById('main-search-input');
             const results = document.getElementById('main-search-results');
 
-            input.oninput = () => {
+            input.oninput = async () => {
                 const val = input.value.trim().toLowerCase();
-                if (val.length < 3) {
-                    results.innerHTML = '';
+                if (val.length < 3) { results.innerHTML = ''; return; }
+
+                const usersRef = collection(db, 'artifacts', appId, 'users');
+                const q = await getDocs(usersRef);
+                let matches = [];
+                q.forEach(doc => {
+                    const data = doc.data();
+                    if (data.email?.toLowerCase().includes(val) || data.displayName?.toLowerCase().includes(val)) {
+                        matches.push(data);
+                    }
+                });
+
+                if (matches.length === 0) {
+                    results.innerHTML = `<p class="text-gray-500 italic p-4 text-center">User not found. Check the spelling or tell them to log in.</p>`;
                     return;
                 }
 
-                results.innerHTML = `
-                    <div class="glass p-5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-blue-600/10 transition-all border-blue-500/20" onclick="window.location.href='?user=${encodeURIComponent(val)}'">
+                results.innerHTML = matches.map(user => `
+                    <div class="glass p-5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-blue-600/10 transition-all border-blue-500/20 active:scale-[0.98]" onclick="window.location.href='?user=${encodeURIComponent(user.email)}'">
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-bold">
-                                ${val.charAt(0).toUpperCase()}
+                            <div class="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center overflow-hidden">
+                                <img src="${user.photoURL || (avatarPlaceholder + encodeURIComponent(user.email))}" class="w-full h-full object-cover">
                             </div>
                             <div class="text-left">
-                                <p class="font-bold">${val}</p>
-                                <p class="text-xs text-gray-500 uppercase font-black">Click to visit</p>
+                                <p class="font-bold">${user.displayName || user.email.split('@')[0]}</p>
+                                <p class="text-xs text-gray-500 font-mono">${user.email}</p>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right text-blue-500"></i>
                     </div>
-                `;
+                `).join('');
             };
         }
     </script>
