@@ -22,36 +22,46 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        #login-modal {
+        #system-loader {
+            background: #020617;
             display: flex;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.5s ease;
         }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden">
+<body class="min-h-screen overflow-hidden">
+
+    <!-- Pre-check System Loader (Prevent Sucker Punching) -->
+    <div id="system-loader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center">
+        <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-32 h-32 mb-8 animate-pulse rounded-2xl">
+        <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-600 animate-[loading_2s_ease-in-out_infinite]"></div>
+        </div>
+        <p class="mt-4 text-blue-400 font-mono text-sm tracking-widest uppercase">Initializing Security...</p>
+    </div>
 
     <!-- Login Overlay -->
-    <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4">
-        <div class="glass max-w-md w-full p-8 rounded-2xl text-center relative">
+    <div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-95 p-4">
+        <div class="glass max-w-md w-full p-8 rounded-2xl text-center relative border-blue-500/30">
             <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-24 h-24 mx-auto mb-6 rounded-xl shadow-lg">
             <h2 class="text-3xl font-extrabold mb-2 text-blue-400">Restricted Access</h2>
             <p class="text-gray-400 mb-8">Login to enter The Crib and check your stats.</p>
             
-            <button id="login-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3">
-                <i class="fas fa-sign-in-alt"></i> Sign In Anonymously
-            </button>
+            <a href="/login/" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3">
+                <i class="fas fa-sign-in-alt"></i> Sign In to The Dungeon
+            </a>
             
             <p class="mt-6 text-xs text-gray-500 uppercase tracking-widest">Authorized Personnel Only</p>
             
-            <!-- The "X" button that triggers the surprise -->
-            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-600 hover:text-red-500 transition-colors">
+            <!-- The Trap Button -->
+            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
     </div>
 
-    <!-- Main Content (Hidden until auth) -->
-    <div id="main-content" class="hidden opacity-0 transition-opacity duration-700">
+    <!-- Main Content -->
+    <div id="main-content" class="hidden opacity-0 transition-opacity duration-1000">
         <!-- Header -->
         <header class="p-6 glass mb-8 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
@@ -87,22 +97,14 @@
                         <h2 class="text-xl font-bold mb-4 flex items-center gap-3">
                             <i class="fas fa-users text-green-400"></i> The Squad
                         </h2>
-                        <div id="friends-list" class="space-y-4">
-                            <!-- Friends will be loaded here -->
-                            <div class="animate-pulse flex items-center gap-3">
-                                <div class="w-10 h-10 bg-slate-700 rounded-full"></div>
-                                <div class="h-4 bg-slate-700 rounded w-24"></div>
-                            </div>
-                        </div>
+                        <div id="friends-list" class="space-y-4"></div>
                     </section>
 
                     <section class="glass p-6 rounded-2xl">
                         <h2 class="text-xl font-bold mb-4 flex items-center gap-3">
                             <i class="fas fa-clock text-orange-400"></i> Your Playtime
                         </h2>
-                        <div id="playtime-stats" class="space-y-4 text-sm">
-                            <!-- Playtime will be loaded here -->
-                        </div>
+                        <div id="playtime-stats" class="space-y-4 text-sm"></div>
                     </section>
                 </div>
 
@@ -110,10 +112,18 @@
         </main>
     </div>
 
+    <style>
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+
     <!-- Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -139,43 +149,36 @@
             { name: "Polytrack", icon: "/storage/photos/polytrack.png", path: "/polytrack/" }
         ];
 
-        // UI Elements
+        const loader = document.getElementById('system-loader');
         const loginModal = document.getElementById('login-modal');
-        const loginBtn = document.getElementById('login-btn');
-        const trapBtn = document.getElementById('close-modal-trap');
         const mainContent = document.getElementById('main-content');
-        const gamesGrid = document.getElementById('games-grid');
-        const friendsList = document.getElementById('friends-list');
-        const playtimeStats = document.getElementById('playtime-stats');
+        const trapBtn = document.getElementById('close-modal-trap');
 
-        // Trap Logic: Surprise close tab
+        // Security Trap
         trapBtn.onclick = () => {
             window.close();
-            // Fallback for browsers that block window.close()
-            document.body.innerHTML = "<div style='background:black; color:red; height:100vh; display:flex; align-items:center; justify-center; font-family:sans-serif; text-align:center;'><h1>OINK OINK</h1><p>Security Breach. Session Terminated.</p></div>";
-            setTimeout(() => { location.href = "about:blank"; }, 500);
+            document.body.innerHTML = "<div style='background:black; color:red; height:100vh; display:flex; align-items:center; justify-center; font-family:sans-serif; text-align:center;'><h1>OINK OINK</h1><p>Unauthorized Closure Detected. Session Nuked.</p></div>";
+            setTimeout(() => { location.href = "about:blank"; }, 400);
         };
 
-        loginBtn.onclick = async () => {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Auth failed:", error);
-            }
-        };
-
+        // Check Auth State (Delayed for safety)
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                loginModal.style.opacity = '0';
-                setTimeout(() => {
-                    loginModal.classList.add('hidden');
+            // Fake a tiny bit of load time to ensure assets are ready
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 500);
+
+                if (user) {
+                    document.body.classList.remove('overflow-hidden');
                     mainContent.classList.remove('hidden');
                     setTimeout(() => mainContent.classList.add('opacity-100'), 50);
-                }, 300);
-                
-                document.getElementById('user-display-id').innerText = `ID: ${user.uid.substring(0, 8)}`;
-                initDashboard(user);
-            }
+                    document.getElementById('user-display-id').innerText = `ID: ${user.uid.substring(0, 8)}`;
+                    initDashboard(user);
+                } else {
+                    loginModal.classList.remove('hidden');
+                    loginModal.classList.add('flex');
+                }
+            }, 1500);
         });
 
         function initDashboard(user) {
@@ -185,79 +188,41 @@
         }
 
         function renderGames() {
-            gamesGrid.innerHTML = games.map(game => `
+            const grid = document.getElementById('games-grid');
+            grid.innerHTML = games.map(game => `
                 <a href="${game.path}" class="game-card glass p-6 rounded-2xl flex items-center gap-5 transition-all duration-300">
                     <img src="${game.icon}" class="w-16 h-16 rounded-xl shadow-lg border border-slate-700" onerror="this.src='https://via.placeholder.com/64'">
                     <div>
                         <h3 class="text-xl font-bold">${game.name}</h3>
-                        <span class="text-xs text-blue-400 font-semibold uppercase tracking-wider">Play Now <i class="fas fa-arrow-right ml-1"></i></span>
+                        <span class="text-xs text-blue-400 font-semibold uppercase tracking-wider">Launch <i class="fas fa-play ml-1"></i></span>
                     </div>
                 </a>
             `).join('');
         }
 
         function loadFriends(user) {
-            // Path: /artifacts/{appId}/users/{userId}/friends
+            const list = document.getElementById('friends-list');
             const friendsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'friends');
             
             onSnapshot(friendsRef, (snapshot) => {
                 if (snapshot.empty) {
-                    friendsList.innerHTML = `
-                        <div class="text-gray-500 italic text-sm p-4 bg-slate-800/50 rounded-lg">
-                            No friends found. Add some in the crib!
-                        </div>`;
+                    list.innerHTML = `<div class="text-gray-500 italic text-sm p-4 bg-slate-800/20 rounded-lg">No homies online yet.</div>`;
                     return;
                 }
-
-                friendsList.innerHTML = '';
+                list.innerHTML = '';
                 snapshot.forEach(doc => {
                     const friend = doc.data();
                     const statusColor = friend.online ? 'bg-green-500' : 'bg-gray-600';
-                    friendsList.innerHTML += `
+                    list.innerHTML += `
                         <div class="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-white/5">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
-                                    <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center border border-blue-500/30">
+                                    <div class="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20">
                                         <i class="fas fa-user text-xs"></i>
                                     </div>
                                     <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 ${statusColor} rounded-full border-2 border-slate-900"></div>
                                 </div>
-                                <div>
-                                    <p class="font-bold text-sm">${friend.name || 'Unknown Homie'}</p>
-                                    <p class="text-[10px] text-gray-500 uppercase">${friend.status || 'Chillin'}</p>
-                                </div>
-                            </div>
-                            <i class="fas fa-comment text-slate-600 hover:text-blue-400 cursor-pointer"></i>
-                        </div>
-                    `;
-                });
-            }, (error) => {
-                console.error("Firestore Error:", error);
-            });
-        }
-
-        function loadPlaytime(user) {
-            // Path: /artifacts/{appId}/users/{userId}/playtime
-            const statsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'playtime');
-            
-            onSnapshot(statsRef, (snapshot) => {
-                if (snapshot.empty) {
-                    playtimeStats.innerHTML = `<p class="text-gray-500 italic">No hours logged yet. Go game!</p>`;
-                    return;
-                }
-
-                playtimeStats.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const progress = Math.min((data.hours / 100) * 100, 100);
-                    playtimeStats.innerHTML += `
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-xs font-semibold">
-                                <span>${doc.id}</span>
-                                <span class="text-blue-400">${data.hours} hrs</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-blue-500" style="width: ${progress}%"></div>
+                                <p class="font-bold text-sm">${friend.name || 'Gamer'}</p>
                             </div>
                         </div>
                     `;
@@ -265,6 +230,32 @@
             }, (err) => console.error(err));
         }
 
+        function loadPlaytime(user) {
+            const stats = document.getElementById('playtime-stats');
+            const statsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'playtime');
+            
+            onSnapshot(statsRef, (snapshot) => {
+                if (snapshot.empty) {
+                    stats.innerHTML = `<p class="text-gray-500 italic">Play games to log hours!</p>`;
+                    return;
+                }
+                stats.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    stats.innerHTML += `
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span>${doc.id}</span>
+                                <span class="text-blue-400">${data.hours}h</span>
+                            </div>
+                            <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500" style="width: ${Math.min(data.hours, 100)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }, (err) => console.error(err));
+        }
     </script>
 </body>
 </html>
