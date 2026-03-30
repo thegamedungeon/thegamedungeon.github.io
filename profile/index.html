@@ -150,6 +150,14 @@
             initSearchLogic();
         };
 
+        // FAILSAFE: If it takes more than 5 seconds to sync, show search view
+        const syncTimeout = setTimeout(() => {
+            if (!profileContainer.classList.contains('opacity-100') && errorState.classList.contains('hidden')) {
+                console.log("Sync timed out, forcing search view");
+                showSearch();
+            }
+        }, 5000);
+
         onAuthStateChanged(auth, async (currentUser) => {
             if (!currentUser) {
                 await signInAnonymously(auth);
@@ -158,6 +166,7 @@
 
             // If no user parameter is provided, jump straight to search
             if (!targetUserEmail) {
+                clearTimeout(syncTimeout);
                 showSearch();
                 return;
             }
@@ -179,7 +188,8 @@
                     }
                 });
 
-                if (!foundUser && currentUser.email?.toLowerCase() === cleanEmail) {
+                // Check if the current user is the one we're looking for but isn't indexed yet
+                if (!foundUser && currentUser.email && currentUser.email.toLowerCase() === cleanEmail) {
                     foundUserId = currentUser.uid;
                     foundUser = {
                         email: currentUser.email,
@@ -192,10 +202,12 @@
 
                 if (!foundUser) throw new Error("User missing");
 
+                clearTimeout(syncTimeout);
                 renderProfile(foundUser, foundUserId, currentUser);
 
             } catch (err) {
                 console.error("Dungeon Logic Error:", err);
+                clearTimeout(syncTimeout);
                 if(loader) loader.classList.add('hidden');
                 errorState.classList.remove('hidden');
             }
