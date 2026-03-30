@@ -73,6 +73,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -86,6 +87,8 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = "the-game-dungeon-4d75d";
 
         const form = document.getElementById('login-form');
         const statusMsg = document.getElementById('status-msg');
@@ -96,12 +99,37 @@
             statusMsg.className = `mt-6 text-center text-sm font-medium opacity-100 ${isError ? 'text-red-400' : 'text-blue-400'}`;
         }
 
-        // Redirect if already signed in
         onAuthStateChanged(auth, (user) => {
             if (user && user.email) {
                 window.location.href = `/profile/?user=${encodeURIComponent(user.email)}`;
             }
         });
+
+        // This handles the "First Contact" - it creates the subcollection and document simultaneously
+        async function initializeUserProfile(user) {
+            try {
+                // RULE 1: The path must be exactly /artifacts/{appId}/public/data/{collectionName}
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                const docSnap = await getDoc(userRef);
+
+                if (!docSnap.exists()) {
+                    await setDoc(userRef, {
+                        uid: user.uid,
+                        email: user.email,
+                        username: user.email.split('@')[0],
+                        name: "New Recruit",
+                        gamername: "Player1",
+                        bio: "Just joined the dungeon.",
+                        photoURL: `https://ui-avatars.com/api/?background=3b82f6&color=fff&name=${encodeURIComponent(user.email)}`,
+                        createdAt: new Date().toISOString()
+                    });
+                    console.log("Subcollection initialized and user document created.");
+                }
+            } catch (err) {
+                console.error("Initialization error:", err.message);
+                // If it fails here, it's likely a Firebase Rule blocking the write
+            }
+        }
 
         form.onsubmit = async (e) => {
             e.preventDefault();
@@ -114,14 +142,15 @@
             showStatus("Checking credentials...");
 
             try {
-                // Try logging in
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                await initializeUserProfile(userCredential.user);
             } catch (error) {
-                // If user doesn't exist, create account
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
                     try {
                         showStatus("User not found. Creating account...");
-                        await createUserWithEmailAndPassword(auth, email, password);
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        await initializeUserProfile(userCredential.user);
+                        showStatus("Account created! Redirecting...");
                     } catch (createError) {
                         showStatus(createError.message, true);
                         btn.disabled = false;
@@ -135,16 +164,17 @@
             }
         };
 
-        // Fast Pass logic (Anonymous login or quick entry)
         fastPass.onclick = async () => {
             showStatus("Activating Fast Pass...");
             try {
                 await signInAnonymously(auth);
-                // Since it's anonymous, it won't have an email for the redirect check above
-                // We'll manually push to the main page if no email
-                window.location.href = "/";
+                window.location.href = "/profile/"; 
             } catch (err) {
-                showStatus("Fast Pass failed: " + err.message, true);
+                if (err.code === 'auth/admin-restricted-operation') {
+                    showStatus("Fast Pass blicked. Enable 'Anonymous' in Firebase Auth settings.", true);
+                } else {
+                    showStatus("Fast Pass error: " + err.message, true);
+                }
             }
         };
     </script>
