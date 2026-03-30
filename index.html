@@ -82,6 +82,7 @@
         }
 
         async function updateProfileUI(user) {
+            // FIXED: Ensure path is exactly 6 segments for doc()
             const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'));
             const pfp = userDoc.exists() ? userDoc.data().photoURL : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.uid;
             const email = user.email || 'guest@thecrib.io';
@@ -97,14 +98,14 @@
             const friendsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'friends');
             onSnapshot(friendsRef, (snapshot) => {
                 friendsList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const friend = doc.data();
+                snapshot.forEach(docSnap => {
+                    const friend = docSnap.data();
                     const div = document.createElement('div');
                     div.className = "flex flex-col items-center cursor-pointer hover:opacity-80 transition shrink-0";
                     div.innerHTML = `<img src="${friend.photoURL || 'https://api.dicebear.com/7.x/pixel-art/svg?seed='+friend.name}" class="w-16 h-16 rounded-full bg-gray-800 p-1 border border-gray-600"><span class="text-xs mt-2 text-gray-300 font-medium">${friend.name}</span>`;
                     friendsList.appendChild(div);
                 });
-            });
+            }, (err) => console.error("Friends sync error", err));
 
             const gamesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'recentGames');
             onSnapshot(gamesRef, (snapshot) => {
@@ -116,7 +117,7 @@
                     div.innerHTML = `<h4 class="font-bold text-green-400">${game.name}</h4><p class="text-sm text-gray-400">${game.hours} hours played</p>`;
                     recentGames.appendChild(div);
                 });
-            });
+            }, (err) => console.error("Games sync error", err));
         }
 
         // ✨ Gemini Integration: AI Game Analyst
@@ -140,7 +141,6 @@
                 const analysisText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The analyst is busy touching grass. Try later.";
                 aiAnalysisContent.innerHTML = `<p class="text-gray-300 italic leading-relaxed">"${analysisText}"</p>`;
                 
-                // Add TTS Button
                 const ttsBtn = document.createElement('button');
                 ttsBtn.className = "mt-3 text-xs text-green-500 hover:underline font-bold";
                 ttsBtn.innerText = "✨ Hear Lore (TTS)";
@@ -168,9 +168,7 @@
                 });
                 const data = await response.json();
                 const pcmBase64 = data.candidates[0].content.parts[0].inlineData.data;
-                
-                // Simple PCM to WAV conversion for browser playback
-                const audioBlob = base64ToAudioBlob(pcmBase64, 24000); // Assuming 24kHz for Charon
+                const audioBlob = base64ToAudioBlob(pcmBase64, 24000); 
                 const url = URL.createObjectURL(audioBlob);
                 const audio = new Audio(url);
                 audio.play();
@@ -184,7 +182,6 @@
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
             const pcm = new Int16Array(bytes.buffer);
-            
             const wavHeader = new ArrayBuffer(44);
             const view = new DataView(wavHeader);
             const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
@@ -201,7 +198,6 @@
             view.setUint16(34, 16, true);
             writeString(36, 'data');
             view.setUint32(40, pcm.length * 2, true);
-            
             return new Blob([wavHeader, pcm], { type: 'audio/wav' });
         }
 
@@ -225,17 +221,10 @@
                 if (activeChatId !== null) return;
                 chatContent.innerHTML = '';
                 
-                // ✨ Magic AI Scroll Option
                 const aiScroll = document.createElement('div');
                 aiScroll.className = "p-4 border-b border-gray-700 bg-green-950/20 hover:bg-green-900/30 cursor-pointer transition flex items-center gap-3";
                 aiScroll.onclick = () => openChat('ai-bot', '✨ AI Dungeon Master');
-                aiScroll.innerHTML = `
-                    <div class="w-10 h-10 rounded bg-green-600 flex items-center justify-center text-white">✨</div>
-                    <div>
-                        <div class="font-bold text-sm text-green-400">AI Dungeon Master</div>
-                        <div class="text-xs text-gray-400">Ask for gaming tips or lore...</div>
-                    </div>
-                `;
+                aiScroll.innerHTML = `<div class="w-10 h-10 rounded bg-green-600 flex items-center justify-center text-white">✨</div><div><div class="font-bold text-sm text-green-400">AI Dungeon Master</div><div class="text-xs text-gray-400">Ask for gaming tips or lore...</div></div>`;
                 chatContent.appendChild(aiScroll);
 
                 snapshot.forEach(docSnap => {
@@ -246,7 +235,7 @@
                     item.innerHTML = `<div class="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-gray-400">📜</div><div><div class="font-bold text-sm">${chat.name}</div><div class="text-xs text-gray-500 truncate w-32">${chat.lastMessage || 'Open...'}</div></div>`;
                     chatContent.appendChild(item);
                 });
-            });
+            }, (err) => console.error("Scrolls sync error", err));
         }
 
         async function handleAIScrollMessage(text) {
@@ -271,10 +260,7 @@
                 thinkingDiv.remove();
                 const aiDiv = document.createElement('div');
                 aiDiv.className = "flex items-start gap-2";
-                aiDiv.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-xs text-white">AI</div>
-                    <div class="max-w-[70%] p-2 rounded-lg text-sm bg-gray-700 text-gray-200">${aiText}</div>
-                `;
+                aiDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-xs text-white">AI</div><div class="max-w-[70%] p-2 rounded-lg text-sm bg-gray-700 text-gray-200">${aiText}</div>`;
                 msgContainer.appendChild(aiDiv);
                 msgContainer.scrollTop = msgContainer.scrollHeight;
             } catch (err) {
@@ -303,6 +289,7 @@
             const path = id === 'global' ? collection(db, 'artifacts', appId, 'public', 'data', 'globalChat', 'messages') : collection(db, 'artifacts', appId, 'users', currentUser.uid, 'scrolls', id, 'messages');
             onSnapshot(path, (snapshot) => {
                 const msgContainer = document.getElementById('messages-container');
+                if (!msgContainer) return;
                 msgContainer.innerHTML = '';
                 const msgs = snapshot.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
                 msgs.forEach(m => {
@@ -313,7 +300,7 @@
                     msgContainer.appendChild(msgDiv);
                 });
                 msgContainer.scrollTop = msgContainer.scrollHeight;
-            });
+            }, (err) => console.error("Chat sync error", err));
         }
 
         async function sendMessage() {
@@ -331,6 +318,7 @@
                 return;
             }
 
+            // FIXED: Path for user profile doc
             const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'));
             const userData = userDoc.exists() ? userDoc.data() : { photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUser.uid };
             const payload = { text, senderId: currentUser.uid, senderEmail: currentUser.email || 'guest', senderPhoto: userData.photoURL, createdAt: serverTimestamp() };
@@ -364,21 +352,23 @@
 <body class="overflow-x-hidden">
 
     <div id="firebase-error" class="fixed inset-0 bg-slate-950 z-[100] hidden flex items-center justify-center p-6 text-center">
-        <div class="max-w-md"><h1 class="text-2xl font-bold mb-2 text-white">FIREBASE ERROR</h1><p class="text-gray-400">System blicked.</p></div>
+        <div class="max-w-md"><h1 class="text-2xl font-bold mb-2 text-white">FIREBASE ERROR</h1><p class="text-gray-400">System blicked. Check your connection bro.</p></div>
     </div>
 
     <div id="login-prompt" class="fixed inset-0 bg-slate-900 z-40 hidden flex items-center justify-center p-6 text-center">
         <div class="max-w-sm bg-gray-800 p-8 rounded-2xl border border-gray-700">
             <h2 class="text-xl font-extrabold mb-2">Access Denied</h2>
             <p class="text-gray-400 text-sm mb-6">Sign in to enter the dungeon.</p>
-            <a href="/login/" class="block w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-bold">Sign In</a>
+            <a href="/login/" class="block w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-bold transition">Sign In</a>
         </div>
     </div>
 
     <div id="main-ui" class="hidden">
         <nav class="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 fixed top-0 w-full z-50">
             <a href="/" class="flex items-center gap-2 group">
-                <div class="bg-green-600 p-1.5 rounded-lg">SVG</div>
+                <div class="bg-green-600 p-1.5 rounded-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path></svg>
+                </div>
                 <span class="font-extrabold text-xl tracking-tighter">GAME<span class="text-green-500">DUNGEON</span></span>
             </a>
             <div class="flex items-center gap-6">
@@ -400,7 +390,7 @@
                         <h2 class="text-sm font-bold text-green-500 uppercase tracking-widest">AI Strategic Analyst</h2>
                         <p class="text-xs text-gray-500">Summoning the spirits of the leaderboard...</p>
                     </div>
-                    <button onclick="analyzePlaystyle()" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-full font-bold transition flex items-center gap-2">
+                    <button onclick="analyzePlaystyle()" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-full font-bold transition flex items-center gap-2 shadow-lg">
                         <span>✨ Analyze Runs</span>
                     </button>
                 </div>
@@ -415,7 +405,9 @@
             </section>
         </main>
 
-        <button id="chat-toggle" class="fixed right-0 top-1/2 -translate-y-1/2 bg-green-600 p-3 rounded-l-2xl shadow-xl hover:bg-green-500 z-40">CHAT</button>
+        <button id="chat-toggle" class="fixed right-0 top-1/2 -translate-y-1/2 bg-green-600 p-3 rounded-l-2xl shadow-xl hover:bg-green-500 transition-all z-40">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+        </button>
 
         <div id="chat-sidebar" class="fixed right-0 top-0 h-full w-80 bg-gray-900 shadow-2xl border-l border-gray-800 z-50 transition-transform duration-300 translate-x-full flex flex-col">
             <div class="p-4 border-b border-gray-800 flex justify-between items-center">
@@ -429,8 +421,10 @@
             <div id="chat-content" class="flex-1 overflow-y-auto"></div>
             <div id="chat-input-container" class="p-4 border-t border-gray-800 hidden">
                 <div class="relative flex items-center">
-                    <input id="chat-input" type="text" placeholder="Type a scroll..." class="w-full bg-gray-800 rounded-full py-2 px-4 pr-12 text-sm focus:outline-none">
-                    <button id="send-btn" class="absolute right-2 text-green-500 hidden">SEND</button>
+                    <input id="chat-input" type="text" placeholder="Type a scroll..." class="w-full bg-gray-800 rounded-full py-2 px-4 pr-12 text-sm focus:outline-none focus:ring-1 ring-green-500">
+                    <button id="send-btn" class="absolute right-2 text-green-500 hover:text-green-400 hidden">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                    </button>
                 </div>
             </div>
         </div>
