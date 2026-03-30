@@ -3,38 +3,437 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE GAME DUNGEON</title>
+    <title>The Game Dungeon | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Gemini API Constants
+        const apiKey = ""; // Provided by environment
+        const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+
+        // Elements
+        const authSection = document.getElementById('auth-section');
+        const friendsList = document.getElementById('friends-list');
+        const recentGames = document.getElementById('recent-games');
+        const chatSidebar = document.getElementById('chat-sidebar');
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatContent = document.getElementById('chat-content');
+        const chatInputContainer = document.getElementById('chat-input-container');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatTabLocal = document.getElementById('tab-local');
+        const chatTabGlobal = document.getElementById('tab-global');
+        const mainUI = document.getElementById('main-ui');
+        const loginPrompt = document.getElementById('login-prompt');
+        const firebaseError = document.getElementById('firebase-error');
+        const aiAnalysisContent = document.getElementById('ai-analysis-content');
+
+        // State
+        let currentUser = null;
+        let isChatOpen = false;
+        let activeChatId = null; 
+        let app, auth, db, appId;
+        let currentRecentGames = [];
+
+        // Firebase Initialization
+        try {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'the-game-dungeon';
+        } catch (error) {
+            console.error("Firebase load failed:", error);
+            firebaseError.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        const initAuth = async () => {
+            if (!auth) return;
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth failed:", err);
+            }
+        };
+
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user && !user.isAnonymous) {
+                    mainUI.classList.remove('hidden');
+                    loginPrompt.classList.add('hidden');
+                    updateProfileUI(user);
+                    loadDashboardData(user);
+                } else {
+                    mainUI.classList.add('hidden');
+                    loginPrompt.classList.remove('hidden');
+                    authSection.innerHTML = `<a href="/login/" class="bg-blue-600 px-4 py-2 rounded-lg font-bold hover:bg-blue-500 transition text-sm">Login</a>`;
+                }
+            });
+        }
+
+        async function updateProfileUI(user) {
+            const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'));
+            const pfp = userDoc.exists() ? userDoc.data().photoURL : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.uid;
+            const email = user.email || 'guest@thecrib.io';
+            authSection.innerHTML = `
+                <a href="/profile/?user=${encodeURIComponent(email)}">
+                    <img src="${pfp}" class="w-10 h-10 rounded-full border-2 border-green-500 hover:scale-110 transition" alt="Profile">
+                </a>
+            `;
+        }
+
+        function loadDashboardData(user) {
+            if (!user) return;
+            const friendsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'friends');
+            onSnapshot(friendsRef, (snapshot) => {
+                friendsList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const friend = doc.data();
+                    const div = document.createElement('div');
+                    div.className = "flex flex-col items-center cursor-pointer hover:opacity-80 transition shrink-0";
+                    div.innerHTML = `<img src="${friend.photoURL || 'https://api.dicebear.com/7.x/pixel-art/svg?seed='+friend.name}" class="w-16 h-16 rounded-full bg-gray-800 p-1 border border-gray-600"><span class="text-xs mt-2 text-gray-300 font-medium">${friend.name}</span>`;
+                    friendsList.appendChild(div);
+                });
+            });
+
+            const gamesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'recentGames');
+            onSnapshot(gamesRef, (snapshot) => {
+                recentGames.innerHTML = '';
+                currentRecentGames = snapshot.docs.map(d => d.data());
+                currentRecentGames.slice(0, 3).forEach(game => {
+                    const div = document.createElement('div');
+                    div.className = "bg-gray-800 p-4 rounded-xl border border-gray-700 group";
+                    div.innerHTML = `<h4 class="font-bold text-green-400">${game.name}</h4><p class="text-sm text-gray-400">${game.hours} hours played</p>`;
+                    recentGames.appendChild(div);
+                });
+            });
+        }
+
+        // ✨ Gemini Integration: AI Game Analyst
+        window.analyzePlaystyle = async () => {
+            if (currentRecentGames.length === 0) {
+                aiAnalysisContent.innerText = "Play some games first so I can judge you, bro.";
+                return;
+            }
+            aiAnalysisContent.innerHTML = '<div class="animate-pulse text-green-500">Summoning the Strategic Analyst...</div>';
+            
+            const gameNames = currentRecentGames.map(g => g.name).join(", ");
+            const prompt = `Based on these recently played games: ${gameNames}, act as a trash-talking but brilliant gaming strategist. Briefly describe the user's gaming personality and suggest one specific game they should play next. Keep it under 60 words and very "gamer" in tone.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                const analysisText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The analyst is busy touching grass. Try later.";
+                aiAnalysisContent.innerHTML = `<p class="text-gray-300 italic leading-relaxed">"${analysisText}"</p>`;
+                
+                // Add TTS Button
+                const ttsBtn = document.createElement('button');
+                ttsBtn.className = "mt-3 text-xs text-green-500 hover:underline font-bold";
+                ttsBtn.innerText = "✨ Hear Lore (TTS)";
+                ttsBtn.onclick = () => playAIVoice(analysisText);
+                aiAnalysisContent.appendChild(ttsBtn);
+
+            } catch (err) {
+                aiAnalysisContent.innerText = "Analyst blicked. Error connecting.";
+            }
+        };
+
+        // ✨ Gemini Integration: Text to Speech
+        async function playAIVoice(text) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Say in a deep, epic dungeon master voice: ${text}` }] }],
+                        generationConfig: { 
+                            responseModalities: ["AUDIO"],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } } } 
+                        }
+                    })
+                });
+                const data = await response.json();
+                const pcmBase64 = data.candidates[0].content.parts[0].inlineData.data;
+                
+                // Simple PCM to WAV conversion for browser playback
+                const audioBlob = base64ToAudioBlob(pcmBase64, 24000); // Assuming 24kHz for Charon
+                const url = URL.createObjectURL(audioBlob);
+                const audio = new Audio(url);
+                audio.play();
+            } catch (err) {
+                console.error("TTS failed", err);
+            }
+        }
+
+        function base64ToAudioBlob(base64, sampleRate) {
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            const pcm = new Int16Array(bytes.buffer);
+            
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+            const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcm.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcm.length * 2, true);
+            
+            return new Blob([wavHeader, pcm], { type: 'audio/wav' });
+        }
+
+        // Chat Logic
+        window.toggleChat = function() {
+            isChatOpen = !isChatOpen;
+            chatSidebar.style.transform = isChatOpen ? 'translateX(0)' : 'translateX(100%)';
+            if (isChatOpen) renderLocalChats();
+        }
+
+        function renderLocalChats() {
+            activeChatId = null;
+            chatTabLocal.classList.add('bg-gray-700', 'text-white');
+            chatTabGlobal.classList.remove('bg-gray-700', 'text-white');
+            chatInputContainer.classList.add('hidden');
+            chatContent.innerHTML = '<div class="p-4 text-gray-400 text-sm italic">Scrolls (Private Chats)</div>';
+            
+            if (!currentUser) return;
+            const chatsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'scrolls');
+            onSnapshot(chatsRef, (snapshot) => {
+                if (activeChatId !== null) return;
+                chatContent.innerHTML = '';
+                
+                // ✨ Magic AI Scroll Option
+                const aiScroll = document.createElement('div');
+                aiScroll.className = "p-4 border-b border-gray-700 bg-green-950/20 hover:bg-green-900/30 cursor-pointer transition flex items-center gap-3";
+                aiScroll.onclick = () => openChat('ai-bot', '✨ AI Dungeon Master');
+                aiScroll.innerHTML = `
+                    <div class="w-10 h-10 rounded bg-green-600 flex items-center justify-center text-white">✨</div>
+                    <div>
+                        <div class="font-bold text-sm text-green-400">AI Dungeon Master</div>
+                        <div class="text-xs text-gray-400">Ask for gaming tips or lore...</div>
+                    </div>
+                `;
+                chatContent.appendChild(aiScroll);
+
+                snapshot.forEach(docSnap => {
+                    const chat = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = "p-4 border-b border-gray-700 hover:bg-gray-800 cursor-pointer transition flex items-center gap-3";
+                    item.onclick = () => openChat(docSnap.id, chat.name);
+                    item.innerHTML = `<div class="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-gray-400">📜</div><div><div class="font-bold text-sm">${chat.name}</div><div class="text-xs text-gray-500 truncate w-32">${chat.lastMessage || 'Open...'}</div></div>`;
+                    chatContent.appendChild(item);
+                });
+            });
+        }
+
+        async function handleAIScrollMessage(text) {
+            const msgContainer = document.getElementById('messages-container');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = "flex items-start gap-2 animate-pulse";
+            thinkingDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-xs text-white">AI</div><div class="bg-gray-700 p-2 rounded-lg text-xs italic">Thinking...</div>`;
+            msgContainer.appendChild(thinkingDiv);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: `You are the AI Dungeon Master for a gaming platform called The Game Dungeon. Answer this gamer: ${text}` }] }] 
+                    })
+                });
+                const data = await response.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The scroll is blank...";
+                
+                thinkingDiv.remove();
+                const aiDiv = document.createElement('div');
+                aiDiv.className = "flex items-start gap-2";
+                aiDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-xs text-white">AI</div>
+                    <div class="max-w-[70%] p-2 rounded-lg text-sm bg-gray-700 text-gray-200">${aiText}</div>
+                `;
+                msgContainer.appendChild(aiDiv);
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            } catch (err) {
+                thinkingDiv.innerText = "Error in the scrolls.";
+            }
+        }
+
+        function openChat(id, title) {
+            activeChatId = id;
+            chatInputContainer.classList.remove('hidden');
+            chatContent.innerHTML = `
+                <div class="flex items-center p-3 border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
+                    <button id="chat-back" class="mr-2 text-gray-400 hover:text-white">←</button>
+                    <span class="font-bold text-sm text-green-400">${title}</span>
+                </div>
+                <div id="messages-container" class="p-4 space-y-4 overflow-y-auto h-[calc(100%-110px)]"></div>
+            `;
+            document.getElementById('chat-back').onclick = renderLocalChats;
+            
+            if (id === 'ai-bot') {
+                const msgContainer = document.getElementById('messages-container');
+                msgContainer.innerHTML = '<div class="text-center text-xs text-gray-500 my-4 italic">You are now speaking to the Magic Scroll.</div>';
+                return;
+            }
+
+            const path = id === 'global' ? collection(db, 'artifacts', appId, 'public', 'data', 'globalChat', 'messages') : collection(db, 'artifacts', appId, 'users', currentUser.uid, 'scrolls', id, 'messages');
+            onSnapshot(path, (snapshot) => {
+                const msgContainer = document.getElementById('messages-container');
+                msgContainer.innerHTML = '';
+                const msgs = snapshot.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                msgs.forEach(m => {
+                    const isMe = m.senderId === currentUser?.uid;
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `flex items-start gap-2 ${isMe ? 'flex-row-reverse' : ''}`;
+                    msgDiv.innerHTML = `<img src="${m.senderPhoto}" class="w-8 h-8 rounded-full"><div class="max-w-[70%] p-2 rounded-lg text-sm ${isMe ? 'bg-green-700 text-white' : 'bg-gray-700 text-gray-200'}">${m.text}</div>`;
+                    msgContainer.appendChild(msgDiv);
+                });
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            });
+        }
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text || !currentUser || !activeChatId) return;
+
+            if (activeChatId === 'ai-bot') {
+                const msgContainer = document.getElementById('messages-container');
+                const userDiv = document.createElement('div');
+                userDiv.className = "flex items-start gap-2 flex-row-reverse";
+                userDiv.innerHTML = `<div class="bg-green-700 p-2 rounded-lg text-sm text-white">${text}</div>`;
+                msgContainer.appendChild(userDiv);
+                chatInput.value = '';
+                await handleAIScrollMessage(text);
+                return;
+            }
+
+            const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'));
+            const userData = userDoc.exists() ? userDoc.data() : { photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUser.uid };
+            const payload = { text, senderId: currentUser.uid, senderEmail: currentUser.email || 'guest', senderPhoto: userData.photoURL, createdAt: serverTimestamp() };
+            const path = activeChatId === 'global' ? collection(db, 'artifacts', appId, 'public', 'data', 'globalChat', 'messages') : collection(db, 'artifacts', appId, 'users', currentUser.uid, 'scrolls', activeChatId, 'messages');
+            await addDoc(path, payload);
+            chatInput.value = '';
+            sendBtn.classList.add('hidden');
+        }
+
+        window.onload = () => {
+            if (auth) {
+                initAuth();
+                chatToggle.onclick = toggleChat;
+                chatTabLocal.onclick = renderLocalChats;
+                chatTabGlobal.onclick = () => openChat('global', 'Global Chat');
+                chatInput.oninput = (e) => { e.target.value.trim() ? sendBtn.classList.remove('hidden') : sendBtn.classList.add('hidden'); };
+                sendBtn.onclick = sendMessage;
+                chatInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+            }
+        };
+    </script>
     <style>
-        :root {
-            --dungeon-green: #00ff41;
-            --dark-grey: #0a0a0a; /* Almost black */
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .scroll-row::-webkit-scrollbar { display: none; }
+        .scroll-row { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes pulse-border { 0% { border-color: rgba(34, 197, 94, 0.2); } 50% { border-color: rgba(34, 197, 94, 0.8); } 100% { border-color: rgba(34, 197, 94, 0.2); } }
+        .ai-glow { animation: pulse-border 2s infinite; }
+    </style>
+</head>
+<body class="overflow-x-hidden">
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--dark-grey);
-            font-family: 'Courier New', Courier, monospace;
-            color: var(--dungeon-green);
-            user-select: none;
-            touch-action: none; 
-        }
+    <div id="firebase-error" class="fixed inset-0 bg-slate-950 z-[100] hidden flex items-center justify-center p-6 text-center">
+        <div class="max-w-md"><h1 class="text-2xl font-bold mb-2 text-white">FIREBASE ERROR</h1><p class="text-gray-400">System blicked.</p></div>
+    </div>
 
-        /* Splash Screen */
-        #splash-screen {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.8s ease;
-            background-color: var(--dark-grey);
-        }
+    <div id="login-prompt" class="fixed inset-0 bg-slate-900 z-40 hidden flex items-center justify-center p-6 text-center">
+        <div class="max-w-sm bg-gray-800 p-8 rounded-2xl border border-gray-700">
+            <h2 class="text-xl font-extrabold mb-2">Access Denied</h2>
+            <p class="text-gray-400 text-sm mb-6">Sign in to enter the dungeon.</p>
+            <a href="/login/" class="block w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-bold">Sign In</a>
+        </div>
+    </div>
 
-        .logo {
+    <div id="main-ui" class="hidden">
+        <nav class="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 fixed top-0 w-full z-50">
+            <a href="/" class="flex items-center gap-2 group">
+                <div class="bg-green-600 p-1.5 rounded-lg">SVG</div>
+                <span class="font-extrabold text-xl tracking-tighter">GAME<span class="text-green-500">DUNGEON</span></span>
+            </a>
+            <div class="flex items-center gap-6">
+                <div id="auth-section"></div>
+            </div>
+        </nav>
+
+        <main class="mt-20 px-6 max-w-6xl mx-auto pb-20">
+            <section class="mb-10">
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-4">The Gang</h2>
+                <div id="friends-list" class="flex gap-6 overflow-x-auto pb-4 scroll-row min-h-[100px]"></div>
+            </section>
+
+            <!-- ✨ New Gemini AI Section -->
+            <section class="mb-10 p-6 bg-slate-900/50 rounded-2xl border-2 border-green-900/30 ai-glow relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-6xl opacity-10 rotate-12">✨</div>
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-green-500 uppercase tracking-widest">AI Strategic Analyst</h2>
+                        <p class="text-xs text-gray-500">Summoning the spirits of the leaderboard...</p>
+                    </div>
+                    <button onclick="analyzePlaystyle()" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-full font-bold transition flex items-center gap-2">
+                        <span>✨ Analyze Runs</span>
+                    </button>
+                </div>
+                <div id="ai-analysis-content" class="min-h-[60px] flex items-center text-gray-400 text-sm">
+                    Tap to generate your playstyle report...
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-4">Last Runs</h2>
+                <div id="recent-games" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </section>
+        </main>
+
+        <button id="chat-toggle" class="fixed right-0 top-1/2 -translate-y-1/2 bg-green-600 p-3 rounded-l-2xl shadow-xl hover:bg-green-500 z-40">CHAT</button>
+
+        <div id="chat-sidebar" class="fixed right-0 top-0 h-full w-80 bg-gray-900 shadow-2xl border-l border-gray-800 z-50 transition-transform duration-300 translate-x-full flex flex-col">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Chat</h3>
+                <button onclick="toggleChat()" class="text-gray-500 hover:text-white">✕</button>
+            </div>
+            <div class="flex p-2 gap-2">
+                <button id="tab-local" class="flex-1 py-1.5 rounded-md text-xs font-bold transition">Local</button>
+                <button id="tab-global" class="flex-1 py-1.5 rounded-md text-xs font-bold transition">Global</button>
+            </div>
+            <div id="chat-content" class="flex-1 overflow-y-auto"></div>
+            <div id="chat-input-container" class="p-4 border-t border-gray-800 hidden">
+                <div class="relative flex items-center">
+                    <input id="chat-input" type="text" placeholder="Type a scroll..." class="w-full bg-gray-800 rounded-full py-2 px-4 pr-12 text-sm focus:outline-none">
+                    <button id="send-btn" class="absolute right-2 text-green-500 hidden">SEND</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
