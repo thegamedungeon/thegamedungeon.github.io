@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playing | The Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+
+        :root {
+            --dungeon-green: #39ff14;
+            --bg-dark: #050505;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Space+Grotesk', sans-serif;
+            margin: 0;
+            overflow: hidden; /* No scrolling in the dungeon */
+            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+        }
+
+        .nav-bar {
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--dungeon-green);
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .game-container {
+            position: absolute;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .text-glow {
+            color: var(--dungeon-green);
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.7);
+        }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader-bar {
+            width: 200px;
+            height: 2px;
+            background: #111;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader-progress {
+            position: absolute;
+            height: 100%;
+            width: 50%;
+            background: var(--dungeon-green);
+            animation: loading 1.5s infinite ease-in-out;
+        }
+
+        @keyframes loading {
+            0% { left: -50%; }
+            100% { left: 100%; }
+        }
+
+        .btn-back {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            border: 1px solid #333;
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--dungeon-green);
+            color: var(--dungeon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <img src="/storage/photos/tgdtc.png" alt="Logo" class="h-12 mb-4 animate-pulse">
+        <h2 class="text-glow font-black italic tracking-widest">BOOTING VAULT...</h2>
+        <div class="loader-bar"><div class="loader-progress"></div></div>
+    </div>
+
+    <nav class="nav-bar">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="flex items-center gap-2 group">
+                <img src="/storage/photos/tgdtc.png" alt="TGDTC" class="h-8 group-hover:scale-110 transition-transform">
+                <span class="text-xl font-black text-glow tracking-tighter">THE DUNGEON</span>
+            </a>
+            <div class="h-4 w-[1px] bg-zinc-800 mx-2"></div>
+            <span id="game-title-display" class="font-bold italic text-zinc-400 uppercase text-sm tracking-widest">UNCERTAIN_LOG</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="toggleFullscreen()" class="btn-back">FULLSCREEN</button>
+            <a href="index.html" class="btn-back">EXIT TO ARMORY</a>
+        </div>
+    </nav>
+
+    <div class="game-container" id="game-mount">
+        <!-- Game will be injected here -->
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initTracker } from "./tracker.js";
+
+        // Firebase Config (Keep synced with your index.html)
+        const firebaseConfig = { apiKey: "", authDomain: "your-app.firebaseapp.com", projectId: "your-app", storageBucket: "your-app.appspot.com", messagingSenderId: "12345", appId: "1:12345:web:6789" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Game Database (The actual URLs)
+        const gameLibrary = {
+            "minecraft": "https://education.minecraft.net/", // Placeholder or your specific fork
+            "ragdoll-hit": "https://html5.gamedistribution.com/f270fd35a09e443899f36f9035f29910/",
+            "castle-crashers": "https://example.com/castle-crashers-fork",
+            "roblox": "https://www.roblox.com/games",
+            "grand-theft-auto": "https://example.com/gta-retro"
+        };
+
+        const searchParams = new URLSearchParams(window.location.search);
+        const gameSlug = searchParams.get('game') || 'minecraft';
+        const gameName = gameSlug.replace(/-/g, ' ');
+
+        document.getElementById('game-title-display').innerText = gameName;
+        document.title = `${gameName.toUpperCase()} | The Dungeon`;
+
+        // Check Auth and Start
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // If they try to sneak in like Connor, kick them back
+                window.location.href = 'index.html?error=auth_required';
+                return;
+            }
+
+            // Start Tracking
+            initTracker(gameName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+            
+            // Load the Game
+            const url = gameLibrary[gameSlug] || gameLibrary['minecraft'];
+            const mount = document.getElementById('game-mount');
+            mount.innerHTML = `<iframe src="${url}" allowfullscreen id="game-frame"></iframe>`;
+
+            // Remove loading screen
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
+            }, 1000);
+        });
+
+        window.toggleFullscreen = () => {
+            const elem = document.getElementById('game-frame');
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        };
+    </script>
+</body>
+</html>
