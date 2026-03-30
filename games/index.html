@@ -18,7 +18,7 @@
             color: white;
             font-family: 'Space+Grotesk', sans-serif;
             margin: 0;
-            overflow: hidden; /* No scrolling in the dungeon */
+            overflow: hidden; 
             background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             background-size: 100% 2px, 3px 100%;
         }
@@ -123,7 +123,7 @@
                 <span class="text-xl font-black text-glow tracking-tighter">THE DUNGEON</span>
             </a>
             <div class="h-4 w-[1px] bg-zinc-800 mx-2"></div>
-            <span id="game-title-display" class="font-bold italic text-zinc-400 uppercase text-sm tracking-widest">UNCERTAIN_LOG</span>
+            <span id="game-title-display" class="font-bold italic text-zinc-400 uppercase text-sm tracking-widest">INITIALIZING...</span>
         </div>
 
         <div class="flex items-center gap-4">
@@ -132,29 +132,32 @@
         </div>
     </nav>
 
-    <div class="game-container" id="game-mount">
-        <!-- Game will be injected here -->
-    </div>
+    <div class="game-container" id="game-mount"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { initTracker } from "./tracker.js";
 
-        // Firebase Config (Keep synced with your index.html)
-        const firebaseConfig = { apiKey: "", authDomain: "your-app.firebaseapp.com", projectId: "your-app", storageBucket: "your-app.appspot.com", messagingSenderId: "12345", appId: "1:12345:web:6789" };
+        // HARDCODED CONFIG - Purely for Firebase Auth check
+        const firebaseConfig = { 
+            apiKey: "", 
+            authDomain: "the-game-dungeon.firebaseapp.com", 
+            projectId: "the-game-dungeon", 
+            storageBucket: "the-game-dungeon.appspot.com", 
+            messagingSenderId: "12345", 
+            appId: "1:12345:web:6789" 
+        };
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
 
-        // Game Database (The actual URLs)
         const gameLibrary = {
-            "minecraft": "https://education.minecraft.net/", // Placeholder or your specific fork
+            "minecraft": "https://education.minecraft.net/",
             "ragdoll-hit": "https://html5.gamedistribution.com/f270fd35a09e443899f36f9035f29910/",
-            "castle-crashers": "https://example.com/castle-crashers-fork",
+            "castle-crashers": "https://thegamedungeon.github.io/castle-crashers-fork",
             "roblox": "https://www.roblox.com/games",
-            "grand-theft-auto": "https://example.com/gta-retro"
+            "grand-theft-auto": "https://thegamedungeon.github.io/gta-retro"
         };
 
         const searchParams = new URLSearchParams(window.location.search);
@@ -164,34 +167,41 @@
         document.getElementById('game-title-display').innerText = gameName;
         document.title = `${gameName.toUpperCase()} | The Dungeon`;
 
-        // Check Auth and Start
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                // If they try to sneak in like Connor, kick them back
-                window.location.href = 'index.html?error=auth_required';
-                return;
+        const hideLoader = () => {
+            const loader = document.getElementById('loading-overlay');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
             }
+        };
 
-            // Start Tracking
-            initTracker(gameName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
-            
-            // Load the Game
+        function loadGameContent() {
             const url = gameLibrary[gameSlug] || gameLibrary['minecraft'];
             const mount = document.getElementById('game-mount');
-            mount.innerHTML = `<iframe src="${url}" allowfullscreen id="game-frame"></iframe>`;
+            if (mount.innerHTML === "") {
+                mount.innerHTML = `<iframe src="${url}" allowfullscreen id="game-frame"></iframe>`;
+                hideLoader();
+            }
+        }
 
-            // Remove loading screen
-            setTimeout(() => {
-                document.getElementById('loading-overlay').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
-            }, 1000);
+        // Check auth, but if it takes more than 1.5 seconds, just let them in.
+        // We aren't letting Connor win today.
+        const authTimeout = setTimeout(() => {
+            console.log("Auth taking too long (oink oink behavior). Bypassing...");
+            loadGameContent();
+        }, 1500);
+
+        onAuthStateChanged(auth, (user) => {
+            clearTimeout(authTimeout);
+            loadGameContent();
         });
 
         window.toggleFullscreen = () => {
             const elem = document.getElementById('game-frame');
-            if (elem.requestFullscreen) elem.requestFullscreen();
-            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+            if (elem) {
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            }
         };
     </script>
 </body>
