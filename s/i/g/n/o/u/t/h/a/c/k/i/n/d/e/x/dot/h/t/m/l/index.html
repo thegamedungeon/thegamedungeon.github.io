@@ -64,8 +64,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-        // Firebase Config (provided by environment)
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // Fallback for empty config to avoid immediate crashes
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "placeholder" };
         
         const loadingEl = document.getElementById('state-loading');
         const successEl = document.getElementById('state-success');
@@ -73,38 +73,35 @@
 
         async function nukeSession() {
             try {
-                if (!firebaseConfig.apiKey) {
-                    throw new Error("Missing Firebase Config");
-                }
-
+                // Initialize Firebase
                 const app = initializeApp(firebaseConfig);
                 const auth = getAuth(app);
 
-                // Perform the blick-removal
+                // Perform the sign out
                 await signOut(auth);
                 
-                // Switch UI to success
+                // Show success UI
                 loadingEl.classList.add('hidden');
                 successEl.classList.remove('hidden');
 
-                // Bounce back after a sec
+                // Redirect after a brief moment
                 setTimeout(() => {
                     if (window.history.length > 1) {
                         window.history.back();
                     } else {
                         window.location.href = "/login";
                     }
-                }, 1500);
+                }, 1200);
 
             } catch (err) {
-                console.error(err);
+                console.error("Logout Error:", err);
                 loadingEl.classList.add('hidden');
                 errorEl.classList.remove('hidden');
             }
         }
 
-        // Start the process immediately
-        window.onload = nukeSession;
+        // Run when DOM is ready
+        document.addEventListener('DOMContentLoaded', nukeSession);
     </script>
 </body>
 </html>
