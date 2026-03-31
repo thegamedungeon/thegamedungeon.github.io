@@ -1,0 +1,94 @@
+import React, { useEffect, useState } from 'react';
+import { LogOut, Loader2, Undo2 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signOut } from 'firebase/auth';
+
+const App = () => {
+  const [status, setStatus] = useState('initiating');
+
+  // Firebase configuration from environment
+  const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  useEffect(() => {
+    const performSignOut = async () => {
+      try {
+        // Kill the Firebase session
+        await signOut(auth);
+        
+        setStatus('success');
+        
+        // Short delay so you can actually see it worked before it redirects
+        setTimeout(() => {
+          // Go back to the last page (likely /login/ or the dashboard)
+          // If no history, default to root or login
+          if (window.history.length > 1) {
+            window.history.back();
+          } else {
+            window.location.href = '/login';
+          }
+        }, 1500);
+      } catch (error) {
+        console.error("Sign out failed:", error);
+        setStatus('error');
+      }
+    };
+
+    performSignOut();
+  }, [auth]);
+
+  return (
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 font-sans">
+      <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center">
+        {status === 'initiating' && (
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <Loader2 className="text-blue-500 animate-spin" size={48} />
+            </div>
+            <h2 className="text-xl font-bold text-white tracking-tight text-glow">Signing Out...</h2>
+            <p className="text-zinc-500 text-sm">Clearing the crib of all sessions.</p>
+          </div>
+        )}
+
+        {status === 'success' && (
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <div className="bg-green-500/10 p-4 rounded-full border border-green-500/20">
+                <LogOut className="text-green-500" size={40} />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Session Nuked</h2>
+            <p className="text-zinc-400 text-sm">Redirecting you back to the last page...</p>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <div className="bg-red-500/10 p-4 rounded-full border border-red-500/20">
+                <Undo2 className="text-red-500" size={40} />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Error</h2>
+            <p className="text-zinc-400 text-sm">Something went wrong. Just close the tab, bro.</p>
+            <button 
+              onClick={() => window.history.back()}
+              className="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-white py-2 rounded-xl transition-colors text-sm font-medium"
+            >
+              Force Go Back
+            </button>
+          </div>
+        )}
+      </div>
+      
+      <style>{`
+        .text-glow {
+          text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
