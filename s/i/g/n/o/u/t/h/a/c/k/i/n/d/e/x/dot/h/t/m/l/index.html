@@ -30,7 +30,7 @@
                     /s/i/g/n/o/u/t/h/a/c/k/i/n/d/e/x/dot/h/t/m/l/index.html
                 </p>
             </div>
-            <p class="text-zinc-500 text-sm italic">Clearing the crib of all sessions.</p>
+            <p class="text-zinc-500 text-sm italic">Blicking the ghost of deleted accounts...</p>
         </div>
 
         <!-- Success State (Hidden by default) -->
@@ -41,7 +41,7 @@
                 </div>
             </div>
             <h2 class="text-xl font-bold tracking-tight">Session Nuked</h2>
-            <p class="text-zinc-400 text-sm">Redirecting you back to test the Fast Pass...</p>
+            <p class="text-zinc-400 text-sm italic">Local storage wiped. Redirecting...</p>
         </div>
 
         <!-- Error State (Hidden by default) -->
@@ -64,7 +64,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-        // Fallback for empty config to avoid immediate crashes
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "placeholder" };
         
         const loadingEl = document.getElementById('state-loading');
@@ -73,34 +72,49 @@
 
         async function nukeSession() {
             try {
-                // Initialize Firebase
+                // 1. SCORCHED EARTH ON ALL LOCAL DATA
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                if (window.indexedDB && window.indexedDB.databases) {
+                    try {
+                        const dbs = await window.indexedDB.databases();
+                        for (const db of dbs) {
+                            window.indexedDB.deleteDatabase(db.name);
+                        }
+                    } catch (e) {
+                        console.warn("Couldn't wipe IndexedDB.");
+                    }
+                }
+
+                // 2. FIREBASE SIGNOUT
                 const app = initializeApp(firebaseConfig);
                 const auth = getAuth(app);
-
-                // Perform the sign out
-                await signOut(auth);
                 
-                // Show success UI
+                try {
+                    await signOut(auth);
+                } catch (signoutErr) {
+                    console.warn("Cloud signout failed, proceeding with local wipe.");
+                }
+                
+                // 3. SHOW SUCCESS
                 loadingEl.classList.add('hidden');
                 successEl.classList.remove('hidden');
 
-                // Redirect after a brief moment
+                // 4. FINAL BOUNCE
                 setTimeout(() => {
-                    if (window.history.length > 1) {
-                        window.history.back();
-                    } else {
-                        window.location.href = "/login";
-                    }
-                }, 1200);
+                    // Fixed the SyntaxError by using a simple string path for the redirect
+                    const redirectPath = "/login";
+                    window.location.assign(redirectPath);
+                }, 1000);
 
             } catch (err) {
-                console.error("Logout Error:", err);
+                console.error("Critical Logout Error:", err);
                 loadingEl.classList.add('hidden');
                 errorEl.classList.remove('hidden');
             }
         }
 
-        // Run when DOM is ready
         document.addEventListener('DOMContentLoaded', nukeSession);
     </script>
 </body>
