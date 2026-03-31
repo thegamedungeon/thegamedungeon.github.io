@@ -32,6 +32,10 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .input-glow:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
         #root-loader {
             position: fixed;
             inset: 0;
@@ -40,6 +44,9 @@
             justify-content: center;
             background: #020617;
             z-index: 50;
+        }
+        .btn-confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
         }
     </style>
 </head>
@@ -52,17 +59,26 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
-        // Firebase Global Initialization (iPad Friendly)
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // Firebase Global Initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'the-game-dungeon-4d75d';
+        const appId = "the-game-dungeon-4d75d";
 
-        // Lucide Icon Helper for Babel
+        // Lucide Icon Helper
         const Icon = ({ name, className }) => {
             useEffect(() => { lucide.createIcons(); }, [name]);
             return <i data-lucide={name} className={className}></i>;
@@ -77,6 +93,8 @@
             const [isFriend, setIsFriend] = useState(false);
             const [friendRequestStatus, setFriendRequestStatus] = useState(null);
             const [isEditing, setIsEditing] = useState(false);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
             
             const [editData, setEditData] = useState({
                 name: '', gamername: '', bio: '', privacy: 'everyone', photoURL: ''
@@ -89,10 +107,15 @@
             useEffect(() => {
                 document.getElementById('root-loader').style.display = 'none';
                 const unsubscribe = auth.onAuthStateChanged(async (u) => {
-                    if (!u) {
-                        await auth.signInAnonymously();
-                    } else {
+                    if (u) {
                         setUser(u);
+                    } else {
+                        try {
+                            const anon = await auth.signInAnonymously();
+                            setUser(anon.user);
+                        } catch (e) {
+                            setError("Auth blicked. Check your connection.");
+                        }
                     }
                 });
                 return () => unsubscribe();
@@ -100,33 +123,43 @@
 
             useEffect(() => {
                 if (!user) return;
-                if (triggerSignOut && user.email?.toLowerCase() === targetEmail) {
-                    auth.signOut().then(() => window.location.href = '/');
+                
+                // If we have a signout flag, check if we need to show the confirmation UI
+                if (triggerSignOut) {
+                    if (user.email?.toLowerCase() === targetEmail) {
+                        setShowSignOutConfirm(true);
+                        setLoading(false);
+                        return;
+                    } else {
+                        // Not the right user or trying to sign out an anon/someone else? Back to search.
+                        window.location.href = '/profile/';
+                        return;
+                    }
+                }
+
+                // If no target email in URL, show search mode
+                if (!targetEmail) {
+                    setLoading(false);
                     return;
                 }
+
                 fetchProfile();
-            }, [user, targetEmail]);
+            }, [user, targetEmail, triggerSignOut]);
 
             const fetchProfile = async () => {
                 setLoading(true);
                 try {
                     const usersRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users');
-                    const q = await usersRef.get();
-                    let targetDoc = null;
-                    let targetId = null;
-
-                    q.forEach(d => {
-                        if (d.data().email?.toLowerCase() === targetEmail) {
-                            targetDoc = d.data();
-                            targetId = d.id;
-                        }
-                    });
-
-                    if (!targetDoc) {
+                    const q = await usersRef.where("email", "==", targetEmail).get();
+                    
+                    if (q.empty) {
                         setError("This user hasn't joined the gang yet.");
                         setLoading(false);
                         return;
                     }
+
+                    const targetDoc = q.docs[0].data();
+                    const targetId = q.docs[0].id;
 
                     setProfile({ ...targetDoc, id: targetId });
                     setEditData({
@@ -137,10 +170,10 @@
                         photoURL: targetDoc.photoURL || ''
                     });
 
-                    const currentIsOwner = user.email?.toLowerCase() === targetEmail;
+                    const currentIsOwner = user.uid === targetId || (user.email && user.email.toLowerCase() === targetEmail);
                     setIsOwner(currentIsOwner);
 
-                    if (!currentIsOwner) {
+                    if (!currentIsOwner && user.uid) {
                         const friendDoc = await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('friends').doc(targetId).get();
                         setIsFriend(friendDoc.exists);
                         
@@ -149,22 +182,44 @@
                     }
                     setLoading(false);
                 } catch (err) {
-                    console.error(err);
-                    setError("Failed to sync with the database.");
+                    console.error("Firestore Error:", err);
+                    setError("Security Blicked: Permission Denied.");
                     setLoading(false);
                 }
             };
 
+            const handleFinalSignOut = async () => {
+                setLoading(true);
+                await auth.signOut();
+                window.location.href = '/login.html';
+            };
+
+            const cancelSignOut = () => {
+                window.location.href = `/profile/?user=${encodeURIComponent(targetEmail)}`;
+            };
+
+            const handleSearch = (e) => {
+                e.preventDefault();
+                if (!searchQuery.trim()) return;
+                window.location.href = `/profile/?user=${encodeURIComponent(searchQuery.trim().toLowerCase())}`;
+            };
+
             const handleFriendAction = async () => {
-                if (isFriend) {
-                    await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('friends').doc(profile.id).delete();
-                    setIsFriend(false);
-                } else if (!friendRequestStatus) {
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').doc(`${user.uid}_${profile.id}`).set({
-                        from: user.uid, to: profile.id, timestamp: Date.now()
-                    });
-                    setFriendRequestStatus('sent');
+                if (!user || user.isAnonymous) {
+                    alert("Sign in to add people to your squad.");
+                    return;
                 }
+                try {
+                    if (isFriend) {
+                        await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('friends').doc(profile.id).delete();
+                        setIsFriend(false);
+                    } else if (!friendRequestStatus) {
+                        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').doc(`${user.uid}_${profile.id}`).set({
+                            from: user.uid, to: profile.id, timestamp: Date.now()
+                        });
+                        setFriendRequestStatus('sent');
+                    }
+                } catch (e) { alert("Action blicked."); }
             };
 
             const saveProfile = async () => {
@@ -173,7 +228,7 @@
                     await userRef.update(editData);
                     setProfile(prev => ({ ...prev, ...editData }));
                     setIsEditing(false);
-                } catch (e) { alert("Save blicked. Try again."); }
+                } catch (e) { alert("Save blicked. Permission denied."); }
             };
 
             if (loading) return (
@@ -182,13 +237,96 @@
                 </div>
             );
 
+            // CONFIRM SIGN OUT UI
+            if (showSignOutConfirm) {
+                return (
+                    <div className="min-h-screen p-6 flex items-center justify-center bg-[#020617]">
+                        <div className="glass max-w-sm w-full p-8 rounded-[2.5rem] text-center border-red-500/20 shadow-2xl">
+                            <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                                <Icon name="log-out" className="w-10 h-10 text-red-500" />
+                            </div>
+                            <h2 className="text-2xl font-black mb-2 uppercase tracking-tighter">Exit Terminal?</h2>
+                            <p className="text-slate-400 text-sm mb-8">Are you sure you want to end your session at The Game Dungeon?</p>
+                            
+                            <div className="space-y-3">
+                                <button 
+                                    onClick={handleFinalSignOut}
+                                    className="w-full py-4 btn-confirm rounded-2xl font-black text-white shadow-lg shadow-red-950/20 flex items-center justify-center gap-2"
+                                >
+                                    CONFIRM LOG OUT
+                                </button>
+                                <button 
+                                    onClick={cancelSignOut}
+                                    className="w-full py-4 bg-slate-800 text-slate-300 rounded-2xl font-black border border-white/5"
+                                >
+                                    STAY IN DUNGEON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // SEARCH MODE
+            if (!targetEmail && !error) {
+                return (
+                    <div className="min-h-screen p-4 md:p-8 flex flex-col items-center justify-center">
+                        <div className="max-w-md w-full">
+                            <div className="text-center mb-10">
+                                <div className="bg-blue-600/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
+                                    <Icon name="search" className="w-10 h-10 text-blue-500" />
+                                </div>
+                                <h2 className="text-4xl font-black tracking-tighter mb-2">DUNGEON SEARCH</h2>
+                                <p className="text-slate-500 uppercase text-xs font-bold tracking-[0.2em]">Locate a Gamer Profile</p>
+                            </div>
+
+                            <form onSubmit={handleSearch} className="glass p-8 rounded-[2.5rem] border-white/5 space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Email or Gamername</label>
+                                    <div className="relative mt-2">
+                                        <input 
+                                            type="text" 
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="gamer@thecrib.com"
+                                            className="w-full bg-slate-950/50 border border-white/10 rounded-2xl p-4 outline-none input-glow text-white placeholder:text-slate-700"
+                                        />
+                                        <button type="submit" className="absolute right-2 top-2 bottom-2 bg-blue-600 px-4 rounded-xl font-black text-xs hover:bg-blue-500 transition-colors">
+                                            FIND
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {user && !user.isAnonymous && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => window.location.href = `/profile/?user=${encodeURIComponent(user.email)}`}
+                                        className="w-full py-4 bg-slate-800 text-slate-300 rounded-2xl font-black text-xs border border-white/5 flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="user" className="w-4 h-4" /> MY PROFILE
+                                    </button>
+                                )}
+
+                                <button 
+                                    type="button"
+                                    onClick={() => window.location.href = '/login.html'}
+                                    className="w-full text-slate-600 text-[10px] font-black uppercase tracking-widest mt-2"
+                                >
+                                    Login to Terminal
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
             if (error) return (
                 <div className="min-h-screen flex items-center justify-center p-6 text-center">
                     <div className="glass p-10 rounded-[2.5rem] border-red-500/20 max-w-sm">
                         <Icon name="shield-alert" className="w-16 h-16 text-red-500 mx-auto mb-4" />
                         <h2 className="text-2xl font-black mb-2 uppercase">Passport Blicked</h2>
                         <p className="text-gray-400 mb-6">{error}</p>
-                        <button onClick={() => window.location.href = '/'} className="w-full py-4 bg-blue-600 rounded-2xl font-black">Back to Home</button>
+                        <button onClick={() => window.location.href = '/profile/'} className="w-full py-4 bg-blue-600 rounded-2xl font-black">Search Again</button>
                     </div>
                 </div>
             );
@@ -200,8 +338,8 @@
                 <div className="min-h-screen p-4 md:p-8">
                     <div className="max-w-2xl mx-auto">
                         <div className="flex justify-between items-center mb-8 px-2">
-                            <button onClick={() => window.location.href = '/'} className="text-blue-400 flex items-center gap-2 font-bold">
-                                <Icon name="chevron-left" className="w-5 h-5" /> Back to Crib
+                            <button onClick={() => window.location.href = '/profile/'} className="text-blue-400 flex items-center gap-2 font-bold">
+                                <Icon name="chevron-left" className="w-5 h-5" /> Search
                             </button>
                             <span className="text-[10px] font-black tracking-widest text-slate-600 uppercase">Dungeon ID</span>
                         </div>
