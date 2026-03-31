@@ -27,7 +27,7 @@
             background: #020617;
             display: flex;
             transition: opacity 0.5s ease;
-            pointer-events: all;
+            z-index: 9999;
         }
         .rotate-45 { transform: rotate(45deg); }
         @keyframes loading {
@@ -35,17 +35,24 @@
             50% { transform: translateX(100%); }
             100% { transform: translateX(-100%); }
         }
-        /* Fix for iPad touch targets */
-        button, a {
+        /* Absolute nuking of blicked touch events */
+        button, a, .btn-fix {
             cursor: pointer;
             touch-action: manipulation;
+            position: relative;
+            z-index: 50 !important;
+        }
+        .hidden-force {
+            display: none !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
         }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden">
 
     <!-- Pre-check System Loader -->
-    <div id="system-loader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center">
+    <div id="system-loader" class="fixed inset-0 flex flex-col items-center justify-center">
         <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-32 h-32 mb-8 animate-pulse rounded-2xl">
         <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div class="h-full bg-blue-600 animate-[loading_2s_ease-in-out_infinite]"></div>
@@ -59,10 +66,10 @@
             <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-24 h-24 mx-auto mb-6 rounded-xl shadow-lg">
             <h2 class="text-3xl font-extrabold mb-2 text-blue-400">Restricted Access</h2>
             <p class="text-gray-400 mb-8">Login to enter The Crib and check your stats.</p>
-            <a href="/login/" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3">
+            <a href="/login/" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3 btn-fix">
                 <i class="fas fa-sign-in-alt"></i> Sign In to The Dungeon
             </a>
-            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors p-2">
+            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors p-2 btn-fix">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -78,7 +85,7 @@
                 </div>
                 <div id="user-info" class="flex items-center gap-3">
                     <span class="text-sm font-medium text-gray-400" id="user-display-id"></span>
-                    <a id="user-avatar-link" href="#" class="w-10 h-10 bg-blue-900 rounded-full border-2 border-blue-500 flex items-center justify-center overflow-hidden transition-transform active:scale-95">
+                    <a id="user-avatar-link" href="#" class="w-10 h-10 bg-blue-900 rounded-full border-2 border-blue-500 flex items-center justify-center overflow-hidden transition-transform active:scale-95 btn-fix">
                         <div id="avatar-container" class="w-full h-full flex items-center justify-center">
                              <i class="fas fa-user text-blue-300"></i>
                         </div>
@@ -104,7 +111,7 @@
                             <h2 class="text-xl font-bold flex items-center gap-3">
                                 <i class="fas fa-users text-green-400"></i> The Squad
                             </h2>
-                            <button id="toggle-search" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300 active:scale-90 z-10">
+                            <button id="toggle-search" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300 active:scale-90 z-10 btn-fix">
                                 <i class="fas fa-plus text-sm"></i>
                             </button>
                         </div>
@@ -178,27 +185,30 @@
             if (loader) {
                 loader.style.opacity = '0';
                 loader.style.pointerEvents = 'none';
-                setTimeout(() => loader.remove(), 600);
+                setTimeout(() => {
+                    loader.classList.add('hidden-force');
+                }, 600);
             }
             if (loginModal) {
-                loginModal.classList.add('hidden');
+                loginModal.classList.add('hidden-force');
                 loginModal.style.pointerEvents = 'none';
             }
         }
 
-        document.getElementById('close-modal-trap').onclick = (e) => {
-            e.preventDefault();
-            window.close();
-            document.body.innerHTML = "<div class='bg-black text-red-600 h-screen flex items-center justify-center font-bold'>OINK OINK... TAB NUKED</div>";
-            setTimeout(() => { location.href = "about:blank"; }, 400);
-        };
+        // iPad specific touch start fix
+        document.addEventListener('touchstart', function() {}, true);
 
-        toggleSearch.onclick = (e) => {
+        document.getElementById('close-modal-trap').addEventListener('click', (e) => {
             e.preventDefault();
-            const isHidden = searchContainer.classList.contains('hidden');
+            document.body.innerHTML = "<div class='bg-black text-red-600 h-screen flex items-center justify-center font-bold uppercase tracking-tighter'>OINK OINK... TAB NUKED</div>";
+            setTimeout(() => { location.href = "about:blank"; }, 400);
+        });
+
+        toggleSearch.addEventListener('click', (e) => {
+            e.preventDefault();
             searchContainer.classList.toggle('hidden');
             toggleSearch.classList.toggle('rotate-45');
-        };
+        });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -230,7 +240,8 @@
                 setTimeout(() => {
                     if (loader) loader.style.opacity = '0';
                     setTimeout(() => {
-                        if (loader) loader.classList.add('hidden');
+                        if (loader) loader.classList.add('hidden-force');
+                        loginModal.classList.remove('hidden-force');
                         loginModal.classList.remove('hidden');
                         loginModal.classList.add('flex');
                     }, 500);
@@ -248,7 +259,7 @@
         function renderGames() {
             const grid = document.getElementById('games-grid');
             grid.innerHTML = games.map(game => `
-                <a href="${game.path}" class="game-card glass p-6 rounded-2xl flex items-center gap-5 transition-all duration-300">
+                <a href="${game.path}" class="game-card glass p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 btn-fix">
                     <img src="${game.icon}" class="w-16 h-16 rounded-xl shadow-lg border border-slate-700" onerror="this.src='https://via.placeholder.com/64'">
                     <div>
                         <h3 class="text-xl font-bold">${game.name}</h3>
@@ -276,7 +287,7 @@
 
                     list.innerHTML += `
                         <div class="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-white/5">
-                            <a href="${profileUrl}" class="flex items-center gap-3 group w-full">
+                            <a href="${profileUrl}" class="flex items-center gap-3 group w-full btn-fix">
                                 <div class="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20 group-hover:border-blue-400 transition-colors overflow-hidden shrink-0">
                                     <img src="${friendPhoto}" class="w-full h-full object-cover" onerror="this.src='${avatarPlaceholder + 'User'}'">
                                 </div>
@@ -288,7 +299,7 @@
                         </div>
                     `;
                 });
-            }, (err) => console.log("Friends list empty or blocked"));
+            }, (err) => console.log("Friends list blicked"));
         }
 
         function loadPlaytime(user) {
@@ -330,18 +341,15 @@
                 if (hasRealTime) {
                     totalContainer.classList.remove('hidden');
                     totalDisplay.innerText = (totalSeconds / 3600).toFixed(1) + 'h';
-                } else {
-                    stats.innerHTML = `<div class="text-gray-500 italic text-center p-4">lazy🥱</div>`;
-                    totalContainer.classList.add('hidden');
                 }
-            }, (err) => console.log("Playtime blocked or empty"));
+            }, (err) => console.log("Playtime blicked"));
         }
 
         function initSearch() {
             const input = document.getElementById('friend-search-input');
             const results = document.getElementById('search-results');
 
-            input.oninput = () => {
+            input.addEventListener('input', () => {
                 const val = input.value.trim().toLowerCase();
                 if (val.length < 3) {
                     results.innerHTML = '';
@@ -349,7 +357,7 @@
                 }
 
                 results.innerHTML = `
-                    <div class="p-3 bg-blue-600/10 border border-blue-500/20 rounded-xl flex items-center justify-between cursor-pointer hover:bg-blue-600/20 transition-all" onclick="window.location.href='/profile/?user=${encodeURIComponent(val)}'">
+                    <div class="p-3 bg-blue-600/10 border border-blue-500/20 rounded-xl flex items-center justify-between cursor-pointer hover:bg-blue-600/20 transition-all btn-fix" onclick="window.location.href='/profile/?user=${encodeURIComponent(val)}'">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center overflow-hidden">
                                 <img src="${avatarPlaceholder + encodeURIComponent(val)}" class="w-full h-full object-cover">
@@ -359,7 +367,7 @@
                         <i class="fas fa-external-link-alt text-xs text-blue-400"></i>
                     </div>
                 `;
-            };
+            });
         }
     </script>
 </body>
