@@ -1,94 +1,110 @@
-import React, { useEffect, useState } from 'react';
-import { LogOut, Loader2, Undo2 } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signOut } from 'firebase/auth';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tactical Session Nuke</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .text-glow { text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .animate-spin-slow { animation: spin 3s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen flex items-center justify-center p-6">
 
-const App = () => {
-  const [status, setStatus] = useState('initiating');
-
-  // Firebase configuration from environment
-  const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  useEffect(() => {
-    const performSignOut = async () => {
-      try {
-        // Kill the Firebase session
-        await signOut(auth);
-        
-        setStatus('success');
-        
-        // Short delay so you can actually see it worked before it redirects
-        setTimeout(() => {
-          // Go back to the last page (likely /login/ or the dashboard)
-          // If no history, default to root or login
-          if (window.history.length > 1) {
-            window.history.back();
-          } else {
-            window.location.href = '/login';
-          }
-        }, 1500);
-      } catch (error) {
-        console.error("Sign out failed:", error);
-        setStatus('error');
-      }
-    };
-
-    performSignOut();
-  }, [auth]);
-
-  return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 font-sans">
-      <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center">
-        {status === 'initiating' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <Loader2 className="text-blue-500 animate-spin" size={48} />
+    <div id="status-card" class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl w-full max-w-md shadow-2xl text-center">
+        <!-- Initial State -->
+        <div id="state-loading" class="space-y-4">
+            <div class="flex justify-center">
+                <svg class="animate-spin h-12 w-12 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight text-glow">Signing Out...</h2>
-            <p className="text-zinc-500 text-sm">Clearing the crib of all sessions.</p>
-          </div>
-        )}
-
-        {status === 'success' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="bg-green-500/10 p-4 rounded-full border border-green-500/20">
-                <LogOut className="text-green-500" size={40} />
-              </div>
+            <h2 class="text-xl font-bold tracking-tight text-glow uppercase">Nuking Session...</h2>
+            <div class="bg-black/50 p-3 rounded-xl border border-zinc-800 my-4">
+                <p class="text-blue-500 text-[10px] font-mono break-all leading-tight">
+                    /s/i/g/n/o/u/t/h/a/c/k/i/n/d/e/x/dot/h/t/m/l/index.html
+                </p>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Session Nuked</h2>
-            <p className="text-zinc-400 text-sm">Redirecting you back to the last page...</p>
-          </div>
-        )}
+            <p class="text-zinc-500 text-sm italic">Clearing the crib of all sessions.</p>
+        </div>
 
-        {status === 'error' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="bg-red-500/10 p-4 rounded-full border border-red-500/20">
-                <Undo2 className="text-red-500" size={40} />
-              </div>
+        <!-- Success State (Hidden by default) -->
+        <div id="state-success" class="hidden space-y-4">
+            <div class="flex justify-center">
+                <div class="bg-green-500/10 p-4 rounded-full border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </div>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Error</h2>
-            <p className="text-zinc-400 text-sm">Something went wrong. Just close the tab, bro.</p>
-            <button 
-              onClick={() => window.history.back()}
-              className="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-white py-2 rounded-xl transition-colors text-sm font-medium"
-            >
-              Force Go Back
+            <h2 class="text-xl font-bold tracking-tight">Session Nuked</h2>
+            <p class="text-zinc-400 text-sm">Redirecting you back to test the Fast Pass...</p>
+        </div>
+
+        <!-- Error State (Hidden by default) -->
+        <div id="state-error" class="hidden space-y-4">
+            <div class="flex justify-center">
+                <div class="bg-red-500/10 p-4 rounded-full border border-red-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M3 2v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>
+                </div>
+            </div>
+            <h2 class="text-xl font-bold tracking-tight">Error</h2>
+            <p class="text-zinc-400 text-sm italic text-red-400">"Oink Oink" security blocked the logout.</p>
+            <button onclick="window.history.back()" class="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-white py-2 rounded-xl transition-colors text-sm font-medium border border-zinc-700">
+                Force Go Back
             </button>
-          </div>
-        )}
-      </div>
-      
-      <style>{`
-        .text-glow {
-          text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-        }
-      `}</style>
+        </div>
     </div>
-  );
-};
 
-export default App;
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        // Firebase Config (provided by environment)
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        
+        const loadingEl = document.getElementById('state-loading');
+        const successEl = document.getElementById('state-success');
+        const errorEl = document.getElementById('state-error');
+
+        async function nukeSession() {
+            try {
+                if (!firebaseConfig.apiKey) {
+                    throw new Error("Missing Firebase Config");
+                }
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+
+                // Perform the blick-removal
+                await signOut(auth);
+                
+                // Switch UI to success
+                loadingEl.classList.add('hidden');
+                successEl.classList.remove('hidden');
+
+                // Bounce back after a sec
+                setTimeout(() => {
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        window.location.href = "/login";
+                    }
+                }, 1500);
+
+            } catch (err) {
+                console.error(err);
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Start the process immediately
+        window.onload = nukeSession;
+    </script>
+</body>
+</html>
