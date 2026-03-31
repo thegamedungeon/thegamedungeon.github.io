@@ -35,10 +35,16 @@
             align-items: center;
             justify-content: center;
         }
-        @keyframes pulse-blue {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .edit-input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            color: white;
+            outline: none;
         }
+        .edit-input:focus { border-color: #3b82f6; }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden">
@@ -87,8 +93,22 @@
                     <div id="pfp-container" class="w-32 h-32 mx-auto rounded-full border-4 border-blue-500 bg-slate-900 shadow-2xl overflow-hidden mb-6">
                         <i class="fas fa-user text-4xl text-slate-700 mt-10"></i>
                     </div>
-                    <h2 id="display-name" class="text-3xl font-black mb-1">Loading...</h2>
-                    <p id="display-email" class="text-blue-400 font-medium mb-6 text-sm"></p>
+                    
+                    <div id="display-fields">
+                        <h2 id="display-name" class="text-3xl font-black mb-1">Loading...</h2>
+                        <p id="display-gamername" class="text-blue-400 font-bold mb-2"></p>
+                        <p id="display-bio" class="text-gray-400 italic mb-6 max-w-sm mx-auto"></p>
+                    </div>
+
+                    <div id="edit-fields" class="hidden space-y-4 max-w-sm mx-auto mb-6">
+                        <label class="block text-left text-xs font-bold text-gray-500 uppercase ml-1">Real Name</label>
+                        <input type="text" id="edit-name" placeholder="Your Name" class="edit-input">
+                        <label class="block text-left text-xs font-bold text-gray-500 uppercase ml-1">Gamer Name</label>
+                        <input type="text" id="edit-gamername" placeholder="Gamer Name" class="edit-input">
+                        <label class="block text-left text-xs font-bold text-gray-500 uppercase ml-1">Bio</label>
+                        <textarea id="edit-bio" placeholder="Bio" class="edit-input h-24"></textarea>
+                    </div>
+
                     <div id="action-buttons" class="flex justify-center gap-4"></div>
                 </div>
             </div>
@@ -124,7 +144,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const __firebase_config = '{"apiKey": "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI", "authDomain": "the-game-dungeon-4d75d.firebaseapp.com", "projectId": "the-game-dungeon-4d75d", "storageBucket": "the-game-dungeon-4d75d.firebasestorage.app", "messagingSenderId": "533459716906", "appId": "1:533459716906:web:377bf4ea74cf21bf8aac53"}';
         const firebaseConfig = JSON.parse(__firebase_config);
@@ -140,42 +160,47 @@
         const searchView = document.getElementById('search-view');
 
         const params = new URLSearchParams(window.location.search);
-        let targetUserEmail = params.get('user');
+        let rawTarget = params.get('user');
+        let currentProfileData = null;
+        let currentProfileId = null;
 
         window.showSearch = () => {
             errorState.classList.add('hidden');
             profileContainer.classList.add('hidden');
             searchView.classList.remove('hidden');
-            if(loader) loader.classList.add('hidden');
+            if(loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 500);
+            }
             initSearchLogic();
         };
 
-        // FAILSAFE: If it takes more than 5 seconds to sync, show search view
         const syncTimeout = setTimeout(() => {
-            if (!profileContainer.classList.contains('opacity-100') && errorState.classList.contains('hidden')) {
-                console.log("Sync timed out, forcing search view");
+            if (profileContainer.classList.contains('hidden') && errorState.classList.contains('hidden')) {
                 showSearch();
             }
-        }, 5000);
+        }, 3000);
 
-        onAuthStateChanged(auth, async (currentUser) => {
-            if (!currentUser) {
-                await signInAnonymously(auth);
-                return; 
-            }
+        const startApp = async () => {
+            try { await signInAnonymously(auth).catch(() => {}); } catch (e) {}
 
-            // If no user parameter is provided, jump straight to search
-            if (!targetUserEmail) {
+            if (!rawTarget) {
                 clearTimeout(syncTimeout);
                 showSearch();
                 return;
             }
 
-            const cleanEmail = decodeURIComponent(targetUserEmail).toLowerCase();
-            document.getElementById('display-email').innerText = cleanEmail;
+            // Fix the URL artifact issue: translate encoded characters properly
+            // 1. First decode the full string (handles %40 -> @ and %20 -> space)
+            let cleanEmail = decodeURIComponent(rawTarget).toLowerCase().trim();
+            
+            // 2. If it still doesn't have an @ but has a space, force the swap
+            if (!cleanEmail.includes('@') && cleanEmail.includes(' ')) {
+                cleanEmail = cleanEmail.replace(' ', '@');
+            }
 
             try {
-                const usersRef = collection(db, 'artifacts', appId, 'users');
+                const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
                 const q = await getDocs(usersRef);
                 let foundUser = null;
                 let foundUserId = null;
@@ -188,35 +213,28 @@
                     }
                 });
 
-                // Check if the current user is the one we're looking for but isn't indexed yet
-                if (!foundUser && currentUser.email && currentUser.email.toLowerCase() === cleanEmail) {
-                    foundUserId = currentUser.uid;
-                    foundUser = {
-                        email: currentUser.email,
-                        displayName: currentUser.displayName || currentUser.email.split('@')[0],
-                        photoURL: currentUser.photoURL || null,
-                        lastActive: new Date().toISOString()
-                    };
-                    await setDoc(doc(db, 'artifacts', appId, 'users', foundUserId), foundUser);
-                }
-
                 if (!foundUser) throw new Error("User missing");
 
+                currentProfileData = foundUser;
+                currentProfileId = foundUserId;
                 clearTimeout(syncTimeout);
-                renderProfile(foundUser, foundUserId, currentUser);
+                renderProfile(foundUser, foundUserId, auth.currentUser);
 
             } catch (err) {
-                console.error("Dungeon Logic Error:", err);
                 clearTimeout(syncTimeout);
                 if(loader) loader.classList.add('hidden');
                 errorState.classList.remove('hidden');
             }
-        });
+        };
+
+        startApp();
 
         async function renderProfile(userData, uid, currentUser) {
             const pfp = userData.photoURL || (avatarPlaceholder + encodeURIComponent(userData.email || 'User'));
             document.getElementById('pfp-container').innerHTML = `<img src="${pfp}" class="w-full h-full object-cover">`;
-            document.getElementById('display-name').innerText = userData.displayName || userData.email.split('@')[0];
+            document.getElementById('display-name').innerText = userData.name || userData.username || "New Recruit";
+            document.getElementById('display-gamername').innerText = userData.gamername ? `@${userData.gamername}` : `@${userData.username || 'unknown'}`;
+            document.getElementById('display-bio').innerText = userData.bio || "No bio yet.";
 
             try {
                 const playtimeRef = collection(db, 'artifacts', appId, 'users', uid, 'playtime');
@@ -228,13 +246,13 @@
                 const friendsRef = collection(db, 'artifacts', appId, 'users', uid, 'friends');
                 const friendsSnap = await getDocs(friendsRef);
                 document.getElementById('squad-count').innerText = friendsSnap.size + ' Friends';
-            } catch (e) { console.log("Stats fetch blocked"); }
+            } catch (e) {}
 
             const actions = document.getElementById('action-buttons');
-            if (currentUser && currentUser.uid !== uid) {
+            if (currentUser && currentUser.uid === uid) {
+                actions.innerHTML = `<button id="edit-btn" onclick="toggleEditMode()" class="bg-slate-700 px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-600 transition-all"><i class="fas fa-edit"></i> Edit Profile</button>`;
+            } else {
                 actions.innerHTML = `<button class="btn-primary px-8 py-3 rounded-xl font-bold flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Friend</button>`;
-            } else if (currentUser && currentUser.uid === uid) {
-                actions.innerHTML = `<button class="bg-slate-700 px-8 py-3 rounded-xl font-bold flex items-center gap-2"><i class="fas fa-edit"></i> Edit Profile</button>`;
             }
 
             if(loader) loader.classList.add('hidden');
@@ -242,47 +260,97 @@
             setTimeout(() => profileContainer.classList.add('opacity-100'), 50);
         }
 
+        window.toggleEditMode = () => {
+            const isEditing = !document.getElementById('display-fields').classList.contains('hidden');
+            const display = document.getElementById('display-fields');
+            const edit = document.getElementById('edit-fields');
+            const btn = document.getElementById('edit-btn');
+
+            if (isEditing) {
+                display.classList.add('hidden');
+                edit.classList.remove('hidden');
+                document.getElementById('edit-name').value = currentProfileData.name || '';
+                document.getElementById('edit-gamername').value = currentProfileData.gamername || '';
+                document.getElementById('edit-bio').value = currentProfileData.bio || '';
+                btn.innerHTML = `<i class="fas fa-save"></i> Save Changes`;
+                btn.classList.replace('bg-slate-700', 'bg-green-600');
+            } else {
+                saveProfileChanges();
+            }
+        };
+
+        async function saveProfileChanges() {
+            const btn = document.getElementById('edit-btn');
+            const newName = document.getElementById('edit-name').value.trim();
+            const newGamername = document.getElementById('edit-gamername').value.trim();
+            const newBio = document.getElementById('edit-bio').value.trim();
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Saving...`;
+
+            try {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentProfileId);
+                await updateDoc(userRef, {
+                    name: newName,
+                    gamername: newGamername,
+                    bio: newBio
+                });
+
+                currentProfileData.name = newName;
+                currentProfileData.gamername = newGamername;
+                currentProfileData.bio = newBio;
+
+                document.getElementById('display-fields').classList.remove('hidden');
+                document.getElementById('edit-fields').classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.replace('bg-green-600', 'bg-slate-700');
+                renderProfile(currentProfileData, currentProfileId, auth.currentUser);
+            } catch (e) {
+                console.error("Save failed:", e);
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-save"></i> Try Again`;
+                const errDiv = document.createElement('div');
+                errDiv.className = "text-red-500 text-xs mt-2 font-bold";
+                errDiv.innerText = "Error: Permission denied or network issue.";
+                btn.parentNode.appendChild(errDiv);
+                setTimeout(() => errDiv.remove(), 3000);
+            }
+        }
+
         let searchInitialized = false;
         async function initSearchLogic() {
             if (searchInitialized) return;
             searchInitialized = true;
-            
             const input = document.getElementById('main-search-input');
             const results = document.getElementById('main-search-results');
-
             input.oninput = async () => {
                 const val = input.value.trim().toLowerCase();
-                if (val.length < 3) { results.innerHTML = ''; return; }
-
-                const usersRef = collection(db, 'artifacts', appId, 'users');
-                const q = await getDocs(usersRef);
-                let matches = [];
-                q.forEach(doc => {
-                    const data = doc.data();
-                    if (data.email?.toLowerCase().includes(val) || data.displayName?.toLowerCase().includes(val)) {
-                        matches.push(data);
-                    }
-                });
-
-                if (matches.length === 0) {
-                    results.innerHTML = `<p class="text-gray-500 italic p-4 text-center">User not found. Check the spelling or tell them to log in.</p>`;
-                    return;
-                }
-
-                results.innerHTML = matches.map(user => `
-                    <div class="glass p-5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-blue-600/10 transition-all border-blue-500/20 active:scale-[0.98]" onclick="window.location.href='?user=${encodeURIComponent(user.email)}'">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center overflow-hidden">
-                                <img src="${user.photoURL || (avatarPlaceholder + encodeURIComponent(user.email))}" class="w-full h-full object-cover">
+                if (val.length < 2) { results.innerHTML = ''; return; }
+                try {
+                    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+                    const q = await getDocs(usersRef);
+                    let matches = [];
+                    q.forEach(doc => {
+                        const data = doc.data();
+                        if (data.email?.toLowerCase().includes(val) || data.gamername?.toLowerCase().includes(val) || data.name?.toLowerCase().includes(val)) {
+                            matches.push(data);
+                        }
+                    });
+                    results.innerHTML = matches.map(user => `
+                        <div class="glass p-5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-blue-600/10 transition-all border-blue-500/20 active:scale-[0.98]" onclick="window.location.href='?user=${encodeURIComponent(user.email)}'">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center overflow-hidden">
+                                    <img src="${user.photoURL || (avatarPlaceholder + encodeURIComponent(user.email))}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="text-left">
+                                    <p class="font-bold text-white">${user.name || user.username || 'Recruit'}</p>
+                                    <p class="text-xs text-blue-400 font-mono">@${user.gamername || user.username || 'unknown'}</p>
+                                </div>
                             </div>
-                            <div class="text-left">
-                                <p class="font-bold">${user.displayName || user.email.split('@')[0]}</p>
-                                <p class="text-xs text-gray-500 font-mono">${user.email}</p>
-                            </div>
+                            <i class="fas fa-chevron-right text-blue-500"></i>
                         </div>
-                        <i class="fas fa-chevron-right text-blue-500"></i>
-                    </div>
-                `).join('');
+                    `).join('') || `<p class="text-gray-500 italic p-4 text-center">User not found.</p>`;
+                } catch (e) { console.log("Search blicked"); }
             };
         }
     </script>
