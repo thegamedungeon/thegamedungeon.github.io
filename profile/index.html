@@ -4,355 +4,296 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Game Dungeon | Profile</title>
+    
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase App (Compat version for easier global access on iPad) -->
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Styling & Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
+            background-color: #020617;
             color: #f1f5f9;
             -webkit-tap-highlight-color: transparent;
         }
         .glass {
-            background: rgba(30, 41, 59, 0.7);
+            background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .btn-primary {
-            background: #2563eb;
-            transition: all 0.2s ease;
-        }
-        .btn-primary:active { transform: scale(0.95); }
-        
-        #page-loader {
-            background: #020617;
-            display: flex;
-            transition: opacity 0.5s ease;
+        #root-loader {
             position: fixed;
             inset: 0;
-            z-index: 100;
+            display: flex;
             align-items: center;
             justify-content: center;
+            background: #020617;
+            z-index: 50;
         }
-        .edit-input {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 0.75rem;
-            padding: 0.5rem 1rem;
-            width: 100%;
-            color: white;
-            outline: none;
-        }
-        .edit-input:focus { border-color: #3b82f6; }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden">
-
-    <!-- Page Loader -->
-    <div id="page-loader">
-        <div class="text-center">
-            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-blue-400 font-mono text-sm tracking-widest uppercase">Syncing with The Crib...</p>
-        </div>
+<body>
+    <div id="root-loader">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
+    <div id="root"></div>
 
-    <!-- 404 / Error State -->
-    <div id="error-state" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-[#020617]">
-        <div class="glass max-w-md w-full p-10 rounded-3xl text-center border-red-500/30">
-            <div class="text-6xl mb-6">🚫</div>
-            <h2 class="text-4xl font-black text-white mb-2">404</h2>
-            <p class="text-gray-400 mb-8" id="error-message">This user hasn't joined The Dungeon yet. They might be "oink oink" or just lazy like Connor.</p>
-            <div class="flex flex-col gap-4">
-                <button onclick="showSearch()" class="btn-primary py-4 rounded-xl font-bold flex items-center justify-center gap-2">
-                    <i class="fas fa-search"></i> Search for Users
-                </button>
-                <a href="/" class="bg-slate-800 hover:bg-slate-700 py-4 rounded-xl font-bold flex items-center justify-center gap-2">
-                    <i class="fas fa-home"></i> Back to The Crib
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Profile Content -->
-    <div id="profile-container" class="hidden opacity-0 transition-opacity duration-700 pb-20">
-        <header class="p-6 glass mb-8 sticky top-0 z-40">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-                <a href="/" class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2 font-bold">
-                    <i class="fas fa-chevron-left"></i> Home
-                </a>
-                <h1 class="text-xl font-black tracking-tighter">USER PROFILE</h1>
-                <div class="w-10"></div>
-            </div>
-        </header>
-
-        <main class="max-w-4xl mx-auto px-6">
-            <div class="glass rounded-3xl p-8 mb-8 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-600/20 to-transparent"></div>
-                <div class="relative z-10">
-                    <div id="pfp-container" class="w-32 h-32 mx-auto rounded-full border-4 border-blue-500 bg-slate-900 shadow-2xl overflow-hidden mb-6">
-                        <i class="fas fa-user text-4xl text-slate-700 mt-10"></i>
-                    </div>
-                    
-                    <div id="display-fields">
-                        <h2 id="display-name" class="text-3xl font-black mb-1">Loading...</h2>
-                        <p id="display-gamername" class="text-blue-400 font-bold mb-2"></p>
-                        <p id="display-bio" class="text-gray-400 italic mb-6 max-w-sm mx-auto"></p>
-                    </div>
-
-                    <div id="edit-fields" class="hidden space-y-4 max-w-sm mx-auto mb-6">
-                        <label class="block text-left text-xs font-bold text-gray-500 uppercase ml-1">Real Name</label>
-                        <input type="text" id="edit-name" placeholder="Your Name" class="edit-input">
-                        <label class="block text-left text-xs font-bold text-gray-500 uppercase ml-1">Gamer Name</label>
-                        <input type="text" id="edit-gamername" placeholder="Gamer Name" class="edit-input">
-                        <label class="block text-left text-xs font-bold text-gray-500 uppercase ml-1">Bio</label>
-                        <textarea id="edit-bio" placeholder="Bio" class="edit-input h-24"></textarea>
-                    </div>
-
-                    <div id="action-buttons" class="flex justify-center gap-4"></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass p-6 rounded-2xl">
-                    <h3 class="text-gray-400 uppercase text-xs font-black tracking-widest mb-4">Total Playtime</h3>
-                    <div id="profile-playtime" class="text-3xl font-black text-white">0.0h</div>
-                </div>
-                <div class="glass p-6 rounded-2xl">
-                    <h3 class="text-gray-400 uppercase text-xs font-black tracking-widest mb-4">Squad Status</h3>
-                    <div id="squad-count" class="text-3xl font-black text-white">0 Friends</div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Search View -->
-    <div id="search-view" class="hidden p-6 pt-20">
-        <div class="max-w-md mx-auto text-center">
-            <h2 class="text-4xl font-black mb-8">Find the Squad</h2>
-            <div class="relative mb-8">
-                <input type="text" id="main-search-input" placeholder="Enter email or name..." class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-5 text-lg focus:border-blue-500 outline-none shadow-xl">
-                <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-500"></i>
-            </div>
-            <div id="main-search-results" class="space-y-4 text-left"></div>
-            <a href="/" class="inline-block mt-12 text-gray-500 hover:text-white transition-colors font-bold">
-                <i class="fas fa-arrow-left mr-2"></i> Nevermind, take me home
-            </a>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const __firebase_config = '{"apiKey": "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI", "authDomain": "the-game-dungeon-4d75d.firebaseapp.com", "projectId": "the-game-dungeon-4d75d", "storageBucket": "the-game-dungeon-4d75d.firebasestorage.app", "messagingSenderId": "533459716906", "appId": "1:533459716906:web:377bf4ea74cf21bf8aac53"}';
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Firebase Global Initialization (iPad Friendly)
         const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = "the-game-dungeon-4d75d";
-        const avatarPlaceholder = "https://ui-avatars.com/api/?background=1e293b&color=3b82f6&bold=true&name=";
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'the-game-dungeon-4d75d';
 
-        const loader = document.getElementById('page-loader');
-        const profileContainer = document.getElementById('profile-container');
-        const errorState = document.getElementById('error-state');
-        const searchView = document.getElementById('search-view');
-
-        const params = new URLSearchParams(window.location.search);
-        let rawTarget = params.get('user');
-        let currentProfileData = null;
-        let currentProfileId = null;
-
-        window.showSearch = () => {
-            errorState.classList.add('hidden');
-            profileContainer.classList.add('hidden');
-            searchView.classList.remove('hidden');
-            if(loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.classList.add('hidden'), 500);
-            }
-            initSearchLogic();
+        // Lucide Icon Helper for Babel
+        const Icon = ({ name, className }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className}></i>;
         };
 
-        const syncTimeout = setTimeout(() => {
-            if (profileContainer.classList.contains('hidden') && errorState.classList.contains('hidden')) {
-                showSearch();
-            }
-        }, 3000);
-
-        const startApp = async () => {
-            try { await signInAnonymously(auth).catch(() => {}); } catch (e) {}
-
-            if (!rawTarget) {
-                clearTimeout(syncTimeout);
-                showSearch();
-                return;
-            }
-
-            // Fix the URL artifact issue: translate encoded characters properly
-            // 1. First decode the full string (handles %40 -> @ and %20 -> space)
-            let cleanEmail = decodeURIComponent(rawTarget).toLowerCase().trim();
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [profile, setProfile] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [isOwner, setIsOwner] = useState(false);
+            const [isFriend, setIsFriend] = useState(false);
+            const [friendRequestStatus, setFriendRequestStatus] = useState(null);
+            const [isEditing, setIsEditing] = useState(false);
             
-            // 2. If it still doesn't have an @ but has a space, force the swap
-            if (!cleanEmail.includes('@') && cleanEmail.includes(' ')) {
-                cleanEmail = cleanEmail.replace(' ', '@');
-            }
+            const [editData, setEditData] = useState({
+                name: '', gamername: '', bio: '', privacy: 'everyone', photoURL: ''
+            });
 
-            try {
-                const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                const q = await getDocs(usersRef);
-                let foundUser = null;
-                let foundUserId = null;
+            const params = new URLSearchParams(window.location.search);
+            const targetEmail = decodeURIComponent(params.get('user') || '').toLowerCase().trim();
+            const triggerSignOut = params.get('signout') === 'true';
 
-                q.forEach(doc => {
-                    const data = doc.data();
-                    if (data.email?.toLowerCase() === cleanEmail) {
-                        foundUser = data;
-                        foundUserId = doc.id;
+            useEffect(() => {
+                document.getElementById('root-loader').style.display = 'none';
+                const unsubscribe = auth.onAuthStateChanged(async (u) => {
+                    if (!u) {
+                        await auth.signInAnonymously();
+                    } else {
+                        setUser(u);
                     }
                 });
+                return () => unsubscribe();
+            }, []);
 
-                if (!foundUser) throw new Error("User missing");
+            useEffect(() => {
+                if (!user) return;
+                if (triggerSignOut && user.email?.toLowerCase() === targetEmail) {
+                    auth.signOut().then(() => window.location.href = '/');
+                    return;
+                }
+                fetchProfile();
+            }, [user, targetEmail]);
 
-                currentProfileData = foundUser;
-                currentProfileId = foundUserId;
-                clearTimeout(syncTimeout);
-                renderProfile(foundUser, foundUserId, auth.currentUser);
-
-            } catch (err) {
-                clearTimeout(syncTimeout);
-                if(loader) loader.classList.add('hidden');
-                errorState.classList.remove('hidden');
-            }
-        };
-
-        startApp();
-
-        async function renderProfile(userData, uid, currentUser) {
-            const pfp = userData.photoURL || (avatarPlaceholder + encodeURIComponent(userData.email || 'User'));
-            document.getElementById('pfp-container').innerHTML = `<img src="${pfp}" class="w-full h-full object-cover">`;
-            document.getElementById('display-name').innerText = userData.name || userData.username || "New Recruit";
-            document.getElementById('display-gamername').innerText = userData.gamername ? `@${userData.gamername}` : `@${userData.username || 'unknown'}`;
-            document.getElementById('display-bio').innerText = userData.bio || "No bio yet.";
-
-            try {
-                const playtimeRef = collection(db, 'artifacts', appId, 'users', uid, 'playtime');
-                const playtimeSnap = await getDocs(playtimeRef);
-                let totalSecs = 0;
-                playtimeSnap.forEach(d => totalSecs += (d.data().seconds || 0));
-                document.getElementById('profile-playtime').innerText = (totalSecs / 3600).toFixed(1) + 'h';
-
-                const friendsRef = collection(db, 'artifacts', appId, 'users', uid, 'friends');
-                const friendsSnap = await getDocs(friendsRef);
-                document.getElementById('squad-count').innerText = friendsSnap.size + ' Friends';
-            } catch (e) {}
-
-            const actions = document.getElementById('action-buttons');
-            if (currentUser && currentUser.uid === uid) {
-                actions.innerHTML = `<button id="edit-btn" onclick="toggleEditMode()" class="bg-slate-700 px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-600 transition-all"><i class="fas fa-edit"></i> Edit Profile</button>`;
-            } else {
-                actions.innerHTML = `<button class="btn-primary px-8 py-3 rounded-xl font-bold flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Friend</button>`;
-            }
-
-            if(loader) loader.classList.add('hidden');
-            profileContainer.classList.remove('hidden');
-            setTimeout(() => profileContainer.classList.add('opacity-100'), 50);
-        }
-
-        window.toggleEditMode = () => {
-            const isEditing = !document.getElementById('display-fields').classList.contains('hidden');
-            const display = document.getElementById('display-fields');
-            const edit = document.getElementById('edit-fields');
-            const btn = document.getElementById('edit-btn');
-
-            if (isEditing) {
-                display.classList.add('hidden');
-                edit.classList.remove('hidden');
-                document.getElementById('edit-name').value = currentProfileData.name || '';
-                document.getElementById('edit-gamername').value = currentProfileData.gamername || '';
-                document.getElementById('edit-bio').value = currentProfileData.bio || '';
-                btn.innerHTML = `<i class="fas fa-save"></i> Save Changes`;
-                btn.classList.replace('bg-slate-700', 'bg-green-600');
-            } else {
-                saveProfileChanges();
-            }
-        };
-
-        async function saveProfileChanges() {
-            const btn = document.getElementById('edit-btn');
-            const newName = document.getElementById('edit-name').value.trim();
-            const newGamername = document.getElementById('edit-gamername').value.trim();
-            const newBio = document.getElementById('edit-bio').value.trim();
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Saving...`;
-
-            try {
-                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentProfileId);
-                await updateDoc(userRef, {
-                    name: newName,
-                    gamername: newGamername,
-                    bio: newBio
-                });
-
-                currentProfileData.name = newName;
-                currentProfileData.gamername = newGamername;
-                currentProfileData.bio = newBio;
-
-                document.getElementById('display-fields').classList.remove('hidden');
-                document.getElementById('edit-fields').classList.add('hidden');
-                btn.disabled = false;
-                btn.classList.replace('bg-green-600', 'bg-slate-700');
-                renderProfile(currentProfileData, currentProfileId, auth.currentUser);
-            } catch (e) {
-                console.error("Save failed:", e);
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-save"></i> Try Again`;
-                const errDiv = document.createElement('div');
-                errDiv.className = "text-red-500 text-xs mt-2 font-bold";
-                errDiv.innerText = "Error: Permission denied or network issue.";
-                btn.parentNode.appendChild(errDiv);
-                setTimeout(() => errDiv.remove(), 3000);
-            }
-        }
-
-        let searchInitialized = false;
-        async function initSearchLogic() {
-            if (searchInitialized) return;
-            searchInitialized = true;
-            const input = document.getElementById('main-search-input');
-            const results = document.getElementById('main-search-results');
-            input.oninput = async () => {
-                const val = input.value.trim().toLowerCase();
-                if (val.length < 2) { results.innerHTML = ''; return; }
+            const fetchProfile = async () => {
+                setLoading(true);
                 try {
-                    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                    const q = await getDocs(usersRef);
-                    let matches = [];
-                    q.forEach(doc => {
-                        const data = doc.data();
-                        if (data.email?.toLowerCase().includes(val) || data.gamername?.toLowerCase().includes(val) || data.name?.toLowerCase().includes(val)) {
-                            matches.push(data);
+                    const usersRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users');
+                    const q = await usersRef.get();
+                    let targetDoc = null;
+                    let targetId = null;
+
+                    q.forEach(d => {
+                        if (d.data().email?.toLowerCase() === targetEmail) {
+                            targetDoc = d.data();
+                            targetId = d.id;
                         }
                     });
-                    results.innerHTML = matches.map(user => `
-                        <div class="glass p-5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-blue-600/10 transition-all border-blue-500/20 active:scale-[0.98]" onclick="window.location.href='?user=${encodeURIComponent(user.email)}'">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center overflow-hidden">
-                                    <img src="${user.photoURL || (avatarPlaceholder + encodeURIComponent(user.email))}" class="w-full h-full object-cover">
-                                </div>
-                                <div class="text-left">
-                                    <p class="font-bold text-white">${user.name || user.username || 'Recruit'}</p>
-                                    <p class="text-xs text-blue-400 font-mono">@${user.gamername || user.username || 'unknown'}</p>
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-right text-blue-500"></i>
-                        </div>
-                    `).join('') || `<p class="text-gray-500 italic p-4 text-center">User not found.</p>`;
-                } catch (e) { console.log("Search blicked"); }
+
+                    if (!targetDoc) {
+                        setError("This user hasn't joined the gang yet.");
+                        setLoading(false);
+                        return;
+                    }
+
+                    setProfile({ ...targetDoc, id: targetId });
+                    setEditData({
+                        name: targetDoc.name || '',
+                        gamername: targetDoc.gamername || '',
+                        bio: targetDoc.bio || '',
+                        privacy: targetDoc.privacy || 'everyone',
+                        photoURL: targetDoc.photoURL || ''
+                    });
+
+                    const currentIsOwner = user.email?.toLowerCase() === targetEmail;
+                    setIsOwner(currentIsOwner);
+
+                    if (!currentIsOwner) {
+                        const friendDoc = await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('friends').doc(targetId).get();
+                        setIsFriend(friendDoc.exists);
+                        
+                        const outgoingReq = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').doc(`${user.uid}_${targetId}`).get();
+                        if (outgoingReq.exists) setFriendRequestStatus('sent');
+                    }
+                    setLoading(false);
+                } catch (err) {
+                    console.error(err);
+                    setError("Failed to sync with the database.");
+                    setLoading(false);
+                }
             };
-        }
+
+            const handleFriendAction = async () => {
+                if (isFriend) {
+                    await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('friends').doc(profile.id).delete();
+                    setIsFriend(false);
+                } else if (!friendRequestStatus) {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').doc(`${user.uid}_${profile.id}`).set({
+                        from: user.uid, to: profile.id, timestamp: Date.now()
+                    });
+                    setFriendRequestStatus('sent');
+                }
+            };
+
+            const saveProfile = async () => {
+                try {
+                    const userRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(profile.id);
+                    await userRef.update(editData);
+                    setProfile(prev => ({ ...prev, ...editData }));
+                    setIsEditing(false);
+                } catch (e) { alert("Save blicked. Try again."); }
+            };
+
+            if (loading) return (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            );
+
+            if (error) return (
+                <div className="min-h-screen flex items-center justify-center p-6 text-center">
+                    <div className="glass p-10 rounded-[2.5rem] border-red-500/20 max-w-sm">
+                        <Icon name="shield-alert" className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-2xl font-black mb-2 uppercase">Passport Blicked</h2>
+                        <p className="text-gray-400 mb-6">{error}</p>
+                        <button onClick={() => window.location.href = '/'} className="w-full py-4 bg-blue-600 rounded-2xl font-black">Back to Home</button>
+                    </div>
+                </div>
+            );
+
+            const canSeeFull = isOwner || isFriend || profile.privacy === 'everyone';
+            const displayBio = canSeeFull ? (profile.bio || "No bio yet.") : "This user's bio is locked. Only the squad can see it.";
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-2xl mx-auto">
+                        <div className="flex justify-between items-center mb-8 px-2">
+                            <button onClick={() => window.location.href = '/'} className="text-blue-400 flex items-center gap-2 font-bold">
+                                <Icon name="chevron-left" className="w-5 h-5" /> Back to Crib
+                            </button>
+                            <span className="text-[10px] font-black tracking-widest text-slate-600 uppercase">Dungeon ID</span>
+                        </div>
+
+                        <div className="glass rounded-[2.5rem] overflow-hidden shadow-2xl border-white/5">
+                            <div className="h-32 bg-gradient-to-br from-blue-600/10 to-purple-600/10 relative">
+                                {isOwner && (
+                                    <button onClick={() => setIsEditing(!isEditing)} className="absolute top-4 right-4 bg-slate-900/80 p-3 rounded-2xl">
+                                        <Icon name={isEditing ? "x" : "edit-3"} className="w-5 h-5 text-white" />
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="px-8 pb-10 -mt-16 text-center">
+                                <div className="relative inline-block mb-6">
+                                    <div className="w-32 h-32 rounded-[2rem] bg-slate-900 border-4 border-slate-950 overflow-hidden shadow-2xl">
+                                        <img src={editData.photoURL || `https://ui-avatars.com/api/?name=${profile.gamername}&background=1e293b&color=3b82f6`} className="w-full h-full object-cover" />
+                                        {isEditing && (
+                                            <label className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer">
+                                                <Icon name="camera" className="text-white" />
+                                                <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => setEditData({...editData, photoURL: reader.result});
+                                                    reader.readAsDataURL(e.target.files[0]);
+                                                }} />
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {!isEditing ? (
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <h2 className="text-3xl font-black">{(isOwner || isFriend) ? profile.name : profile.gamername}</h2>
+                                            {isFriend && <Icon name="check-circle" className="w-5 h-5 text-blue-500" />}
+                                        </div>
+                                        <p className="text-blue-400 font-mono font-bold text-sm tracking-tight mb-6">
+                                            {isOwner || isFriend ? profile.email : `@${profile.gamername}`}
+                                        </p>
+                                        <div className="bg-slate-950/30 rounded-2xl p-6 mb-8 text-left border border-white/5">
+                                            <p className="text-slate-400 leading-relaxed italic">{displayBio}</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {isOwner ? (
+                                                <button onClick={() => window.location.href = `/profile/?user=${encodeURIComponent(targetEmail)}&signout=true`} className="w-full py-4 bg-red-500/10 text-red-400 rounded-2xl font-black border border-red-500/10 flex items-center justify-center gap-2">
+                                                    <Icon name="log-out" className="w-5 h-5" /> SIGN OUT
+                                                </button>
+                                            ) : (
+                                                <button onClick={handleFriendAction} disabled={friendRequestStatus === 'sent'} className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${isFriend ? 'bg-slate-800 text-slate-400' : friendRequestStatus === 'sent' ? 'bg-slate-800/50 text-slate-600' : 'bg-blue-600 shadow-lg shadow-blue-500/20'}`}>
+                                                    <Icon name={isFriend ? "user-minus" : friendRequestStatus === 'sent' ? "clock" : "user-plus"} className="w-5 h-5" />
+                                                    {isFriend ? "UNFRIEND" : friendRequestStatus === 'sent' ? "PENDING" : "ADD SQUAD"}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-left space-y-4 pt-4">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Real Name</label>
+                                            <input type="text" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Gamer Name</label>
+                                            <input type="text" value={editData.gamername} onChange={e => setEditData({...editData, gamername: e.target.value})} className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Bio</label>
+                                            <textarea value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 h-24 outline-none focus:border-blue-500 resize-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Privacy</label>
+                                            <select value={editData.privacy} onChange={e => setEditData({...editData, privacy: e.target.value})} className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 outline-none">
+                                                <option value="everyone">Everyone</option>
+                                                <option value="friends">Friends Only</option>
+                                                <option value="onlyme">Only Me</option>
+                                            </select>
+                                        </div>
+                                        <button onClick={saveProfile} className="w-full py-4 bg-green-600 rounded-2xl font-black mt-4 flex items-center justify-center gap-2">
+                                            <Icon name="save" className="w-5 h-5" /> SAVE SETTINGS
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
