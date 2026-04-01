@@ -693,8 +693,7 @@
                     o.checkKeyBinding(e, gk.ToggleFpsCounter) && k.toggle()
                 }
                 ))
-            }
-            ))
+            })()
         }
         ))
     }
