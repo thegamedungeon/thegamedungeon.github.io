@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minecraft | The Crib</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        .game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* The Sensor Bar: This sits ABOVE the iframe to catch touches */
+        #ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px; /* Catch zone for top taps */
+            z-index: 100;
+            pointer-events: none; /* Let clicks pass through except on children */
+        }
+        #back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: auto; /* Re-enable clicks for the actual button */
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        #back-button:active {
+            scale: 0.92;
+            background: rgba(30, 41, 59, 1);
+        }
+        .ui-fade {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .ui-hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <button id="back-button" class="ui-fade" onclick="goBack()">
+            <i class="fas fa-chevron-left"></i>
+            <span>Back to Dungeon</span>
+        </button>
+    </div>
+
+    <iframe 
+        src="/storage/minecraft-main/" 
+        class="game-container" 
+        allow="autoplay; fullscreen; keyboard"
+        title="Minecraft">
+    </iframe>
+
+    <script>
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        let timer;
+        const btn = document.getElementById('back-button');
+        const uiLayer = document.getElementById('ui-layer');
+        
+        function showUI() {
+            btn.classList.remove('ui-hidden');
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                btn.classList.add('ui-hidden');
+            }, 4000); // 4 seconds of glory
+        }
+
+        // Listen for mouse moves on the main window
+        window.addEventListener('mousemove', showUI);
+        
+        // iPad fix: Since the iframe blicks touches, we use the UI layer 
+        // to detect proximity or initial taps
+        uiLayer.addEventListener('touchstart', (e) => {
+            showUI();
+        }, { passive: true });
+
+        // Backup: if they tap anywhere that isn't the iframe (unlikely but safe)
+        window.addEventListener('touchstart', showUI);
+
+        // Initial show
+        showUI();
+    </script>
+</body>
+</html>
