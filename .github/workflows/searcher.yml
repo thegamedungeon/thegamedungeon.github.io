@@ -1,0 +1,26 @@
+name: Find Track Line
+on:
+  workflow_dispatch: # Allows you to run this manually from the Actions tab
+
+jobs:
+  find-line:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Search for communityTrackFallbacks
+        run: |
+          # Find the line number and content
+          # Using -n for line number and -i for case-insensitive just in case
+          grep -n "communityTrackFallbacks" storage/polytrack-0.5.2-clean-main/main.bundle.js > line.txt || echo "Not found" > line.txt
+          
+          echo "Search Complete. Results in line.txt"
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add line.txt
+          git commit -m "Tactical line hunt complete" || echo "No changes to commit"
+          git push
