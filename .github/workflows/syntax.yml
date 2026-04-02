@@ -1,0 +1,50 @@
+name: Check Syntax Errors
+on:
+  workflow_dispatch: # Manual trigger from the Actions tab
+
+jobs:
+  check-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Validate Line 42541
+        run: |
+          FILE="storage/polytrack-0.5.2-clean-main/main.bundle.js"
+          
+          echo "--- ERROR LOG START ---" > error.txt
+          
+          # Check if the file even exists first
+          if [ ! -f "$FILE" ]; then
+            echo "FILE NOT FOUND: $FILE" >> error.txt
+            exit 1
+          fi
+
+          # Extract the neighborhood of the error
+          echo "CODE AT LINE 42541:" >> error.txt
+          sed -n '42541p' "$FILE" >> error.txt
+          
+          echo "" >> error.txt
+          echo "--- NODE.JS PARSE TEST ---" >> error.txt
+          
+          # We wrap the line in a try/catch to see exactly why it's blicking
+          node -e "
+          try {
+            const line = require('fs').readFileSync('$FILE', 'utf8').split('\n')[42540];
+            console.log('Testing line extraction...');
+            // Attempt to evaluate just the array part to see if quotes/commas are broken
+            eval('(' + line.split('=')[1] + ')'); 
+            console.log('Line syntax looks Daimyan-proof!');
+          } catch (e) {
+            console.log('SYNTAX ERROR DETECTED: ' + e.message);
+          }
+          " >> error.txt 2>&1
+
+      - name: Commit and Push Results
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "bot@github.com"
+          git add error.txt
+          git commit -m "Tactical error report for The Crib" || echo "No changes"
+          git push
