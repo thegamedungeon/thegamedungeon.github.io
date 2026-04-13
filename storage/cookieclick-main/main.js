@@ -8,6 +8,7 @@ http://orteil.dashnet.org
 /*=====================================================================================
 MISC HELPER FUNCTIONS
 =======================================================================================*/
+var connorCookies = Math.floor(Math.random() * 10) + 1;
 function l(what) {return document.getElementById(what);}
 function choose(arr) {return arr[Math.floor(Math.random()*arr.length)];}
 
@@ -1767,7 +1768,7 @@ Game.Launch=function()
 					'News : cookies now more popular than '+choose(['cough drops','broccoli','smoked herring','cheese','video games','stable jobs','relationships','time travel','cat videos','tango','fashion','television','nuclear warfare','whatever it is we ate before','politics','oxygen','lamps'])+', says study.',
 					'News : obesity epidemic strikes nation; experts blame '+choose(['twerking','that darn rap music','video-games','lack of cookies','mysterious ghostly entities','aliens','parents','schools','comic-books','cookie-snorting fad'])+'.',
 					'News : cookie shortage strikes town, people forced to eat cupcakes; "just not the same", concedes mayor.',
-					'News : "you gotta admit, all this cookie stuff is a bit ominous", says confused idiot.',
+					'News : '+Game.bakeryName+' has '+(connorCookies*Game.cookies)+' times more cookies at '+Beautify(Game.cookies)+' than Connor at '+connorCookies+'. What a shame!',
 					'News : movie cancelled from lack of actors; "everybody\'s at home eating cookies", laments director.',
 					'News : comedian forced to cancel cookie routine due to unrelated indigestion.',
 					'News : new cookie-based religion sweeps the nation.',
