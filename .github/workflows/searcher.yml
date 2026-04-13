@@ -1,4 +1,4 @@
-name: Find Track Line
+name: Find Line
 on:
   workflow_dispatch: # Allows you to run this manually from the Actions tab
 
@@ -9,11 +9,11 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Search for communityTrackFallbacks
+      - name: Search for Game.getNews=function(){var list=[];
         run: |
           # Find the line number and content
           # Using -n for line number and -i for case-insensitive just in case
-          grep -n "communityTrackFallbacks" storage/polytrack-0.5.2-clean-main/main.bundle.js > line.txt || echo "Not found" > line.txt
+          grep -n "Game.getNews=function(){var list=[];" storage/cookieclick-main/main.js > line.txt || echo "Not found" > line.txt
           
           echo "Search Complete. Results in line.txt"
 
