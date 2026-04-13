@@ -13,7 +13,7 @@ jobs:
         run: |
           # Find the line number and content
           # Using -n for line number and -i for case-insensitive just in case
-          grep -n "Game.getNews=function(){var list=[];" storage/cookieclick-main/main.js > line.txt || echo "Not found" > line.txt
+          grep -n "News : " storage/cookieclick-main/main.js > line.txt || echo "Not found" > line.txt
           
           echo "Search Complete. Results in line.txt"
 
