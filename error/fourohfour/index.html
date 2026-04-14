@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Game Dungeon | Lost in the Dark</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+        }
+        .glitch-text {
+            text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444;
+            animation: glitch 2s infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444; }
+            50% { text-shadow: -2px 0 #3b82f6, 2px 0 #ef4444; }
+            100% { text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444; }
+        }
+    </style>
+</head>
+<body>
+    <div class="text-center p-8">
+        <h1 class="text-9xl font-black mb-4 glitch-text">404</h1>
+        <h2 class="text-2xl font-bold text-blue-500 uppercase tracking-widest mb-4">Gate Blicked!</h2>
+        <p class="text-gray-400 max-w-md mx-auto mb-8">
+            The page you tried to load doesn’t exist, sorry! Either the "oink oink" moved it, or someone (probably Connor) sent you a zesty link.
+        </p>
+        <p class="mt-12 text-gray-600 text-xs uppercase tracking-tighter">
+            System Status: Dungeon Integrity Compromised
+        </p>
+    </div>
+</body>
+</html>
