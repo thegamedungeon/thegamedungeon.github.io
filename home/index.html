@@ -199,11 +199,23 @@
         }
 
         function navTo(page) {
-            // Clean the path to make it absolute from root
-            const targetUrl = page.startsWith('/') ? page : `/${page}/`;
-            const statusText = `Entering ${page.split('/')[0]}...`;
-            smoothNav(targetUrl, statusText);
+            const loader = document.getElementById('nav-loader');
+            const statusLabel = document.getElementById('loader-status');
+            const url = page === 'home' ? '/home/' : `/${page}/`;
+            
+            statusLabel.innerText = `Loading ${page}...`;
+            loader.style.display = 'flex';
+            loader.style.opacity = '1';
+
+            setTimeout(() => {
+                if (window.self !== window.top) {
+                    window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
+                } else {
+                    window.location.href = url;
+                }
+            }, 600);
         }
+
 
         function smoothNav(url, status) {
             const loader = document.getElementById('nav-loader');
