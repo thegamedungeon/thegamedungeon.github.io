@@ -2,373 +2,209 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Game Dungeon | The Crib</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Game Dungeon | Booting Up...</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body {
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0a0a0a;
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f1f5f9;
-            -webkit-tap-highlight-color: transparent;
+            color: white;
         }
-        .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+
+        /* The Ghost Frame */
+        #content-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            visibility: hidden;
         }
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        #system-loader {
-            background: #020617;
+
+        /* Loading Overlay */
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
             display: flex;
-            transition: opacity 0.5s ease;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             z-index: 9999;
+            transition: opacity 0.8s ease-out;
         }
-        .rotate-45 { transform: rotate(45deg); }
-        @keyframes loading {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+
+        /* Dungeon Broke Screen */
+        #error-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+            text-align: center;
         }
-        /* Absolute nuking of blicked touch events */
-        button, a, .btn-fix {
-            cursor: pointer;
-            touch-action: manipulation;
-            position: relative;
-            z-index: 50 !important;
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6; 
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-        .hidden-force {
-            display: none !important;
-            pointer-events: none !important;
-            visibility: hidden !important;
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: #3b82f6;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .fade-out {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        .error-box {
+            background: #1a1a1a;
+            border-left: 4px solid #ef4444;
+            padding: 20px;
+            margin-top: 20px;
+            max-width: 600px;
+            width: 100%;
+            font-family: monospace;
+            text-align: left;
+            overflow-x: auto;
         }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden">
+<body>
 
-    <!-- Pre-check System Loader -->
-    <div id="system-loader" class="fixed inset-0 flex flex-col items-center justify-center">
-        <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-32 h-32 mb-8 animate-pulse rounded-2xl">
-        <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div class="h-full bg-blue-600 animate-[loading_2s_ease-in-out_infinite]"></div>
-        </div>
-        <p class="mt-4 text-blue-400 font-mono text-sm tracking-widest uppercase">Initializing Security...</p>
+    <iframe id="content-frame" title="The Crib Content"></iframe>
+
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Bypassing Oink Oink...</div>
+        <p id="daimyan-msg" class="text-gray-500 text-xs mt-4">Calm down Daimyan, it's almost ready.</p>
     </div>
 
-    <!-- Login Overlay -->
-    <div id="login-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-95 p-4">
-        <div class="glass max-w-md w-full p-8 rounded-2xl text-center relative border-blue-500/30">
-            <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-24 h-24 mx-auto mb-6 rounded-xl shadow-lg">
-            <h2 class="text-3xl font-extrabold mb-2 text-blue-400">Restricted Access</h2>
-            <p class="text-gray-400 mb-8">Login to enter The Crib and check your stats.</p>
-            <a href="/login/" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3 btn-fix">
-                <i class="fas fa-sign-in-alt"></i> Sign In to The Dungeon
-            </a>
-            <button id="close-modal-trap" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors p-2 btn-fix">
-                <i class="fas fa-times text-xl"></i>
-            </button>
+    <div id="error-screen">
+        <h1 class="text-4xl font-bold text-red-600 mb-2">Dungeon Broke!</h1>
+        <p class="text-gray-400">Someone messed with the code and now the gates are stuck.</p>
+        <div id="error-details" class="error-box">
+            <p class="text-red-400 font-bold mb-1">Error Detected:</p>
+            <div id="error-content" class="text-gray-300 whitespace-pre"></div>
         </div>
+        <button onclick="location.reload()" class="mt-8 bg-red-600 px-6 py-2 rounded font-bold hover:bg-red-700 transition">Try Again</button>
     </div>
 
-    <!-- Main Content -->
-    <div id="main-content" class="hidden opacity-0 transition-opacity duration-1000">
-        <header class="p-6 glass mb-8 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <img src="/storage/photos/tgdtc.png" alt="Logo" class="w-12 h-12 rounded-lg">
-                    <h1 class="text-2xl font-black tracking-tighter text-blue-400">THE GAME DUNGEON</h1>
-                </div>
-                <div id="user-info" class="flex items-center gap-3">
-                    <span class="text-sm font-medium text-gray-400" id="user-display-id"></span>
-                    <a id="user-avatar-link" href="#" class="w-10 h-10 bg-blue-900 rounded-full border-2 border-blue-500 flex items-center justify-center overflow-hidden transition-transform active:scale-95 btn-fix">
-                        <div id="avatar-container" class="w-full h-full flex items-center justify-center">
-                             <i class="fas fa-user text-blue-300"></i>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </header>
+    <script>
+        const frame = document.getElementById('content-frame');
+        const loader = document.getElementById('loader-overlay');
+        const errorScreen = document.getElementById('error-screen');
+        const errorContent = document.getElementById('error-content');
+        const daimyanMsg = document.getElementById('daimyan-msg');
+        let isLoaded = false;
 
-        <main class="max-w-7xl mx-auto px-6 pb-20">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        async function initDungeon() {
+            try {
+                // 1. Check if /home/index.html actually exists
+                const response = await fetch('/home/index.html');
                 
-                <div class="lg:col-span-2">
-                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
-                        <i class="fas fa-gamepad text-blue-500"></i> Featured Games
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="games-grid"></div>
-                </div>
+                if (response.status === 404) {
+                    window.location.href = "/error/fourohfour/";
+                    return;
+                }
 
-                <div class="space-y-8">
-                    <!-- Friends List -->
-                    <section class="glass p-6 rounded-2xl relative">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold flex items-center gap-3">
-                                <i class="fas fa-users text-green-400"></i> The Squad
-                            </h2>
-                            <button id="toggle-search" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300 active:scale-90 z-10 btn-fix">
-                                <i class="fas fa-plus text-sm"></i>
-                            </button>
-                        </div>
+                const code = await response.text();
 
-                        <!-- Search Bar -->
-                        <div id="search-container" class="hidden mb-4 animate-in fade-in slide-in-from-top-2">
-                            <div class="relative">
-                                <input type="text" id="friend-search-input" placeholder="Search by email..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-sm focus:border-blue-500 outline-none pr-10">
-                            </div>
-                            <div id="search-results" class="mt-2 space-y-2"></div>
-                        </div>
+                // 2. Bug Check: Check for basic syntax issues (unclosed tags, etc.)
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(code, "text/html");
+                const parseError = doc.querySelector("parsererror");
 
-                        <div id="friends-list" class="space-y-4"></div>
-                    </section>
+                if (parseError) {
+                    showDungeonBroke(parseError.innerText);
+                    return;
+                }
 
-                    <!-- Playtime Stats -->
-                    <section class="glass p-6 rounded-2xl">
-                        <h2 class="text-xl font-bold mb-4 flex items-center gap-3">
-                            <i class="fas fa-clock text-orange-400"></i> Your Playtime
-                        </h2>
-                        <div id="playtime-stats" class="space-y-4 text-sm"></div>
-                        <div id="total-time-container" class="mt-6 pt-4 border-t border-slate-700 hidden">
-                            <p class="text-xs uppercase text-gray-500 font-bold tracking-widest">All time on the dungeon</p>
-                            <p id="total-hours" class="text-2xl font-black text-blue-400">0h</p>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </main>
-    </div>
+                // If everything looks clean, load the frame
+                frame.src = "/home/index.html";
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            } catch (err) {
+                // Fetch failed or something crashed
+                showDungeonBroke("System Failure: " + err.message);
+            }
+        }
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-            projectId: "the-game-dungeon-4d75d",
-            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-            messagingSenderId: "533459716906",
-            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
-            measurementId: "G-CER9SE96MC"
+        function showDungeonBroke(msg) {
+            document.title = "The Game Dungeon | Dungeon Broke";
+            loader.style.display = 'none';
+            errorScreen.style.display = 'flex';
+            
+            // Try to find a line number in the parser message
+            errorContent.innerText = msg;
+        }
+
+        frame.onload = function() {
+            if (frame.src === "") return; // Don't trigger on initial empty state
+            isLoaded = true;
+            frame.style.visibility = 'visible';
+
+            setTimeout(() => {
+                loader.classList.add('fade-out');
+                window.history.replaceState({}, '', '/home/');
+                setTimeout(() => {
+                    loader.remove();
+                }, 800); 
+            }, 500);
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = "the-game-dungeon";
-
-        const avatarPlaceholder = "https://ui-avatars.com/api/?background=1e293b&color=3b82f6&bold=true&name=";
-
-        const games = [
-            { name: "Ragdoll Hit", icon: "/storage/photos/rh.png", path: "/ragdoll-hit/" },
-            { name: "Geometry Dash", icon: "/storage/photos/gd.png", path: "/geometry-dash/" },
-            { name: "Cookie Clicker", icon: "/storage/photos/cc.png", path: "/cookie-clicker/" },
-            { name: "Minecraft", icon: "/storage/photos/minecraft.png", path: "/minecraft/" },
-            { name: "Polytrack", icon: "/storage/photos/polytrack.png", path: "/polytrack/" }
-        ];
-
-        const loader = document.getElementById('system-loader');
-        const loginModal = document.getElementById('login-modal');
-        const mainContent = document.getElementById('main-content');
-        const toggleSearch = document.getElementById('toggle-search');
-        const searchContainer = document.getElementById('search-container');
-        const avatarContainer = document.getElementById('avatar-container');
-        const avatarLink = document.getElementById('user-avatar-link');
-
-        function cleanUpOverlays() {
-            if (loader) {
-                loader.style.opacity = '0';
-                loader.style.pointerEvents = 'none';
-                setTimeout(() => {
-                    loader.classList.add('hidden-force');
-                }, 600);
+        // 5-second check
+        setTimeout(() => {
+            if (!isLoaded && errorScreen.style.display !== 'flex') {
+                daimyanMsg.innerText = "Gulp, this is taking a while. Please don’t snatch my backend server!😬";
+                daimyanMsg.classList.add('text-yellow-500');
             }
-            if (loginModal) {
-                loginModal.classList.add('hidden-force');
-                loginModal.style.pointerEvents = 'none';
+        }, 5000);
+
+        // 15-second emergency eject
+        setTimeout(() => {
+            if (!isLoaded && errorScreen.style.display !== 'flex') {
+                window.location.href = "/error/loadfailed/";
             }
-        }
+        }, 15000);
 
-        // iPad specific touch start fix
-        document.addEventListener('touchstart', function() {}, true);
-
-        document.getElementById('close-modal-trap').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.body.innerHTML = "<div class='bg-black text-red-600 h-screen flex items-center justify-center font-bold uppercase tracking-tighter'>OINK OINK... TAB NUKED</div>";
-            setTimeout(() => { location.href = "about:blank"; }, 400);
-        });
-
-        toggleSearch.addEventListener('click', (e) => {
-            e.preventDefault();
-            searchContainer.classList.toggle('hidden');
-            toggleSearch.classList.toggle('rotate-45');
-        });
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const email = user.email || 'Guest';
-                avatarLink.href = `/profile/?user=${encodeURIComponent(email)}`;
-                
-                let photoURL = user.photoURL;
-                if (!photoURL) {
-                    try {
-                        const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid));
-                        if (userDoc.exists()) photoURL = userDoc.data().photoURL;
-                    } catch (e) { console.log("Profile fetch skipped"); }
-                }
-
-                const finalPhoto = photoURL || (avatarPlaceholder + encodeURIComponent(email));
-                avatarContainer.innerHTML = `<img src="${finalPhoto}" class="w-full h-full object-cover" onerror="this.src='${avatarPlaceholder + 'User'}'">`;
-
-                document.getElementById('user-display-id').innerText = user.email ? user.email : `ID: ${user.uid.substring(0, 8)}`;
-                
-                initDashboard(user);
-                
-                setTimeout(() => {
-                    cleanUpOverlays();
-                    document.body.classList.remove('overflow-hidden');
-                    mainContent.classList.remove('hidden');
-                    setTimeout(() => mainContent.classList.add('opacity-100'), 50);
-                }, 800);
-            } else {
-                setTimeout(() => {
-                    if (loader) loader.style.opacity = '0';
-                    setTimeout(() => {
-                        if (loader) loader.classList.add('hidden-force');
-                        loginModal.classList.remove('hidden-force');
-                        loginModal.classList.remove('hidden');
-                        loginModal.classList.add('flex');
-                    }, 500);
-                }, 1000);
-            }
-        });
-
-        function initDashboard(user) {
-            renderGames();
-            loadFriends(user);
-            loadPlaytime(user);
-            initSearch();
-        }
-
-        function renderGames() {
-            const grid = document.getElementById('games-grid');
-            grid.innerHTML = games.map(game => `
-                <a href="${game.path}" class="game-card glass p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 btn-fix">
-                    <img src="${game.icon}" class="w-16 h-16 rounded-xl shadow-lg border border-slate-700" onerror="this.src='https://via.placeholder.com/64'">
-                    <div>
-                        <h3 class="text-xl font-bold">${game.name}</h3>
-                        <span class="text-xs text-blue-400 font-semibold uppercase tracking-wider">Launch <i class="fas fa-play ml-1"></i></span>
-                    </div>
-                </a>
-            `).join('');
-        }
-
-        function loadFriends(user) {
-            const list = document.getElementById('friends-list');
-            const friendsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'friends');
-            
-            onSnapshot(friendsRef, (snapshot) => {
-                if (snapshot.empty) {
-                    list.innerHTML = `<div class="text-gray-500 italic text-center p-8 bg-slate-800/10 rounded-2xl border border-dashed border-slate-700">lonely😥</div>`;
-                    return;
-                }
-                list.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const friend = doc.data();
-                    const friendIdentifier = friend.email || friend.name || 'Gamer';
-                    const profileUrl = `/profile/?user=${encodeURIComponent(friendIdentifier)}`;
-                    const friendPhoto = friend.photoURL || (avatarPlaceholder + encodeURIComponent(friendIdentifier));
-
-                    list.innerHTML += `
-                        <div class="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-white/5">
-                            <a href="${profileUrl}" class="flex items-center gap-3 group w-full btn-fix">
-                                <div class="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20 group-hover:border-blue-400 transition-colors overflow-hidden shrink-0">
-                                    <img src="${friendPhoto}" class="w-full h-full object-cover" onerror="this.src='${avatarPlaceholder + 'User'}'">
-                                </div>
-                                <div>
-                                    <p class="font-bold text-sm group-hover:text-blue-400 transition-colors">${friend.name || 'Gamer'}</p>
-                                    <p class="text-[10px] text-gray-500 uppercase">${friend.online ? 'Online' : 'Offline'}</p>
-                                </div>
-                            </a>
-                        </div>
-                    `;
-                });
-            }, (err) => console.log("Friends list blicked"));
-        }
-
-        function loadPlaytime(user) {
-            const stats = document.getElementById('playtime-stats');
-            const totalContainer = document.getElementById('total-time-container');
-            const totalDisplay = document.getElementById('total-hours');
-            const statsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'playtime');
-            
-            onSnapshot(statsRef, (snapshot) => {
-                if (snapshot.empty) {
-                    stats.innerHTML = `<div class="text-gray-500 italic text-center p-4">lazy🥱</div>`;
-                    totalContainer.classList.add('hidden');
-                    return;
-                }
-                
-                stats.innerHTML = '';
-                let totalSeconds = 0;
-                let hasRealTime = false;
-
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const seconds = data.seconds || (data.hours * 3600) || 0;
-                    totalSeconds += seconds;
-                    if (seconds >= 1) hasRealTime = true;
-
-                    stats.innerHTML += `
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-xs font-semibold">
-                                <span>${doc.id}</span>
-                                <span class="text-blue-400">${(seconds/3600).toFixed(1)}h</span>
-                            </div>
-                            <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full bg-blue-500" style="width: ${Math.min((seconds/3600)*2, 100)}%"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                if (hasRealTime) {
-                    totalContainer.classList.remove('hidden');
-                    totalDisplay.innerText = (totalSeconds / 3600).toFixed(1) + 'h';
-                }
-            }, (err) => console.log("Playtime blicked"));
-        }
-
-        function initSearch() {
-            const input = document.getElementById('friend-search-input');
-            const results = document.getElementById('search-results');
-
-            input.addEventListener('input', () => {
-                const val = input.value.trim().toLowerCase();
-                if (val.length < 3) {
-                    results.innerHTML = '';
-                    return;
-                }
-
-                results.innerHTML = `
-                    <div class="p-3 bg-blue-600/10 border border-blue-500/20 rounded-xl flex items-center justify-between cursor-pointer hover:bg-blue-600/20 transition-all btn-fix" onclick="window.location.href='/profile/?user=${encodeURIComponent(val)}'">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center overflow-hidden">
-                                <img src="${avatarPlaceholder + encodeURIComponent(val)}" class="w-full h-full object-cover">
-                            </div>
-                            <span class="text-sm font-bold">${val}</span>
-                        </div>
-                        <i class="fas fa-external-link-alt text-xs text-blue-400"></i>
-                    </div>
-                `;
-            });
-        }
+        // Fire it up
+        initDungeon();
     </script>
 </body>
 </html>
