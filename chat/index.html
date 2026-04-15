@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Game Dungeon | Scrolls</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,7 +27,7 @@
             background: rgba(59, 130, 246, 0.2);
             backdrop-filter: blur(10px);
             display: none;
-            z-index: 1000;
+            z-index: 3000;
             justify-content: center;
             align-items: center;
         }
@@ -40,7 +40,7 @@
             width: 100%;
             height: 100%;
             background: #0a0a0a;
-            z-index: 2000;
+            z-index: 4000;
             display: none;
             flex-direction: column;
             align-items: center;
@@ -57,6 +57,7 @@
             flex-direction: column;
             gap: 12px;
             scroll-behavior: smooth;
+            padding-bottom: 100px;
         }
 
         /* Custom Scrollbar */
@@ -69,7 +70,7 @@
         }
 
         .message {
-            max-width: 80%;
+            max-width: 85%;
             padding: 10px 14px;
             border-radius: 18px;
             font-size: 0.9rem;
@@ -121,11 +122,46 @@
             font-style: italic;
         }
 
+        /* Floating Overlay Logic */
+        #chat-overlay {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-overlay.open {
+            right: 0;
+        }
+
+        .floating-trigger {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            z-index: 50;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
         .input-area {
             background: #0f0f0f;
             border-top: 1px solid rgba(255,255,255,0.1);
             padding: 15px;
-            padding-bottom: calc(15px + 64px); /* Space for taskbar */
+            padding-bottom: 20px;
         }
 
         .taskbar {
@@ -157,7 +193,6 @@
 </head>
 <body>
 
-    <!-- Internal Navigation Loader -->
     <div id="nav-loader">
         <div class="flex flex-col items-center">
             <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -168,10 +203,10 @@
     <div id="firebase-error-screen">
         <i class="fa-solid fa-triangle-exclamation text-red-500 text-6xl mb-6"></i>
         <h1 class="text-3xl font-black italic tracking-tighter text-white mb-2 uppercase">firebase error</h1>
-        <p class="text-gray-400 max-w-xs mb-8">Connection to the Grimoire was blicked. The database might be offline or your connection is zesty.</p>
+        <p class="text-gray-400 max-w-xs mb-8">Connection blicked. Ensure your Firestore path is exactly: artifacts/the-game-dungeon-v1/public/data/scrolls</p>
         <div class="flex flex-col gap-4 w-full max-w-xs">
-            <button onclick="navTo('play')" class="bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-blue-700">Go to Play</button>
-            <a href="mailto:thegamedungeon.thecrib@gmail.com" class="bg-white/5 border border-white/10 text-gray-300 font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-white/10">Email Support</a>
+            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest">Retry Connection</button>
+            <button onclick="navTo('play')" class="bg-white/5 border border-white/10 text-gray-300 font-bold py-3 rounded-xl uppercase tracking-widest">Go to Play</button>
         </div>
     </div>
 
@@ -179,29 +214,48 @@
     <div id="account-error-screen">
         <i class="fa-solid fa-user-slash text-blue-500 text-6xl mb-6"></i>
         <h1 class="text-3xl font-black italic tracking-tighter text-white mb-2 uppercase">account error</h1>
-        <p class="text-gray-400 max-w-xs mb-8">Identification required to access the Scrolls. Anonymous entry is blicked in this sector.</p>
+        <p class="text-gray-400 max-w-xs mb-8">Sign in required to etch scrolls. Anonymous entry is blicked.</p>
         <div class="flex flex-col gap-4 w-full max-w-xs">
-            <button onclick="navTo('account/login')" class="bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-blue-700">Sign In</button>
-            <button onclick="navTo('play')" class="bg-white/5 border border-white/10 text-gray-300 font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-white/10">Back to Play</button>
+            <button onclick="navTo('account/login')" class="bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest">Sign In</button>
+            <button onclick="navTo('play')" class="bg-white/5 border border-white/10 text-gray-300 font-bold py-3 rounded-xl uppercase tracking-widest">Back to Play</button>
         </div>
     </div>
 
-    <header class="p-4 border-b border-white/5 flex items-center justify-between">
-        <h1 class="text-xl font-black italic tracking-tighter text-blue-500">SCROLLS</h1>
-        <div id="user-display" class="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-1 rounded border border-blue-500/20 uppercase font-bold">Connecting...</div>
-    </header>
-
-    <div class="scrolls-container" id="scroll-feed">
-        <!-- Messages will pop in here -->
+    <!-- Floating Trigger -->
+    <div id="chat-trigger" class="floating-trigger" onclick="toggleChat()">
+        <i class="fa-solid fa-comment-dots text-white text-xl"></i>
     </div>
 
-    <div class="input-area">
-        <div class="flex gap-2 bg-[#1a1a1a] p-2 rounded-2xl border border-white/5">
-            <input type="text" id="msg-input" placeholder="Etch a scroll... (email) for private" class="bg-transparent border-none outline-none flex-1 px-2 text-sm text-white">
-            <button onclick="sendScroll()" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-500 transition-colors">
-                <i class="fa-solid fa-paper-plane text-xs"></i>
-            </button>
+    <!-- Main Chat Overlay -->
+    <div id="chat-overlay">
+        <header class="p-4 border-b border-white/5 flex items-center justify-between bg-[#0a0a0a]">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleChat()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-chevron-left"></i></button>
+                <h1 class="text-xl font-black italic tracking-tighter text-blue-500">SCROLLS</h1>
+            </div>
+            <div id="user-display" class="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-1 rounded border border-blue-500/20 uppercase font-bold">Connecting...</div>
+        </header>
+
+        <div class="scrolls-container" id="scroll-feed">
+            <!-- Messages pop in here -->
         </div>
+
+        <div class="input-area">
+            <div class="flex gap-2 bg-[#1a1a1a] p-2 rounded-2xl border border-white/5">
+                <input type="text" id="msg-input" placeholder="Etch scroll... (email) whisper" class="bg-transparent border-none outline-none flex-1 px-2 text-sm text-white">
+                <button onclick="sendScroll()" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-24 h-24 bg-blue-500/10 rounded-3xl flex items-center justify-center mb-4 border border-blue-500/20">
+            <i class="fa-solid fa-gamepad text-blue-500 text-4xl"></i>
+        </div>
+        <h2 class="text-2xl font-black italic tracking-tight">GAME ACTIVE</h2>
+        <p class="text-gray-500 text-sm mt-2 max-w-xs">Tap the blue scroll icon on the right to chat without leaving the game.</p>
     </div>
 
     <nav class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
@@ -213,7 +267,7 @@
             <i class="fa-solid fa-gamepad text-xl"></i>
             <span class="text-[10px] mt-1">Play</span>
         </button>
-        <button class="nav-item active flex flex-col items-center">
+        <button onclick="toggleChat()" class="nav-item active flex flex-col items-center">
             <i class="fa-solid fa-comment-dots text-xl"></i>
             <span class="text-[10px] mt-1">Chat</span>
         </button>
@@ -229,7 +283,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, getDocs, limit, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -249,28 +303,46 @@
         const userDisplay = document.getElementById('user-display');
         const firebaseErrorScreen = document.getElementById('firebase-error-screen');
         const accountErrorScreen = document.getElementById('account-error-screen');
+        const chatOverlay = document.getElementById('chat-overlay');
+        const chatTrigger = document.getElementById('chat-trigger');
         let currentUser = null;
+
+        window.toggleChat = () => {
+            chatOverlay.classList.toggle('open');
+            if(chatOverlay.classList.contains('open')) {
+                chatTrigger.style.display = 'none';
+                setTimeout(() => scrollFeed.scrollTop = scrollFeed.scrollHeight, 100);
+            } else {
+                chatTrigger.style.display = 'flex';
+            }
+        };
 
         async function checkIntegrity() {
             try {
+                // Testing connection with a simple catch
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'scrolls'), limit(1));
-                await getDocs(q);
+                await getDocs(q); 
+                console.log("Integrity: Connection Established.");
             } catch (err) {
-                firebaseErrorScreen.style.display = 'flex';
+                // Only show error if it's a real failure, not just an empty collection
+                if (err.code !== 'permission-denied' && err.message !== 'Quota exceeded') {
+                    console.error("Integrity Error:", err);
+                    firebaseErrorScreen.style.display = 'flex';
+                }
             }
         }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Check if user is actually logged in or just anonymous
-                // For "Account Error", we usually want a real identity
                 if (user.isAnonymous) {
                     accountErrorScreen.style.display = 'flex';
                     return;
                 }
-
+                // Clear errors if we have a valid user
+                accountErrorScreen.style.display = 'none';
+                
                 currentUser = user;
-                userDisplay.innerText = user.email || "Guest Dweller";
+                userDisplay.innerText = user.email || "Dweller";
                 const pfpSlot = document.getElementById('pfp-slot');
                 if (user.photoURL) {
                     pfpSlot.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
@@ -280,7 +352,6 @@
                 checkIntegrity();
                 loadScrolls();
             } else {
-                // If no user at all, show account error
                 accountErrorScreen.style.display = 'flex';
             }
         });
@@ -313,7 +384,9 @@
                 });
                 scrollFeed.scrollTop = scrollFeed.scrollHeight;
             }, (error) => {
-                firebaseErrorScreen.style.display = 'flex';
+                console.error("Snapshot error:", error);
+                // Don't show Firebase error if we are just not logged in properly
+                if (currentUser) firebaseErrorScreen.style.display = 'flex';
             });
         }
 
@@ -355,7 +428,7 @@
     <script>
         function navTo(page) {
             const loader = document.getElementById('nav-loader');
-            const url = page.startsWith('http') ? page : `/${page}/`;
+            const url = page.startsWith('account/login') ? '/account/login/' : (page === 'home' ? '/home/' : `/${page}/`);
             loader.style.display = 'flex';
             setTimeout(() => {
                 if (window.self !== window.top) {
