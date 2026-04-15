@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Game Dungeon | Scrolls</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #nav-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px);
+            display: none;
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Error Overlays */
+        #firebase-error-screen, #account-error-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .scrolls-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        .scrolls-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scrolls-container::-webkit-scrollbar-thumb {
+            background: #1e1e1e;
+            border-radius: 10px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            position: relative;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.mine {
+            align-self: flex-end;
+            background: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.others {
+            align-self: flex-start;
+            background: #1a1a1a;
+            color: #efefef;
+            border-bottom-left-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .message.private {
+            border: 1px dashed #60a5fa;
+            background: rgba(30, 58, 138, 0.4);
+        }
+
+        .sender-name {
+            font-size: 0.7rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: block;
+            color: #60a5fa;
+        }
+
+        .private-tag {
+            font-size: 0.65rem;
+            color: #93c5fd;
+            font-weight: bold;
+            display: block;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .input-area {
+            background: #0f0f0f;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 15px;
+            padding-bottom: calc(15px + 64px); /* Space for taskbar */
+        }
+
+        .taskbar {
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 40;
+        }
+
+        .nav-item {
+            color: #9ca3af;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+        }
+
+        .pfp-container {
+            width: 40px; height: 40px; border-radius: 50%;
+            overflow: hidden; background: #10b981;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Internal Navigation Loader -->
+    <div id="nav-loader">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Error Screen -->
+    <div id="firebase-error-screen">
+        <i class="fa-solid fa-triangle-exclamation text-red-500 text-6xl mb-6"></i>
+        <h1 class="text-3xl font-black italic tracking-tighter text-white mb-2 uppercase">firebase error</h1>
+        <p class="text-gray-400 max-w-xs mb-8">Connection to the Grimoire was blicked. The database might be offline or your connection is zesty.</p>
+        <div class="flex flex-col gap-4 w-full max-w-xs">
+            <button onclick="navTo('play')" class="bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-blue-700">Go to Play</button>
+            <a href="mailto:thegamedungeon.thecrib@gmail.com" class="bg-white/5 border border-white/10 text-gray-300 font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-white/10">Email Support</a>
+        </div>
+    </div>
+
+    <!-- Account Error Screen -->
+    <div id="account-error-screen">
+        <i class="fa-solid fa-user-slash text-blue-500 text-6xl mb-6"></i>
+        <h1 class="text-3xl font-black italic tracking-tighter text-white mb-2 uppercase">account error</h1>
+        <p class="text-gray-400 max-w-xs mb-8">Identification required to access the Scrolls. Anonymous entry is blicked in this sector.</p>
+        <div class="flex flex-col gap-4 w-full max-w-xs">
+            <button onclick="navTo('account/login')" class="bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-blue-700">Sign In</button>
+            <button onclick="navTo('play')" class="bg-white/5 border border-white/10 text-gray-300 font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-white/10">Back to Play</button>
+        </div>
+    </div>
+
+    <header class="p-4 border-b border-white/5 flex items-center justify-between">
+        <h1 class="text-xl font-black italic tracking-tighter text-blue-500">SCROLLS</h1>
+        <div id="user-display" class="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-1 rounded border border-blue-500/20 uppercase font-bold">Connecting...</div>
+    </header>
+
+    <div class="scrolls-container" id="scroll-feed">
+        <!-- Messages will pop in here -->
+    </div>
+
+    <div class="input-area">
+        <div class="flex gap-2 bg-[#1a1a1a] p-2 rounded-2xl border border-white/5">
+            <input type="text" id="msg-input" placeholder="Etch a scroll... (email) for private" class="bg-transparent border-none outline-none flex-1 px-2 text-sm text-white">
+            <button onclick="sendScroll()" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-500 transition-colors">
+                <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <nav class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
+        <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-[10px] mt-1">Home</span>
+        </button>
+        <button onclick="navTo('play')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-gamepad text-xl"></i>
+            <span class="text-[10px] mt-1">Play</span>
+        </button>
+        <button class="nav-item active flex flex-col items-center">
+            <i class="fa-solid fa-comment-dots text-xl"></i>
+            <span class="text-[10px] mt-1">Chat</span>
+        </button>
+        <button onclick="navTo('call')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-phone text-xl"></i>
+            <span class="text-[10px] mt-1">Call</span>
+        </button>
+        <button onclick="navTo('account')" class="nav-item flex flex-col items-center">
+            <div id="pfp-slot" class="pfp-container"><i class="fa-solid fa-user"></i></div>
+            <span class="text-[10px] mt-1">Account</span>
+        </button>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, getDocs, limit, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = "the-game-dungeon-v1";
+        const scrollFeed = document.getElementById('scroll-feed');
+        const userDisplay = document.getElementById('user-display');
+        const firebaseErrorScreen = document.getElementById('firebase-error-screen');
+        const accountErrorScreen = document.getElementById('account-error-screen');
+        let currentUser = null;
+
+        async function checkIntegrity() {
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'scrolls'), limit(1));
+                await getDocs(q);
+            } catch (err) {
+                firebaseErrorScreen.style.display = 'flex';
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Check if user is actually logged in or just anonymous
+                // For "Account Error", we usually want a real identity
+                if (user.isAnonymous) {
+                    accountErrorScreen.style.display = 'flex';
+                    return;
+                }
+
+                currentUser = user;
+                userDisplay.innerText = user.email || "Guest Dweller";
+                const pfpSlot = document.getElementById('pfp-slot');
+                if (user.photoURL) {
+                    pfpSlot.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
+                } else {
+                    pfpSlot.innerHTML = `<span>${(user.displayName || user.email || 'A')[0].toUpperCase()}</span>`;
+                }
+                checkIntegrity();
+                loadScrolls();
+            } else {
+                // If no user at all, show account error
+                accountErrorScreen.style.display = 'flex';
+            }
+        });
+
+        function loadScrolls() {
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
+            onSnapshot(q, (snapshot) => {
+                scrollFeed.innerHTML = '';
+                const allMsgs = [];
+                snapshot.forEach(doc => allMsgs.push({id: doc.id, ...doc.data()}));
+                allMsgs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+
+                allMsgs.forEach(msg => {
+                    const isMine = currentUser && msg.uid === currentUser.uid;
+                    const isTarget = currentUser && msg.targetEmail === currentUser.email;
+                    
+                    if (!msg.targetEmail || isMine || isTarget) {
+                        const msgElement = document.createElement('div');
+                        const isPrivate = !!msg.targetEmail;
+                        msgElement.className = `message ${isMine ? 'mine' : 'others'} ${isPrivate ? 'private' : ''}`;
+                        
+                        let content = '';
+                        if (!isMine) content += `<span class="sender-name">${msg.name || 'Unknown'}</span>`;
+                        content += `<p>${msg.text}</p>`;
+                        if (isPrivate) content += `<span class="private-tag"><i class="fa-solid fa-lock"></i> Whisper to ${msg.targetEmail}</span>`;
+                        
+                        msgElement.innerHTML = content;
+                        scrollFeed.appendChild(msgElement);
+                    }
+                });
+                scrollFeed.scrollTop = scrollFeed.scrollHeight;
+            }, (error) => {
+                firebaseErrorScreen.style.display = 'flex';
+            });
+        }
+
+        window.sendScroll = async () => {
+            const input = document.getElementById('msg-input');
+            const rawText = input.value.trim();
+            if (!rawText || !currentUser) return;
+
+            const emailRegex = /^\(([^)]+)\)\s*(.*)/;
+            const match = rawText.match(emailRegex);
+            let targetEmail = null;
+            let finalText = rawText;
+
+            if (match) {
+                targetEmail = match[1].trim();
+                finalText = match[2].trim();
+            }
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'scrolls'), {
+                    text: finalText,
+                    targetEmail: targetEmail,
+                    name: currentUser.displayName || currentUser.email || "Dungeon Dweller",
+                    uid: currentUser.uid,
+                    senderEmail: currentUser.email || 'anonymous',
+                    timestamp: serverTimestamp()
+                });
+                input.value = '';
+            } catch (e) {
+                firebaseErrorScreen.style.display = 'flex';
+            }
+        };
+
+        document.getElementById('msg-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendScroll();
+        });
+    </script>
+
+    <script>
+        function navTo(page) {
+            const loader = document.getElementById('nav-loader');
+            const url = page.startsWith('http') ? page : `/${page}/`;
+            loader.style.display = 'flex';
+            setTimeout(() => {
+                if (window.self !== window.top) {
+                    window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
+                } else { window.location.href = url; }
+            }, 600);
+        }
+    </script>
+</body>
+</html>
