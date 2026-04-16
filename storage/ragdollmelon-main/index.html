@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://thegamedungeon.github.io/storage/ragdollmelon/assets/css/styles.css">
+</head>
+<body>
+
+    <div id="overlay">
+        <div id="main-menu" class="flex flex-col items-center w-full">
+            <div id="title-container">
+                <div id="scramble-text"></div>
+            </div>
+
+            <div class="menu-btn" onclick="showCharSelect('1p')">START 1P (vs AI)</div>
+            <div class="menu-btn" onclick="showCharSelect('2p')">START 2P</div>
+            <div class="menu-btn" style="background: #1e3a8a; border-color: #3b82f6;" onclick="startSandbox()">SANDBOX MODE</div>
+            <p class="text-gray-500 mt-10">Daimyan-Proof Engine v4.8 (Modular Build)</p>
+        </div>
+
+        <div id="char-select" class="hidden flex flex-col items-center">
+            <h2 id="select-title" class="text-3xl text-white font-bold mb-6">SELECT P1 COLOR</h2>
+            <div class="color-grid" id="color-grid"></div>
+            <p id="select-sub" class="text-gray-400 mt-6 italic">Real skins only.</p>
+        </div>
+    </div>
+
+    <div id="hud" class="hidden">
+        <div class="health-container">
+            <div id="p1-health-bar" class="health-bar"></div>
+            <div class="hp-text">P1 HP</div>
+        </div>
+        <div class="health-container">
+            <div id="p2-health-bar" class="health-bar" style="float: right;"></div>
+            <div class="hp-text">P2 HP</div>
+        </div>
+    </div>
+
+    <div id="ko-screen">
+        <h1 id="winner-text" class="text-7xl font-black mb-10 italic text-red-600">P1 DOMINATED</h1>
+        <div class="menu-btn" onclick="restartMatch()">REMATCH</div>
+        <div class="menu-btn" onclick="changeCharacter()">CHANGE CHARACTER</div>
+        <div class="menu-btn btn-red" onclick="goToMainMenu()">MAIN MENU</div>
+    </div>
+
+    <div id="penalty-alert">IMPACT CRITICAL</div>
+    
+    <div id="game-ui" class="ui-layer hidden">
+        <div id="sandbox-controls" class="hidden" style="pointer-events: none;">
+            <div id="sandbox-toolbar"></div>
+            <div id="vitals-btn" onclick="toggleVitals()">VITALS MONITOR</div>
+            <div id="vitals-menu"></div>
+        </div>
+        
+        <div id="sandbox-hint" class="instruction-box hidden">SANDBOX: TAP TO SPAWN | SLAM TO DAMAGE</div>
+        <div id="battle-hint" class="instruction-box">PUNCHES: 10% | KICKS: 14.3% | REGEN ACTIVE</div>
+        <div id="exit-sandbox" class="menu-btn hidden" style="position: absolute; bottom: 20px; right: 20px; min-width: 150px; font-size: 14px; padding: 10px; pointer-events: auto;" onclick="goToMainMenu()">EXIT SANDBOX</div>
+    </div>
+
+    <script src="https://thegamedungeon.github.io/storage/ragdollmelon/assets/js/main.js"></script>
+    <script src="https://thegamedungeon.github.io/storage/ragdollmelon/assets/js/engine.js"></script>
+</body>
+</html>
