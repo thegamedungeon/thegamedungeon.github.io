@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Game Dungeon | Redirecting...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,11 +13,29 @@
             font-family: 'Inter', sans-serif;
             height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             margin: 0;
-            overflow-y: auto;
+            overflow: hidden;
         }
+
+        /* Internal Navigation Loader */
+        #nav-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px);
+            display: none;
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+
         .spinner {
             width: 40px; height: 40px;
             border: 3px solid rgba(59, 130, 246, 0.1);
@@ -26,6 +44,7 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
         .glitch-text {
             text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444;
             animation: glitch 2s infinite;
@@ -35,21 +54,87 @@
             50% { text-shadow: -2px 0 #3b82f6, 2px 0 #ef4444; }
             100% { text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444; }
         }
+
         .pfp-large {
             width: 100px; height: 100px; border-radius: 50%;
             border: 4px solid #3b82f6; object-fit: cover;
         }
         .fade-in { animation: fadeIn 0.5s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Taskbar Styling */
+        #taskbar {
+            position: fixed;
+            bottom: -100px; /* Hidden initially */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: rgba(15, 15, 15, 0.9);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-around;
+            transition: bottom 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        #taskbar.show { bottom: 20px; }
+        
+        .nav-btn {
+            color: #444;
+            font-size: 1.2rem;
+            transition: 0.3s;
+            pointer-events: none;
+            background: none;
+            border: none;
+            cursor: default;
+        }
+        .nav-btn.active { color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .nav-btn.enabled { color: #9ca3af; pointer-events: auto; cursor: pointer; }
+        .nav-btn.enabled:hover { color: white; transform: translateY(-3px); }
+
+        /* DEBUG CONSOLE */
+        #debug-console {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 250px;
+            max-height: 200px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            z-index: 9999;
+            color: #00ff00;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Loading State -->
+    <!-- DEBUG CONSOLE UI -->
+    <div id="debug-console">
+        <div class="text-red-500 font-bold mb-1 underline">DUNGEON DEBUGGER</div>
+        <div id="debug-logs"></div>
+    </div>
+
+    <!-- Internal Navigation Loader (for moving between pages) -->
+    <div id="nav-loader">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="loader-status" class="mt-4 font-bold text-blue-500 uppercase tracking-widest text-sm">Switching Sectors...</p>
+        </div>
+    </div>
+
+    <!-- Initial Loading State -->
     <div id="loading-ui" class="text-center p-8">
         <div class="spinner mx-auto mb-4"></div>
         <h1 class="text-2xl font-black mb-2 italic tracking-tighter text-blue-500 uppercase">Bypassing Oink Oink...</h1>
-        <p id="loading-subtext" class="text-gray-500 text-xs uppercase tracking-widest text-center">Scanning for Dungeon Dweller...</p>
+        <p id="loading-subtext" class="text-gray-500 text-[10px] uppercase tracking-widest text-center">Scanning for Dungeon Dweller...</p>
     </div>
 
     <!-- 404 State -->
@@ -57,13 +142,13 @@
         <h1 class="text-9xl font-black mb-4 glitch-text">404</h1>
         <h2 class="text-2xl font-bold text-blue-500 uppercase tracking-widest mb-4">Gate Blicked!</h2>
         <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
-            The sector you tried to access doesn’t exist. Either the "oink oink" moved it, or someone (probably Connor) sent you a zesty link.
+            Sector not found. Either the "oink oink" moved it, or Connor sent a zesty link.
         </p>
-        <a href="/" class="inline-block px-8 py-3 rounded-full font-bold uppercase tracking-widest bg-blue-600 text-white text-xs">Return Home</a>
+        <button onclick="navTo('home')" class="inline-block px-8 py-3 rounded-full font-bold uppercase tracking-widest bg-blue-600 text-white text-[10px]">Back to The Crib</button>
     </div>
 
     <!-- Profile UI -->
-    <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center fade-in">
+    <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center fade-in pb-24">
         <div class="mb-6 flex justify-center">
             <img id="view-pfp" src="" class="pfp-large shadow-2xl bg-gray-800" onerror="this.src='https://www.gravatar.com/avatar/0000?d=mp'">
         </div>
@@ -81,40 +166,30 @@
 
         <div class="flex gap-3">
             <button id="friend-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-[10px]">Friend Request</button>
-            <button onclick="window.location.href='/'" class="bg-white/5 border border-white/10 text-gray-300 font-bold px-6 py-3 rounded-xl uppercase tracking-widest text-[10px]">Home</button>
         </div>
     </div>
 
-<!-- Taskbar -->
-    <nav id="main-taskbar" class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
-        <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-house text-xl"></i>
-            <span class="text-[10px] mt-1">Home</span>
-        </button>
-        <button onclick="navTo('play')" class="nav-item active flex flex-col items-center">
-            <i class="fa-solid fa-gamepad text-xl"></i>
-            <span class="text-[10px] mt-1">Play</span>
-        </button>
-        <button onclick="navTo('chat')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-comment-dots text-xl"></i>
-            <span class="text-[10px] mt-1">Chat</span>
-        </button>
-        <button onclick="navTo('call')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-phone text-xl"></i>
-            <span class="text-[10px] mt-1">Call</span>
-        </button>
-        <button onclick="navTo('account')" class="nav-item flex flex-col items-center">
-            <div id="pfp-slot" class="pfp-container">
-                <i class="fa-solid fa-user text-lg"></i>
-            </div>
-            <span class="text-[10px] mt-1">Account</span>
-        </button>
-    </nav>
+    <!-- The Taskbar -->
+    <div id="taskbar">
+        <button onclick="navTo('home')" class="nav-btn" id="btn-home"><i class="fa-solid fa-house"></i></button>
+        <button onclick="navTo('play')" class="nav-btn" id="btn-play"><i class="fa-solid fa-gamepad"></i></button>
+        <button onclick="navTo('chat')" class="nav-btn" id="btn-chat"><i class="fa-solid fa-comment-dots"></i></button>
+        <button onclick="navTo('account')" class="nav-btn" id="btn-profile"><i class="fa-solid fa-user"></i></button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // DEBUG HELPER
+        function log(msg) {
+            const logs = document.getElementById('debug-logs');
+            const div = document.createElement('div');
+            div.innerText = `> ${msg}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -134,87 +209,98 @@
         const loadingSub = document.getElementById('loading-subtext');
         const errorUI = document.getElementById('error-ui');
         const profileUI = document.getElementById('profile-ui');
+        const taskbar = document.getElementById('taskbar');
+
+        window.navTo = function(page) {
+            log(`Navigating to: ${page}`);
+            const loader = document.getElementById('nav-loader');
+            const statusLabel = document.getElementById('loader-status');
+            const url = page === 'home' ? '/home/' : `/${page}/`;
+            
+            statusLabel.innerText = `Loading ${page}...`;
+            loader.style.display = 'flex';
+            loader.style.opacity = '1';
+
+            setTimeout(() => {
+                if (window.self !== window.top) {
+                    window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
+                } else {
+                    window.location.href = url;
+                }
+            }, 600);
+        };
 
         async function resolveDungeonPath() {
+            log("Starting resolveDungeonPath...");
             const fullPath = window.location.pathname;
+            log(`Full Path: ${fullPath}`);
             const segments = fullPath.split('/').filter(p => p !== "");
-            
-            // The handle is the person's username from the URL
+            log(`Segments: [${segments.join(', ')}]`);
+
             let handle = segments.length > 0 ? segments[segments.length - 1] : null;
             
             if (!handle) {
+                log("No handle found in URL. Redirecting home.");
                 window.location.replace('/');
                 return;
             }
 
             handle = decodeURIComponent(handle).trim();
-
-            const systemPaths = ['home', 'play', 'chat', 'call', 'account', 'settings', 'index.html', '404.html'];
-            if (systemPaths.includes(handle.toLowerCase())) {
-                sessionStorage.setItem('redirect_path', fullPath);
-                window.location.replace('/');
-                return;
-            }
+            log(`Target Handle: "${handle}"`);
 
             try {
-                loadingSub.innerText = "Authenticating with the Dungeon...";
+                log("Attempting Anonymous Auth...");
                 await signInAnonymously(auth);
+                log("Auth Success.");
 
-                loadingSub.innerText = `Fetching profile: ${handle}...`;
+                const docPath = `artifacts/${appId}/public/data/users/${handle}`;
+                log(`Querying Firestore: ${docPath}`);
                 
-                // TACTICAL FIX: Replacing placeholder logic with the direct username path
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
+                    log("Document FOUND. Loading UI.");
                     showProfile(docSnap.data(), handle);
                 } else {
-                    // Try lowercase fallback in case of casing issues
-                    const docRefLower = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle.toLowerCase());
-                    const docSnapLower = await getDoc(docRefLower);
-                    if (docSnapLower.exists()) {
-                        showProfile(docSnapLower.data(), handle.toLowerCase());
-                    } else {
-                        show404();
-                    }
+                    log("Document NOT FOUND in users collection.");
+                    show404();
                 }
             } catch (err) {
-                console.error("Dungeon verification failed:", err);
-                loadingSub.innerText = "Blicked by Bot-Brained Security.";
-                setTimeout(show404, 1500);
+                log(`CRITICAL ERROR: ${err.message}`);
+                console.error(err);
+                show404();
             }
         }
 
         function show404() {
+            log("Triggering 404 View.");
             loadingUI.classList.add('hidden');
             errorUI.classList.remove('hidden');
-            profileUI.classList.add('hidden');
-            document.title = "404 | Gate Blicked";
+            taskbar.classList.add('show');
         }
 
         function showProfile(data, usernameId) {
+            log(`Displaying profile for ${usernameId}`);
             loadingUI.classList.add('hidden');
-            errorUI.classList.add('hidden');
             profileUI.classList.remove('hidden');
-            document.title = `Dweller | ${usernameId}`;
-
-            // PFP
-            document.getElementById('view-pfp').src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
+            taskbar.classList.add('show');
             
-            // The person's actual username from the doc ID/path
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.add('enabled'));
+            document.getElementById('btn-profile').classList.add('active');
+
+            document.getElementById('view-pfp').src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
             document.getElementById('view-username').innerText = usernameId;
             document.getElementById('view-handle').innerText = `@${usernameId}`;
-            
-            // The bio inside that doc
             document.getElementById('view-bio').innerText = data.bio || "This dweller hasn't etched a bio yet.";
 
             onAuthStateChanged(auth, (user) => {
                 if (user && !user.isAnonymous) {
+                    log("User logged in (Not Anonymous). Checking ownership.");
                     const myHandle = user.email ? user.email.split('@')[0] : null;
                     if (myHandle && myHandle.toLowerCase() === usernameId.toLowerCase()) {
+                        log("Ownership verified. Enabling Edit Mode.");
                         setupEditMode(usernameId);
-                    } else {
-                        setupFriendButton(user.uid, usernameId);
                     }
                 }
             });
@@ -229,36 +315,27 @@
             let isEditing = false;
             editBtn.onclick = async () => {
                 if (!isEditing) {
-                    editBio.value = viewBio.innerText === "This dweller hasn't etched a bio yet." ? "" : viewBio.innerText;
+                    editBio.value = viewBio.innerText;
                     viewBio.classList.add('hidden');
                     editBio.classList.remove('hidden');
-                    editBtn.innerHTML = '<i class="fa-solid fa-check text-green-500 text-xl"></i>';
-                    editBio.focus();
+                    editBtn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
                     isEditing = true;
                 } else {
                     const newBio = editBio.value.trim();
                     try {
-                        editBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+                        log(`Updating bio for ${docId}...`);
                         const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', docId);
                         await updateDoc(userDoc, { bio: newBio });
-                        viewBio.innerText = newBio || "This dweller hasn't etched a bio yet.";
+                        viewBio.innerText = newBio;
                         viewBio.classList.remove('hidden');
                         editBio.classList.add('hidden');
                         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
                         isEditing = false;
+                        log("Bio update successful.");
                     } catch (e) {
-                        editBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
+                        log(`UPDATE ERROR: ${e.message}`);
                     }
                 }
-            };
-        }
-
-        function setupFriendButton(myUid, targetDocId) {
-            const fBtn = document.getElementById('friend-btn');
-            fBtn.onclick = () => {
-                fBtn.innerText = "Request Sent";
-                fBtn.disabled = true;
-                fBtn.classList.replace('bg-blue-600', 'bg-gray-700');
             };
         }
 
