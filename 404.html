@@ -39,6 +39,8 @@
             width: 100px; height: 100px; border-radius: 50%;
             border: 4px solid #3b82f6; object-fit: cover;
         }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -61,9 +63,9 @@
     </div>
 
     <!-- Profile UI (Hidden by default) -->
-    <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center animate-fadeIn">
+    <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center fade-in">
         <div class="mb-6 flex justify-center">
-            <img id="view-pfp" src="" class="pfp-large shadow-2xl bg-gray-800">
+            <img id="view-pfp" src="" class="pfp-large shadow-2xl bg-gray-800" onerror="this.src='https://www.gravatar.com/avatar/0000?d=mp'">
         </div>
         <h1 id="view-username" class="text-3xl font-black italic tracking-tighter text-white mb-1 uppercase">Loading...</h1>
         <p id="view-handle" class="text-blue-500 text-[10px] font-bold tracking-widest mb-6 uppercase">@dweller</p>
@@ -71,7 +73,7 @@
         <div class="bg-[#111] p-4 rounded-2xl border border-white/5 mb-6 text-left relative">
             <h3 class="text-[10px] text-gray-500 uppercase font-black mb-2">Dweller Bio</h3>
             <p id="view-bio" class="text-gray-300 text-sm italic">"The Dungeon is silent..."</p>
-            <textarea id="edit-bio" class="hidden w-full bg-black/50 border border-blue-500/50 rounded-lg p-2 text-sm text-white focus:outline-none"></textarea>
+            <textarea id="edit-bio" class="hidden w-full bg-black/50 border border-blue-500/50 rounded-lg p-2 text-sm text-white focus:outline-none h-24 resize-none"></textarea>
             <button id="edit-btn" class="hidden absolute top-4 right-4 text-blue-500 hover:text-white transition">
                 <i class="fa-solid fa-pen-to-square"></i>
             </button>
@@ -85,8 +87,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -107,33 +109,45 @@
         const profileUI = document.getElementById('profile-ui');
 
         async function resolveDungeonPath() {
-            const path = window.location.pathname.replace(/\//g, '');
+            const fullPath = window.location.pathname;
+            const segments = fullPath.split('/').filter(p => p !== "");
+            const handle = segments.length > 0 ? segments[segments.length - 1] : null;
             
-            // If it's a known system path, just redirect to root for the loader to handle
-            const systemPaths = ['home', 'play', 'chat', 'call', 'account', 'settings'];
-            if (systemPaths.includes(path) || path === "") {
-                sessionStorage.setItem('redirect_path', window.location.pathname);
+            if (!handle) {
                 window.location.replace('/');
                 return;
             }
 
-            // Assume it's a potential username (email prefix)
+            const systemPaths = ['home', 'play', 'chat', 'call', 'account', 'settings', 'index.html', '404.html'];
+            if (systemPaths.includes(handle.toLowerCase())) {
+                sessionStorage.setItem('redirect_path', fullPath);
+                window.location.replace('/');
+                return;
+            }
+
             try {
-                // We search the public 'data/users' for a document where handle == path
-                // OR we check the standard path: artifacts/appId/public/data/users
+                if (!auth.currentUser) await signInAnonymously(auth);
+
                 const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                const q = query(usersRef, where("handle", "==", path));
+                // We check for exact match first to respect "open.it.out.fortnite"
+                const q = query(usersRef, where("handle", "==", handle));
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
-                    show404();
+                    // Check case-insensitive just in case
+                    const q2 = query(usersRef, where("handle", "==", handle.toLowerCase()));
+                    const snap2 = await getDocs(q2);
+                    
+                    if (snap2.empty) {
+                        show404();
+                    } else {
+                        showProfile(snap2.docs[0].data(), snap2.docs[0].id);
+                    }
                 } else {
-                    const userDoc = querySnapshot.docs[0];
-                    const userData = userDoc.data();
-                    showProfile(userData, userDoc.id);
+                    showProfile(querySnapshot.docs[0].data(), querySnapshot.docs[0].id);
                 }
             } catch (err) {
-                console.error("Verification failed:", err);
+                console.error("Dungeon verification failed:", err);
                 show404();
             }
         }
@@ -141,11 +155,13 @@
         function show404() {
             loadingUI.classList.add('hidden');
             errorUI.classList.remove('hidden');
+            profileUI.classList.add('hidden');
             document.title = "404 | Gate Blicked";
         }
 
         function showProfile(data, firestoreId) {
             loadingUI.classList.add('hidden');
+            errorUI.classList.add('hidden');
             profileUI.classList.remove('hidden');
             document.title = `Dweller | ${data.username || data.handle}`;
 
@@ -155,18 +171,19 @@
             document.getElementById('view-bio').innerText = data.bio || "This dweller hasn't etched a bio yet.";
 
             onAuthStateChanged(auth, (user) => {
-                if (user) {
+                if (user && !user.isAnonymous) {
                     const userHandle = user.email ? user.email.split('@')[0] : null;
-                    
-                    // If the logged-in user matches the profile being viewed
-                    if (userHandle === data.handle) {
-                        setupEditMode(firestoreId, data.bio);
+                    // Strict check for the email prefix matching the profile handle
+                    if (userHandle && userHandle.toLowerCase() === data.handle.toLowerCase()) {
+                        setupEditMode(firestoreId);
+                    } else {
+                        setupFriendButton(user.uid, firestoreId);
                     }
                 }
             });
         }
 
-        function setupEditMode(docId, currentBio) {
+        function setupEditMode(docId) {
             const editBtn = document.getElementById('edit-btn');
             const viewBio = document.getElementById('view-bio');
             const editBio = document.getElementById('edit-bio');
@@ -176,27 +193,38 @@
             let isEditing = false;
             editBtn.onclick = async () => {
                 if (!isEditing) {
-                    // Start editing
-                    editBio.value = viewBio.innerText;
+                    editBio.value = viewBio.innerText === "This dweller hasn't etched a bio yet." ? "" : viewBio.innerText;
                     viewBio.classList.add('hidden');
                     editBio.classList.remove('hidden');
-                    editBtn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
+                    editBtn.innerHTML = '<i class="fa-solid fa-check text-green-500 text-xl"></i>';
+                    editBio.focus();
                     isEditing = true;
                 } else {
-                    // Save
                     const newBio = editBio.value.trim();
                     try {
+                        editBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
                         const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', docId);
                         await updateDoc(userDoc, { bio: newBio });
-                        viewBio.innerText = newBio;
+                        
+                        viewBio.innerText = newBio || "This dweller hasn't etched a bio yet.";
                         viewBio.classList.remove('hidden');
                         editBio.classList.add('hidden');
                         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
                         isEditing = false;
                     } catch (e) {
-                        console.error("Bio save blicked:", e);
+                        editBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
                     }
                 }
+            };
+        }
+
+        function setupFriendButton(myUid, targetDocId) {
+            const fBtn = document.getElementById('friend-btn');
+            // This is where we'd check a "friends" collection later
+            fBtn.onclick = () => {
+                fBtn.innerText = "Request Sent";
+                fBtn.disabled = true;
+                fBtn.classList.replace('bg-blue-600', 'bg-gray-700');
             };
         }
 
