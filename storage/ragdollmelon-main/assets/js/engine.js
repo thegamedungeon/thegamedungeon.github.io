@@ -144,6 +144,26 @@ function setupMultiTouch(canvas) {
     });
 }
 
+function spawnBrick(x, y) {
+    const brick = Bodies.rectangle(x, y, 60, 30, {
+        mass: 15, // Heavy enough to crush the "oink oink" logic
+        friction: 0.8,
+        label: 'brick',
+        render: {
+            sprite: {
+                // This points to your regular orange brick
+                texture: 'assets/png/brick.png', 
+                // Scaling it to fit the 60x30 hitbox
+                xScale: 0.5, 
+                yScale: 0.5
+            }
+        }
+    });
+    
+    Composite.add(engine.world, brick);
+    return brick;
+}
+
 function updateWalls() {
     if (!engine) return;
     if (walls.length > 0) Composite.remove(engine.world, walls);
