@@ -112,17 +112,12 @@ function setupMultiTouch(canvas) {
                 activeTouches[t.identifier] = { constraint, body: clicked };
                 Composite.add(engine.world, constraint);
             } else if (mode === 'sandbox' && sandboxSelectedColor !== null) {
-    if (pos.y > 100) { 
-        // ADD THIS CHECK HERE:
-        if (sandboxSelectedColor === 'brick') {
-            spawnBrick(pos.x, pos.y);
-        } else {
-            // This is your original doll spawn logic
-            const newDoll = createRagdoll(pos.x, pos.y, sandboxSelectedColor, 'sandbox', CAT_DEFAULT);
-            dolls.push(newDoll);
-        }
-    }
-});
+                if (pos.y > 100) { 
+                    const newDoll = createRagdoll(pos.x, pos.y, sandboxSelectedColor, 'sandbox', CAT_DEFAULT);
+                    dolls.push(newDoll);
+                }
+            }
+        });
     }, { passive: false });
 
     canvas.addEventListener('touchmove', (e) => {
@@ -392,24 +387,4 @@ window.addEventListener('resize', () => {
         render.canvas.height = window.innerHeight;
         updateWalls();
     }
-});
-
-function spawnBrick(x, y) {
-    const brick = Bodies.rectangle(x, y, 60, 30, {
-        mass: 15, // Heavy enough to crush the "oink oink" logic
-        friction: 0.8,
-        label: 'brick',
-        render: {
-            sprite: {
-                // This points to your regular orange brick
-                texture: 'assets/png/brick.png', 
-                // Scaling it to fit the 60x30 hitbox
-                xScale: 0.5, 
-                yScale: 0.5
-            }
-        }
-    
-    Composite.add(engine.world, brick);
-    return brick;
-}
 });
