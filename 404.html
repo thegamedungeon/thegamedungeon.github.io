@@ -49,7 +49,7 @@
     <div id="loading-ui" class="text-center p-8">
         <div class="spinner mx-auto mb-4"></div>
         <h1 class="text-2xl font-black mb-2 italic tracking-tighter text-blue-500">BYPASSING OINK OINK...</h1>
-        <p class="text-gray-500 text-xs uppercase tracking-widest">Scanning for Dungeon Dweller...</p>
+        <p id="loading-subtext" class="text-gray-500 text-xs uppercase tracking-widest text-center">Scanning for Dungeon Dweller...</p>
     </div>
 
     <!-- 404 State (Hidden by default) -->
@@ -105,18 +105,22 @@
         const appId = "the-game-dungeon-4d75d";
 
         const loadingUI = document.getElementById('loading-ui');
+        const loadingSub = document.getElementById('loading-subtext');
         const errorUI = document.getElementById('error-ui');
         const profileUI = document.getElementById('profile-ui');
 
         async function resolveDungeonPath() {
             const fullPath = window.location.pathname;
             const segments = fullPath.split('/').filter(p => p !== "");
-            const handle = segments.length > 0 ? segments[segments.length - 1] : null;
+            let handle = segments.length > 0 ? segments[segments.length - 1] : null;
             
             if (!handle) {
                 window.location.replace('/');
                 return;
             }
+
+            // Cleanup handle for search
+            handle = decodeURIComponent(handle).trim();
 
             const systemPaths = ['home', 'play', 'chat', 'call', 'account', 'settings', 'index.html', '404.html'];
             if (systemPaths.includes(handle.toLowerCase())) {
@@ -126,29 +130,35 @@
             }
 
             try {
-                if (!auth.currentUser) await signInAnonymously(auth);
+                // TACTICAL FIX: Wait for Auth before querying
+                loadingSub.innerText = "Authenticating with the Dungeon...";
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
 
+                loadingSub.innerText = `Searching for @${handle}...`;
                 const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                // We check for exact match first to respect "open.it.out.fortnite"
-                const q = query(usersRef, where("handle", "==", handle));
-                const querySnapshot = await getDocs(q);
+                
+                // Brute force check: exact and lowercase
+                const q1 = query(usersRef, where("handle", "==", handle));
+                const q2 = query(usersRef, where("handle", "==", handle.toLowerCase()));
+                
+                const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
 
-                if (querySnapshot.empty) {
-                    // Check case-insensitive just in case
-                    const q2 = query(usersRef, where("handle", "==", handle.toLowerCase()));
-                    const snap2 = await getDocs(q2);
-                    
-                    if (snap2.empty) {
-                        show404();
-                    } else {
-                        showProfile(snap2.docs[0].data(), snap2.docs[0].id);
-                    }
+                let userDoc = null;
+                if (!snap1.empty) userDoc = snap1.docs[0];
+                else if (!snap2.empty) userDoc = snap2.docs[0];
+
+                if (userDoc) {
+                    showProfile(userDoc.data(), userDoc.id);
                 } else {
-                    showProfile(querySnapshot.docs[0].data(), querySnapshot.docs[0].id);
+                    show404();
                 }
             } catch (err) {
                 console.error("Dungeon verification failed:", err);
-                show404();
+                // If it's a permission error, oink oink is blicking us
+                loadingSub.innerText = "Access Denied by Oink Oink Security.";
+                setTimeout(show404, 1500);
             }
         }
 
@@ -172,9 +182,9 @@
 
             onAuthStateChanged(auth, (user) => {
                 if (user && !user.isAnonymous) {
+                    // Check if the current user owns this profile
                     const userHandle = user.email ? user.email.split('@')[0] : null;
-                    // Strict check for the email prefix matching the profile handle
-                    if (userHandle && userHandle.toLowerCase() === data.handle.toLowerCase()) {
+                    if (userHandle && (userHandle.toLowerCase() === data.handle.toLowerCase() || user.uid === data.uid)) {
                         setupEditMode(firestoreId);
                     } else {
                         setupFriendButton(user.uid, firestoreId);
@@ -187,7 +197,6 @@
             const editBtn = document.getElementById('edit-btn');
             const viewBio = document.getElementById('view-bio');
             const editBio = document.getElementById('edit-bio');
-            
             editBtn.classList.remove('hidden');
             
             let isEditing = false;
@@ -205,7 +214,6 @@
                         editBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
                         const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', docId);
                         await updateDoc(userDoc, { bio: newBio });
-                        
                         viewBio.innerText = newBio || "This dweller hasn't etched a bio yet.";
                         viewBio.classList.remove('hidden');
                         editBio.classList.add('hidden');
@@ -220,7 +228,6 @@
 
         function setupFriendButton(myUid, targetDocId) {
             const fBtn = document.getElementById('friend-btn');
-            // This is where we'd check a "friends" collection later
             fBtn.onclick = () => {
                 fBtn.innerText = "Request Sent";
                 fBtn.disabled = true;
