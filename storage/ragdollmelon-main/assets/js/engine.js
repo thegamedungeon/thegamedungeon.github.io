@@ -392,14 +392,18 @@ window.addEventListener('resize', () => {
     }
 });
 
-// STEP 1: FOUNDATION - The Spawn Brick Function
+// STEP 2: THE SKINNING - Adding your tuff brick sprite
 function spawnBrick(x, y) {
     const brick = Bodies.rectangle(x, y, 60, 30, {
         mass: 15,
         friction: 0.8,
         label: 'brick',
         render: {
-            fillStyle: '#e67e22' // Starting with orange color for testing
+            sprite: {
+                texture: 'brick.png', // Using your uploaded asset
+                xScale: 0.15, // Adjusted to fit the 60x30 hitbox
+                yScale: 0.15
+            }
         }
     });
     Composite.add(engine.world, brick);
