@@ -85,7 +85,7 @@
         </div>
     </div>
 
-     <!-- Taskbar -->
+<!-- Taskbar -->
     <nav id="main-taskbar" class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
         <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
             <i class="fa-solid fa-house text-xl"></i>
@@ -110,11 +110,11 @@
             <span class="text-[10px] mt-1">Account</span>
         </button>
     </nav>
-    
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -138,6 +138,8 @@
         async function resolveDungeonPath() {
             const fullPath = window.location.pathname;
             const segments = fullPath.split('/').filter(p => p !== "");
+            
+            // The handle is the person's username from the URL
             let handle = segments.length > 0 ? segments[segments.length - 1] : null;
             
             if (!handle) {
@@ -155,44 +157,31 @@
             }
 
             try {
-                loadingSub.innerText = "Synchronizing with the Shadows...";
-                if (!auth.currentUser) {
-                    await signInAnonymously(auth);
-                }
+                loadingSub.innerText = "Authenticating with the Dungeon...";
+                await signInAnonymously(auth);
 
-                loadingSub.innerText = `Locating @${handle}...`;
+                loadingSub.innerText = `Fetching profile: ${handle}...`;
                 
-                // TACTICAL UPDATE: The username IS the document name
+                // TACTICAL FIX: Replacing placeholder logic with the direct username path
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     showProfile(docSnap.data(), handle);
-                    return;
-                }
-
-                // Fallback: check lowercase document ID
-                const docRefLower = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle.toLowerCase());
-                const docSnapLower = await getDoc(docRefLower);
-                if (docSnapLower.exists()) {
-                    showProfile(docSnapLower.data(), handle.toLowerCase());
-                    return;
-                }
-
-                // Final check: Search the collection if document ID isn't an exact match
-                const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                const q1 = query(usersRef, where("username", "==", handle));
-                const snap1 = await getDocs(q1);
-                
-                if (!snap1.empty) {
-                    showProfile(snap1.docs[0].data(), snap1.docs[0].id);
                 } else {
-                    show404();
+                    // Try lowercase fallback in case of casing issues
+                    const docRefLower = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle.toLowerCase());
+                    const docSnapLower = await getDoc(docRefLower);
+                    if (docSnapLower.exists()) {
+                        showProfile(docSnapLower.data(), handle.toLowerCase());
+                    } else {
+                        show404();
+                    }
                 }
             } catch (err) {
                 console.error("Dungeon verification failed:", err);
-                loadingSub.innerText = "Dungeon Integrity Compromised.";
-                setTimeout(show404, 1000);
+                loadingSub.innerText = "Blicked by Bot-Brained Security.";
+                setTimeout(show404, 1500);
             }
         }
 
@@ -209,22 +198,20 @@
             profileUI.classList.remove('hidden');
             document.title = `Dweller | ${usernameId}`;
 
-            // PFP from data or default
+            // PFP
             document.getElementById('view-pfp').src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
             
-            // Username is the ID
+            // The person's actual username from the doc ID/path
             document.getElementById('view-username').innerText = usernameId;
             document.getElementById('view-handle').innerText = `@${usernameId}`;
             
-            // Bio is inside the data
+            // The bio inside that doc
             document.getElementById('view-bio').innerText = data.bio || "This dweller hasn't etched a bio yet.";
 
             onAuthStateChanged(auth, (user) => {
                 if (user && !user.isAnonymous) {
                     const myHandle = user.email ? user.email.split('@')[0] : null;
-                    const isOwner = (myHandle && myHandle.toLowerCase() === usernameId.toLowerCase());
-                    
-                    if (isOwner) {
+                    if (myHandle && myHandle.toLowerCase() === usernameId.toLowerCase()) {
                         setupEditMode(usernameId);
                     } else {
                         setupFriendButton(user.uid, usernameId);
