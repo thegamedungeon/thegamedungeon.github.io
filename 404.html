@@ -3,18 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Dungeon Lost</title>
+    <title>The Game Dungeon | Redirecting...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body, html {
+        body {
+            background-color: #0a0a0a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden; /* Stops scrolling so the vibe stays clean */
-            background-color: #000; /* Black background if the image takes a sec to load */
+            overflow-y: auto;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6; 
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .glitch-text {
+            text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444;
+            animation: glitch 2s infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444; }
+            50% { text-shadow: -2px 0 #3b82f6, 2px 0 #ef4444; }
+            100% { text-shadow: 2px 0 #3b82f6, -2px 0 #ef4444; }
+        }
+        .pfp-large {
+            width: 100px; height: 100px; border-radius: 50%;
+            border: 4px solid #3b82f6; object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading State -->
+    <div id="loading-ui" class="text-center p-8">
+        <div class="spinner mx-auto mb-4"></div>
+        <h1 class="text-2xl font-black mb-2 italic tracking-tighter text-blue-500">BYPASSING OINK OINK...</h1>
+        <p class="text-gray-500 text-xs uppercase tracking-widest">Scanning for Dungeon Dweller...</p>
+    </div>
+
+    <!-- 404 State (Hidden by default) -->
+    <div id="error-ui" class="hidden text-center p-8">
+        <h1 class="text-9xl font-black mb-4 glitch-text">404</h1>
+        <h2 class="text-2xl font-bold text-blue-500 uppercase tracking-widest mb-4">Gate Blicked!</h2>
+        <p class="text-gray-400 max-w-md mx-auto mb-8">
+            The sector you tried to access doesn’t exist. Either the "oink oink" moved it, or someone (probably Connor) sent you a zesty link.
+        </p>
+        <a href="/" class="inline-block px-8 py-3 rounded-full font-bold uppercase tracking-widest bg-blue-600 text-white text-sm">Return Home</a>
+    </div>
+
+    <!-- Profile UI (Hidden by default) -->
+    <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center animate-fadeIn">
+        <div class="mb-6 flex justify-center">
+            <img id="view-pfp" src="" class="pfp-large shadow-2xl bg-gray-800">
+        </div>
+        <h1 id="view-username" class="text-3xl font-black italic tracking-tighter text-white mb-1 uppercase">Loading...</h1>
+        <p id="view-handle" class="text-blue-500 text-[10px] font-bold tracking-widest mb-6 uppercase">@dweller</p>
+        
+        <div class="bg-[#111] p-4 rounded-2xl border border-white/5 mb-6 text-left relative">
+            <h3 class="text-[10px] text-gray-500 uppercase font-black mb-2">Dweller Bio</h3>
+            <p id="view-bio" class="text-gray-300 text-sm italic">"The Dungeon is silent..."</p>
+            <textarea id="edit-bio" class="hidden w-full bg-black/50 border border-blue-500/50 rounded-lg p-2 text-sm text-white focus:outline-none"></textarea>
+            <button id="edit-btn" class="hidden absolute top-4 right-4 text-blue-500 hover:text-white transition">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+        </div>
+
+        <div class="flex gap-3">
+            <button id="friend-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-xs">Friend Request</button>
+            <button onclick="window.location.href='/'" class="bg-white/5 border border-white/10 text-gray-300 font-bold px-6 py-3 rounded-xl uppercase tracking-widest text-xs">Home</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = "the-game-dungeon-4d75d";
+
+        const loadingUI = document.getElementById('loading-ui');
+        const errorUI = document.getElementById('error-ui');
+        const profileUI = document.getElementById('profile-ui');
+
+        async function resolveDungeonPath() {
+            const path = window.location.pathname.replace(/\//g, '');
+            
+            // If it's a known system path, just redirect to root for the loader to handle
+            const systemPaths = ['home', 'play', 'chat', 'call', 'account', 'settings'];
+            if (systemPaths.includes(path) || path === "") {
+                sessionStorage.setItem('redirect_path', window.location.pathname);
+                window.location.replace('/');
+                return;
+            }
+
+            // Assume it's a potential username (email prefix)
+            try {
+                // We search the public 'data/users' for a document where handle == path
+                // OR we check the standard path: artifacts/appId/public/data/users
+                const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+                const q = query(usersRef, where("handle", "==", path));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    show404();
+                } else {
+                    const userDoc = querySnapshot.docs[0];
+                    const userData = userDoc.data();
+                    showProfile(userData, userDoc.id);
+                }
+            } catch (err) {
+                console.error("Verification failed:", err);
+                show404();
+            }
         }
 
-<b>Fatal Error</b>
-<b></b>
+        function show404() {
+            loadingUI.classList.add('hidden');
+            errorUI.classList.remove('hidden');
+            document.title = "404 | Gate Blicked";
+        }
 
+        function showProfile(data, firestoreId) {
+            loadingUI.classList.add('hidden');
+            profileUI.classList.remove('hidden');
+            document.title = `Dweller | ${data.username || data.handle}`;
+
+            document.getElementById('view-pfp').src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
+            document.getElementById('view-username').innerText = data.username || data.handle;
+            document.getElementById('view-handle').innerText = `@${data.handle}`;
+            document.getElementById('view-bio').innerText = data.bio || "This dweller hasn't etched a bio yet.";
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    const userHandle = user.email ? user.email.split('@')[0] : null;
+                    
+                    // If the logged-in user matches the profile being viewed
+                    if (userHandle === data.handle) {
+                        setupEditMode(firestoreId, data.bio);
+                    }
+                }
+            });
+        }
+
+        function setupEditMode(docId, currentBio) {
+            const editBtn = document.getElementById('edit-btn');
+            const viewBio = document.getElementById('view-bio');
+            const editBio = document.getElementById('edit-bio');
+            
+            editBtn.classList.remove('hidden');
+            
+            let isEditing = false;
+            editBtn.onclick = async () => {
+                if (!isEditing) {
+                    // Start editing
+                    editBio.value = viewBio.innerText;
+                    viewBio.classList.add('hidden');
+                    editBio.classList.remove('hidden');
+                    editBtn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
+                    isEditing = true;
+                } else {
+                    // Save
+                    const newBio = editBio.value.trim();
+                    try {
+                        const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', docId);
+                        await updateDoc(userDoc, { bio: newBio });
+                        viewBio.innerText = newBio;
+                        viewBio.classList.remove('hidden');
+                        editBio.classList.add('hidden');
+                        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+                        isEditing = false;
+                    } catch (e) {
+                        console.error("Bio save blicked:", e);
+                    }
+                }
+            };
+        }
+
+        resolveDungeonPath();
+    </script>
 </body>
 </html>
