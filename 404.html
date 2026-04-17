@@ -48,30 +48,30 @@
     <!-- Loading State -->
     <div id="loading-ui" class="text-center p-8">
         <div class="spinner mx-auto mb-4"></div>
-        <h1 class="text-2xl font-black mb-2 italic tracking-tighter text-blue-500">BYPASSING OINK OINK...</h1>
+        <h1 class="text-2xl font-black mb-2 italic tracking-tighter text-blue-500 uppercase">Bypassing Oink Oink...</h1>
         <p id="loading-subtext" class="text-gray-500 text-xs uppercase tracking-widest text-center">Scanning for Dungeon Dweller...</p>
     </div>
 
-    <!-- 404 State (Hidden by default) -->
+    <!-- 404 State -->
     <div id="error-ui" class="hidden text-center p-8">
         <h1 class="text-9xl font-black mb-4 glitch-text">404</h1>
         <h2 class="text-2xl font-bold text-blue-500 uppercase tracking-widest mb-4">Gate Blicked!</h2>
-        <p class="text-gray-400 max-w-md mx-auto mb-8">
+        <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
             The sector you tried to access doesn’t exist. Either the "oink oink" moved it, or someone (probably Connor) sent you a zesty link.
         </p>
-        <a href="/" class="inline-block px-8 py-3 rounded-full font-bold uppercase tracking-widest bg-blue-600 text-white text-sm">Return Home</a>
+        <a href="/" class="inline-block px-8 py-3 rounded-full font-bold uppercase tracking-widest bg-blue-600 text-white text-xs">Return Home</a>
     </div>
 
-    <!-- Profile UI (Hidden by default) -->
+    <!-- Profile UI -->
     <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center fade-in">
         <div class="mb-6 flex justify-center">
             <img id="view-pfp" src="" class="pfp-large shadow-2xl bg-gray-800" onerror="this.src='https://www.gravatar.com/avatar/0000?d=mp'">
         </div>
-        <h1 id="view-username" class="text-3xl font-black italic tracking-tighter text-white mb-1 uppercase">Loading...</h1>
+        <h1 id="view-username" class="text-3xl font-black italic tracking-tighter text-white mb-1 uppercase tracking-tighter">Loading...</h1>
         <p id="view-handle" class="text-blue-500 text-[10px] font-bold tracking-widest mb-6 uppercase">@dweller</p>
         
         <div class="bg-[#111] p-4 rounded-2xl border border-white/5 mb-6 text-left relative">
-            <h3 class="text-[10px] text-gray-500 uppercase font-black mb-2">Dweller Bio</h3>
+            <h3 class="text-[10px] text-gray-500 uppercase font-black mb-2 tracking-widest">Dweller Bio</h3>
             <p id="view-bio" class="text-gray-300 text-sm italic">"The Dungeon is silent..."</p>
             <textarea id="edit-bio" class="hidden w-full bg-black/50 border border-blue-500/50 rounded-lg p-2 text-sm text-white focus:outline-none h-24 resize-none"></textarea>
             <button id="edit-btn" class="hidden absolute top-4 right-4 text-blue-500 hover:text-white transition">
@@ -80,15 +80,15 @@
         </div>
 
         <div class="flex gap-3">
-            <button id="friend-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-xs">Friend Request</button>
-            <button onclick="window.location.href='/'" class="bg-white/5 border border-white/10 text-gray-300 font-bold px-6 py-3 rounded-xl uppercase tracking-widest text-xs">Home</button>
+            <button id="friend-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-[10px]">Friend Request</button>
+            <button onclick="window.location.href='/'" class="bg-white/5 border border-white/10 text-gray-300 font-bold px-6 py-3 rounded-xl uppercase tracking-widest text-[10px]">Home</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -119,7 +119,6 @@
                 return;
             }
 
-            // Cleanup handle for search
             handle = decodeURIComponent(handle).trim();
 
             const systemPaths = ['home', 'play', 'chat', 'call', 'account', 'settings', 'index.html', '404.html'];
@@ -130,35 +129,44 @@
             }
 
             try {
-                // TACTICAL FIX: Wait for Auth before querying
-                loadingSub.innerText = "Authenticating with the Dungeon...";
+                loadingSub.innerText = "Synchronizing with the Shadows...";
                 if (!auth.currentUser) {
                     await signInAnonymously(auth);
                 }
 
-                loadingSub.innerText = `Searching for @${handle}...`;
+                loadingSub.innerText = `Locating @${handle}...`;
+                
+                // TACTICAL UPDATE: The username IS the document name
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    showProfile(docSnap.data(), handle);
+                    return;
+                }
+
+                // Fallback: check lowercase document ID
+                const docRefLower = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle.toLowerCase());
+                const docSnapLower = await getDoc(docRefLower);
+                if (docSnapLower.exists()) {
+                    showProfile(docSnapLower.data(), handle.toLowerCase());
+                    return;
+                }
+
+                // Final check: Search the collection if document ID isn't an exact match
                 const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+                const q1 = query(usersRef, where("username", "==", handle));
+                const snap1 = await getDocs(q1);
                 
-                // Brute force check: exact and lowercase
-                const q1 = query(usersRef, where("handle", "==", handle));
-                const q2 = query(usersRef, where("handle", "==", handle.toLowerCase()));
-                
-                const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-
-                let userDoc = null;
-                if (!snap1.empty) userDoc = snap1.docs[0];
-                else if (!snap2.empty) userDoc = snap2.docs[0];
-
-                if (userDoc) {
-                    showProfile(userDoc.data(), userDoc.id);
+                if (!snap1.empty) {
+                    showProfile(snap1.docs[0].data(), snap1.docs[0].id);
                 } else {
                     show404();
                 }
             } catch (err) {
                 console.error("Dungeon verification failed:", err);
-                // If it's a permission error, oink oink is blicking us
-                loadingSub.innerText = "Access Denied by Oink Oink Security.";
-                setTimeout(show404, 1500);
+                loadingSub.innerText = "Dungeon Integrity Compromised.";
+                setTimeout(show404, 1000);
             }
         }
 
@@ -169,25 +177,31 @@
             document.title = "404 | Gate Blicked";
         }
 
-        function showProfile(data, firestoreId) {
+        function showProfile(data, usernameId) {
             loadingUI.classList.add('hidden');
             errorUI.classList.add('hidden');
             profileUI.classList.remove('hidden');
-            document.title = `Dweller | ${data.username || data.handle}`;
+            document.title = `Dweller | ${usernameId}`;
 
+            // PFP from data or default
             document.getElementById('view-pfp').src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
-            document.getElementById('view-username').innerText = data.username || data.handle;
-            document.getElementById('view-handle').innerText = `@${data.handle}`;
+            
+            // Username is the ID
+            document.getElementById('view-username').innerText = usernameId;
+            document.getElementById('view-handle').innerText = `@${usernameId}`;
+            
+            // Bio is inside the data
             document.getElementById('view-bio').innerText = data.bio || "This dweller hasn't etched a bio yet.";
 
             onAuthStateChanged(auth, (user) => {
                 if (user && !user.isAnonymous) {
-                    // Check if the current user owns this profile
-                    const userHandle = user.email ? user.email.split('@')[0] : null;
-                    if (userHandle && (userHandle.toLowerCase() === data.handle.toLowerCase() || user.uid === data.uid)) {
-                        setupEditMode(firestoreId);
+                    const myHandle = user.email ? user.email.split('@')[0] : null;
+                    const isOwner = (myHandle && myHandle.toLowerCase() === usernameId.toLowerCase());
+                    
+                    if (isOwner) {
+                        setupEditMode(usernameId);
                     } else {
-                        setupFriendButton(user.uid, firestoreId);
+                        setupFriendButton(user.uid, usernameId);
                     }
                 }
             });
