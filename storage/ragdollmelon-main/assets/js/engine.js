@@ -112,12 +112,17 @@ function setupMultiTouch(canvas) {
                 activeTouches[t.identifier] = { constraint, body: clicked };
                 Composite.add(engine.world, constraint);
             } else if (mode === 'sandbox' && sandboxSelectedColor !== null) {
-                if (pos.y > 100) { 
-                    const newDoll = createRagdoll(pos.x, pos.y, sandboxSelectedColor, 'sandbox', CAT_DEFAULT);
-                    dolls.push(newDoll);
-                }
-            }
-        });
+    if (pos.y > 100) { 
+        // ADD THIS CHECK HERE:
+        if (sandboxSelectedColor === 'brick') {
+            spawnBrick(pos.x, pos.y);
+        } else {
+            // This is your original doll spawn logic
+            const newDoll = createRagdoll(pos.x, pos.y, sandboxSelectedColor, 'sandbox', CAT_DEFAULT);
+            dolls.push(newDoll);
+        }
+    }
+});
     }, { passive: false });
 
     canvas.addEventListener('touchmove', (e) => {
