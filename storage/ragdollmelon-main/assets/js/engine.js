@@ -42,7 +42,7 @@ function cleanupPhysics() {
     dolls = [];
     spawnCounter = 0;
     vitalsVisible = false;
-    document.getElementById('vitals-menu').style.display = 'none';
+    if (document.getElementById('vitals-menu')) document.getElementById('vitals-menu').style.display = 'none';
 }
 
 function initPhysics() {
@@ -95,7 +95,7 @@ function setupMultiTouch(canvas) {
         e.preventDefault();
         Array.from(e.changedTouches).forEach(t => {
             const pos = getPos(t);
-            const bodies = Composite.allBodies(engine.world).filter(b => b.label && (b.label.includes('p1') || b.label.includes('p2') || b.label.includes('sandbox')));
+            const bodies = Composite.allBodies(engine.world).filter(b => b.label && (b.label.includes('p1') || b.label.includes('p2') || b.label.includes('sandbox') || b.label === 'brick'));
             const clicked = Query.point(bodies, pos)[0];
 
             if (clicked) {
@@ -113,8 +113,13 @@ function setupMultiTouch(canvas) {
                 Composite.add(engine.world, constraint);
             } else if (mode === 'sandbox' && sandboxSelectedColor !== null) {
                 if (pos.y > 100) { 
-                    const newDoll = createRagdoll(pos.x, pos.y, sandboxSelectedColor, 'sandbox', CAT_DEFAULT);
-                    dolls.push(newDoll);
+                    // Tactical Brick Check
+                    if (sandboxSelectedColor === 'brick') {
+                        spawnBrick(pos.x, pos.y);
+                    } else {
+                        const newDoll = createRagdoll(pos.x, pos.y, sandboxSelectedColor, 'sandbox', CAT_DEFAULT);
+                        dolls.push(newDoll);
+                    }
                 }
             }
         });
@@ -164,10 +169,7 @@ function createRagdoll(x, y, colorCode, label, category) {
     
     const head = Bodies.circle(x, y - 45, 18, { ...opt, label: label + '_head', render: { sprite: { texture: `${baseUrl}/head/${colorName}.png`, xScale: 0.225, yScale: 0.225 } } });
     const torso = Bodies.rectangle(x, y, 30, 50, { ...opt, label: label + '_torso', render: { sprite: { texture: `${baseUrl}/body/${colorName}.png`, xScale: 0.225, yScale: 0.225 } } });
-    const parts = [head, torso]; // simplified for clarity, constraints handle others
     
-    // Detailed Limb Creation... (omitted for brevity in display, but functionally complete in logic)
-    // To maintain brevity, I'll use the core structure already established.
     const armLU = Bodies.rectangle(x - 20, y - 10, 8, 20, { ...opt, label: label + '_arm', render: { sprite: { texture: `${baseUrl}/arm/fore/universe.png`, xScale: 0.2, yScale: 0.18 } } });
     const armLL = Bodies.rectangle(x - 20, y + 10, 8, 20, { ...opt, label: label + '_arm', render: { sprite: { texture: `${baseUrl}/arm/anat/${colorName}.png`, xScale: 0.2, yScale: 0.18 } } });
     const handL = Bodies.circle(x - 20, y + 25, 8, { ...opt, label: label + '_hand', render: { sprite: { texture: `${baseUrl}/hands/${colorName}.png`, xScale: 0.11, yScale: 0.11 } } });
@@ -206,8 +208,9 @@ function handleCombat(bodyA, bodyB) {
     const hitKey = bodyA.id + "_" + bodyB.id;
     if (activeHits.has(hitKey)) return;
     
-    const isWall = bodyA.label === 'wall' || bodyB.label === 'wall' || bodyA.label === 'ground' || bodyB.label === 'ground';
-    const part = isWall ? (bodyA.label === 'wall' || bodyA.label === 'ground' ? bodyB : bodyA) : null;
+    // Updated isWall to include bricks
+    const isWall = bodyA.label === 'wall' || bodyB.label === 'wall' || bodyA.label === 'ground' || bodyB.label === 'ground' || bodyA.label === 'brick' || bodyB.label === 'brick';
+    const part = isWall ? (bodyA.label === 'wall' || bodyA.label === 'ground' || bodyA.label === 'brick' ? bodyB : bodyA) : null;
     
     if (part && part.label && part.label.includes('torso')) {
         const doll = dolls.find(d => d.parts.includes(part));
@@ -312,7 +315,7 @@ function updateHUD() {
     if (!hud) return;
     if (mode === 'sandbox') {
         hud.classList.add('hidden');
-        hud.style.display = 'none !important';
+        hud.style.display = 'none';
         return;
     } else {
         hud.classList.remove('hidden');
@@ -330,7 +333,7 @@ function checkWin() {
         isGameOver = true;
         const winText = document.getElementById('winner-text');
         if (winText) winText.innerText = p1Health <= 0 ? "P2 DOMINATED" : "P1 DOMINATED";
-        document.getElementById('ko-screen').style.display = 'flex';
+        if (document.getElementById('ko-screen')) document.getElementById('ko-screen').style.display = 'flex';
     }
 }
 
@@ -350,7 +353,7 @@ function handleAI(ai, target) {
 
 function toggleVitals() {
     vitalsVisible = !vitalsVisible;
-    document.getElementById('vitals-menu').style.display = vitalsVisible ? 'flex' : 'none';
+    if (document.getElementById('vitals-menu')) document.getElementById('vitals-menu').style.display = vitalsVisible ? 'flex' : 'none';
 }
 
 function updateVitalsMenu() {
@@ -388,3 +391,17 @@ window.addEventListener('resize', () => {
         updateWalls();
     }
 });
+
+// STEP 1: FOUNDATION - The Spawn Brick Function
+function spawnBrick(x, y) {
+    const brick = Bodies.rectangle(x, y, 60, 30, {
+        mass: 15,
+        friction: 0.8,
+        label: 'brick',
+        render: {
+            fillStyle: '#e67e22' // Starting with orange color for testing
+        }
+    });
+    Composite.add(engine.world, brick);
+    return brick;
+}
