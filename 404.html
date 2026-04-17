@@ -85,6 +85,32 @@
         </div>
     </div>
 
+     <!-- Taskbar -->
+    <nav id="main-taskbar" class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
+        <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-[10px] mt-1">Home</span>
+        </button>
+        <button onclick="navTo('play')" class="nav-item active flex flex-col items-center">
+            <i class="fa-solid fa-gamepad text-xl"></i>
+            <span class="text-[10px] mt-1">Play</span>
+        </button>
+        <button onclick="navTo('chat')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-comment-dots text-xl"></i>
+            <span class="text-[10px] mt-1">Chat</span>
+        </button>
+        <button onclick="navTo('call')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-phone text-xl"></i>
+            <span class="text-[10px] mt-1">Call</span>
+        </button>
+        <button onclick="navTo('account')" class="nav-item flex flex-col items-center">
+            <div id="pfp-slot" class="pfp-container">
+                <i class="fa-solid fa-user text-lg"></i>
+            </div>
+            <span class="text-[10px] mt-1">Account</span>
+        </button>
+    </nav>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
