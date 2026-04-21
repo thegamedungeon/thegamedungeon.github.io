@@ -58,14 +58,16 @@
         .pfp-large {
             width: 100px; height: 100px; border-radius: 50%;
             border: 4px solid #3b82f6; object-fit: cover;
+            background: #1a1a1a;
+            transition: filter 0.3s;
         }
+
         .fade-in { animation: fadeIn 0.5s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Taskbar Styling */
         #taskbar {
             position: fixed;
-            bottom: -100px; /* Hidden initially */
+            bottom: -100px; 
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -94,35 +96,10 @@
         .nav-btn.active { color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
         .nav-btn.enabled { color: #9ca3af; pointer-events: auto; cursor: pointer; }
         .nav-btn.enabled:hover { color: white; transform: translateY(-3px); }
-
-        /* DEBUG CONSOLE */
-        #debug-console {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            width: 250px;
-            max-height: 200px;
-            background: rgba(0,0,0,0.8);
-            border: 1px solid #ef4444;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 10px;
-            padding: 10px;
-            overflow-y: auto;
-            z-index: 9999;
-            color: #00ff00;
-        }
     </style>
 </head>
 <body>
 
-    <!-- DEBUG CONSOLE UI -->
-    <div id="debug-console">
-        <div class="text-red-500 font-bold mb-1 underline">DUNGEON DEBUGGER</div>
-        <div id="debug-logs"></div>
-    </div>
-
-    <!-- Internal Navigation Loader (for moving between pages) -->
     <div id="nav-loader">
         <div class="flex flex-col items-center">
             <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -130,27 +107,28 @@
         </div>
     </div>
 
-    <!-- Initial Loading State -->
     <div id="loading-ui" class="text-center p-8">
         <div class="spinner mx-auto mb-4"></div>
         <h1 class="text-2xl font-black mb-2 italic tracking-tighter text-blue-500 uppercase">Bypassing Oink Oink...</h1>
         <p id="loading-subtext" class="text-gray-500 text-[10px] uppercase tracking-widest text-center">Scanning for Dungeon Dweller...</p>
     </div>
 
-    <!-- 404 State -->
     <div id="error-ui" class="hidden text-center p-8">
         <h1 class="text-9xl font-black mb-4 glitch-text">404</h1>
         <h2 class="text-2xl font-bold text-blue-500 uppercase tracking-widest mb-4">Gate Blicked!</h2>
-        <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
+        <p id="error-desc" class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
             Sector not found. Either the "oink oink" moved it, or Connor sent a zesty link.
         </p>
         <button onclick="navTo('home')" class="inline-block px-8 py-3 rounded-full font-bold uppercase tracking-widest bg-blue-600 text-white text-[10px]">Back to The Crib</button>
     </div>
 
-    <!-- Profile UI -->
     <div id="profile-ui" class="hidden w-full max-w-md p-6 text-center fade-in pb-24">
-        <div class="mb-6 flex justify-center">
-            <img id="view-pfp" src="" class="pfp-large shadow-2xl bg-gray-800" onerror="this.src='https://www.gravatar.com/avatar/0000?d=mp'">
+        <div class="mb-6 flex justify-center relative">
+            <img id="view-pfp" src="" class="pfp-large shadow-2xl" onerror="this.src='https://www.gravatar.com/avatar/0000?d=mp'">
+            <button id="pfp-edit-btn" class="hidden absolute bottom-0 right-1/3 bg-blue-600 w-8 h-8 rounded-full border-2 border-[#0a0a0a] flex items-center justify-center">
+                <i class="fa-solid fa-camera text-xs"></i>
+            </button>
+            <input type="file" id="pfp-input" class="hidden" accept="image/*">
         </div>
         <h1 id="view-username" class="text-3xl font-black italic tracking-tighter text-white mb-1 uppercase tracking-tighter">Loading...</h1>
         <p id="view-handle" class="text-blue-500 text-[10px] font-bold tracking-widest mb-6 uppercase">@dweller</p>
@@ -164,17 +142,15 @@
             </button>
         </div>
 
-        <div class="flex gap-3">
+        <div id="social-actions" class="flex gap-3">
             <button id="friend-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-[10px]">Friend Request</button>
         </div>
     </div>
 
-    <!-- The Taskbar -->
     <div id="taskbar">
         <button onclick="navTo('home')" class="nav-btn" id="btn-home"><i class="fa-solid fa-house"></i></button>
         <button onclick="navTo('play')" class="nav-btn" id="btn-play"><i class="fa-solid fa-gamepad"></i></button>
         <button onclick="navTo('chat')" class="nav-btn" id="btn-chat"><i class="fa-solid fa-comment-dots"></i></button>
-        <button onclick="navTo('call')" class="nav-btn" id="btn-call"><i class="fa-solid fa-phone"></i></button>
         <button onclick="navTo('account')" class="nav-btn" id="btn-profile"><i class="fa-solid fa-user"></i></button>
     </div>
 
@@ -182,15 +158,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
-        // DEBUG HELPER
-        function log(msg) {
-            const logs = document.getElementById('debug-logs');
-            const div = document.createElement('div');
-            div.innerText = `> ${msg}`;
-            logs.appendChild(div);
-            logs.scrollTop = logs.scrollHeight;
-        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -207,13 +174,11 @@
         const appId = "the-game-dungeon-4d75d";
 
         const loadingUI = document.getElementById('loading-ui');
-        const loadingSub = document.getElementById('loading-subtext');
         const errorUI = document.getElementById('error-ui');
         const profileUI = document.getElementById('profile-ui');
         const taskbar = document.getElementById('taskbar');
 
         window.navTo = function(page) {
-            log(`Navigating to: ${page}`);
             const loader = document.getElementById('nav-loader');
             const statusLabel = document.getElementById('loader-status');
             const url = page === 'home' ? '/home/' : `/${page}/`;
@@ -232,79 +197,122 @@
         };
 
         async function resolveDungeonPath() {
-            log("Starting resolveDungeonPath...");
             const fullPath = window.location.pathname;
-            log(`Full Path: ${fullPath}`);
-            const segments = fullPath.split('/').filter(p => p !== "");
-            log(`Segments: [${segments.join(', ')}]`);
-
+            const segments = fullPath.split('/').filter(p => p !== "" && p !== "index.html" && p !== "404.html");
+            
             let handle = segments.length > 0 ? segments[segments.length - 1] : null;
             
             if (!handle) {
-                log("No handle found in URL. Redirecting home.");
-                window.location.replace('/');
+                show404("You hit the gate with no ID, bro.");
                 return;
             }
 
             handle = decodeURIComponent(handle).trim();
-            log(`Target Handle: "${handle}"`);
 
             try {
-                log("Attempting Anonymous Auth...");
                 await signInAnonymously(auth);
-                log("Auth Success.");
 
-                const docPath = `artifacts/${appId}/public/data/users/${handle}`;
-                log(`Querying Firestore: ${docPath}`);
-                
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle);
-                const docSnap = await getDoc(docRef);
+                let docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', handle);
+                let docSnap = await getDoc(docRef);
+
+                if (!docSnap.exists() && !handle.includes('@')) {
+                    const emailHandle = handle + "@gmail.com";
+                    docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', emailHandle);
+                    docSnap = await getDoc(docRef);
+                }
 
                 if (docSnap.exists()) {
-                    log("Document FOUND. Loading UI.");
-                    showProfile(docSnap.data(), handle);
+                    showProfile(docSnap.data(), docSnap.id);
                 } else {
-                    log("Document NOT FOUND in users collection.");
-                    show404();
+                    show404(`"${handle}" is a ghost. He doesn't live here.`);
                 }
             } catch (err) {
-                log(`CRITICAL ERROR: ${err.message}`);
-                console.error(err);
-                show404();
+                show404(`Dungeon System Error: ${err.code}`);
             }
         }
 
-        function show404() {
-            log("Triggering 404 View.");
+        function show404(customMsg) {
+            if (customMsg) document.getElementById('error-desc').innerText = customMsg;
             loadingUI.classList.add('hidden');
+            profileUI.classList.add('hidden');
             errorUI.classList.remove('hidden');
             taskbar.classList.add('show');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.add('enabled'));
         }
 
         function showProfile(data, usernameId) {
-            log(`Displaying profile for ${usernameId}`);
             loadingUI.classList.add('hidden');
+            errorUI.classList.add('hidden');
             profileUI.classList.remove('hidden');
             taskbar.classList.add('show');
             
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.add('enabled'));
-            document.getElementById('btn-profile').classList.add('active');
-
-            document.getElementById('view-pfp').src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
-            document.getElementById('view-username').innerText = usernameId;
+            
+            const pfpImg = document.getElementById('view-pfp');
+            pfpImg.src = data.pfp || "https://www.gravatar.com/avatar/0000?d=mp";
+            document.getElementById('view-username').innerText = data.displayName || usernameId.split('@')[0];
             document.getElementById('view-handle').innerText = `@${usernameId}`;
             document.getElementById('view-bio').innerText = data.bio || "This dweller hasn't etched a bio yet.";
 
+            // SECURITY CHECK: Check if the logged-in user owns this profile
             onAuthStateChanged(auth, (user) => {
                 if (user && !user.isAnonymous) {
-                    log("User logged in (Not Anonymous). Checking ownership.");
-                    const myHandle = user.email ? user.email.split('@')[0] : null;
-                    if (myHandle && myHandle.toLowerCase() === usernameId.toLowerCase()) {
-                        log("Ownership verified. Enabling Edit Mode.");
+                    const myEmail = user.email ? user.email.toLowerCase() : null;
+                    const profileEmail = usernameId.toLowerCase();
+                    
+                    if (myEmail === profileEmail) {
+                        // IT'S YOU! Show edit controls
+                        document.getElementById('btn-profile').classList.add('active');
+                        document.getElementById('social-actions').classList.add('hidden');
                         setupEditMode(usernameId);
+                        setupPfpUpload(usernameId);
+                    } else {
+                        // NOT YOU. Hide edit controls, show friend btn
+                        document.getElementById('pfp-edit-btn').classList.add('hidden');
+                        document.getElementById('edit-btn').classList.add('hidden');
+                        document.getElementById('social-actions').classList.remove('hidden');
                     }
+                } else {
+                    // GUEST OR NOT LOGGED IN
+                    document.getElementById('pfp-edit-btn').classList.add('hidden');
+                    document.getElementById('edit-btn').classList.add('hidden');
+                    document.getElementById('social-actions').classList.remove('hidden');
                 }
             });
+        }
+
+        function setupPfpUpload(docId) {
+            const pfpBtn = document.getElementById('pfp-edit-btn');
+            const pfpInput = document.getElementById('pfp-input');
+            const pfpImg = document.getElementById('view-pfp');
+            
+            pfpBtn.classList.remove('hidden');
+            pfpImg.classList.add('cursor-pointer');
+            pfpBtn.onclick = () => pfpInput.click();
+            pfpImg.onclick = () => pfpInput.click();
+
+            pfpInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (file.size > 800000) {
+                    // Too big for oink oink to handle (base64 string limit)
+                    return; 
+                }
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64String = event.target.result;
+                    try {
+                        const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', docId);
+                        await updateDoc(userDoc, { pfp: base64String });
+                        pfpImg.src = base64String;
+                    } catch (err) {
+                        console.error(`PFP FAIL: ${err.code}`);
+                    }
+                };
+                reader.readAsDataURL(file);
+            };
         }
 
         function setupEditMode(docId) {
@@ -324,7 +332,6 @@
                 } else {
                     const newBio = editBio.value.trim();
                     try {
-                        log(`Updating bio for ${docId}...`);
                         const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', docId);
                         await updateDoc(userDoc, { bio: newBio });
                         viewBio.innerText = newBio;
@@ -332,15 +339,14 @@
                         editBio.classList.add('hidden');
                         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
                         isEditing = false;
-                        log("Bio update successful.");
                     } catch (e) {
-                        log(`UPDATE ERROR: ${e.message}`);
+                        console.error(`UPDATE FAIL: ${e.code}`);
                     }
                 }
             };
         }
 
-        resolveDungeonPath();
+        setTimeout(resolveDungeonPath, 100);
     </script>
 </body>
 </html>
