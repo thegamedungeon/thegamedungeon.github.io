@@ -224,7 +224,7 @@
                 if (docSnap.exists()) {
                     showProfile(docSnap.data(), docSnap.id);
                 } else {
-                    show404(`"${handle}" is a ghost. He doesn't live here.`);
+                    show404(``);
                 }
             } catch (err) {
                 show404(`Dungeon System Error: ${err.code}`);
