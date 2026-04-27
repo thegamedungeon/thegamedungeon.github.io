@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Dungeon | Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .taskbar {
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 40;
+        }
+
+        .nav-item {
+            color: #9ca3af;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+        }
+
+        .pfp-container {
+            width: 40px; height: 40px; border-radius: 50%;
+            overflow: hidden; background: #262626;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px;
+        }
+
+        .glass-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: #3b82f6;
+            outline: none;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #nav-loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .error-toast {
+            display: none;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="nav-loader">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-blue-500 font-bold uppercase text-xs tracking-widest">Verifying Sector Access...</p>
+    </div>
+
+    <!-- Header -->
+    <header class="p-6 text-center">
+        <h1 class="text-3xl font-black italic tracking-tighter text-blue-500">GATEWAY</h1>
+        <p class="text-gray-500 text-[10px] uppercase tracking-widest">Identify yourself or get blicked</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col items-center justify-center p-6 pb-24 overflow-y-auto">
+        <div class="w-full max-w-sm glass-card p-8">
+            <!-- Fast Pass -->
+            <button onclick="googleFastPass()" class="w-full bg-white text-black font-black py-4 rounded-xl flex items-center justify-center gap-3 mb-8 hover:bg-gray-200 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5" alt="">
+                GOOGLE FAST PASS
+            </button>
+
+            <div class="flex items-center gap-4 mb-8">
+                <div class="h-[1px] bg-white/10 flex-1"></div>
+                <span class="text-gray-600 text-[10px] font-bold">OR ETCH SCROLL</span>
+                <div class="h-[1px] bg-white/10 flex-1"></div>
+            </div>
+
+            <!-- Email/Password -->
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">FULL EMAIL (NO USERNAMES)</label>
+                    <input type="email" id="email" placeholder="example@gmail.com" class="w-full p-4 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">SECRET KEY</label>
+                    <input type="password" id="password" placeholder="••••••••" class="w-full p-4 rounded-xl text-sm">
+                </div>
+                <button onclick="emailLogin()" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl mt-4 hover:bg-blue-500 transition uppercase tracking-widest">
+                    Enter Dungeon
+                </button>
+            </div>
+
+            <!-- Error Feedback -->
+            <div id="error-box" class="error-toast mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p id="error-msg" class="text-red-500 text-xs text-center font-bold"></p>
+            </div>
+
+            <p class="mt-8 text-center text-gray-500 text-xs">
+                New dweller? <button onclick="navTo('account/login/new')" class="text-blue-500 font-bold">Create Account</button>
+            </p>
+        </div>
+    </main>
+
+    <!-- Taskbar -->
+    <nav class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
+        <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-[10px] mt-1">Home</span>
+        </button>
+        <button onclick="navTo('play')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-gamepad text-xl"></i>
+            <span class="text-[10px] mt-1">Play</span>
+        </button>
+        <button onclick="navTo('chat')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-comment-dots text-xl"></i>
+            <span class="text-[10px] mt-1">Chat</span>
+        </button>
+        <button onclick="navTo('call')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-phone text-xl"></i>
+            <span class="text-[10px] mt-1">Call</span>
+        </button>
+        <button onclick="navTo('account')" class="nav-item active flex flex-col items-center">
+            <div id="pfp-slot" class="pfp-container"><i class="fa-solid fa-user"></i></div>
+            <span class="text-[10px] mt-1">Account</span>
+        </button>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, setPersistence, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const loader = document.getElementById('nav-loader');
+        const errorBox = document.getElementById('error-box');
+        const errorMsg = document.getElementById('error-msg');
+
+        function showError(msg) {
+            errorMsg.innerText = msg;
+            errorBox.style.display = 'block';
+            loader.style.display = 'none';
+        }
+
+        window.emailLogin = async () => {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email.includes('@')) {
+                showError("Nice try, but you need a real email (with the @).");
+                return;
+            }
+
+            loader.style.display = 'flex';
+            errorBox.style.display = 'none';
+
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                await signInWithEmailAndPassword(auth, email, password);
+                navTo('account');
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    showError("Nice try, but you need to create an account first.");
+                } else {
+                    showError("Gate blicked: " + error.message);
+                }
+            }
+        };
+
+        window.googleFastPass = async () => {
+            loader.style.display = 'flex';
+            errorBox.style.display = 'none';
+            
+            try {
+                // We use a popup for iPad friendliness
+                await setPersistence(auth, browserLocalPersistence);
+                const result = await signInWithPopup(auth, provider);
+                
+                // Note: fetchSignInMethodsForEmail is sometimes blicked by privacy settings, 
+                // but for a "Fast Pass" we'll assume if the login succeeds, they're in.
+                // If they don't have a profile doc, the /account/ redirect logic will handle it.
+                navTo('account');
+            } catch (error) {
+                console.error(error);
+                showError("Fast Pass failed. Did you create an account first?");
+            }
+        };
+
+        window.navTo = (page) => {
+            const url = page.startsWith('/') ? page : `/${page}/`;
+            if (window.self !== window.top) {
+                window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
+            } else {
+                window.location.href = url;
+            }
+        };
+    </script>
+</body>
+</html>
