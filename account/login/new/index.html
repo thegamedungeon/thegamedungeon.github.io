@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Dungeon | New Dweller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .taskbar {
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 40;
+        }
+
+        .nav-item {
+            color: #9ca3af;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+        }
+
+        .glass-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+        }
+
+        input, textarea {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #3b82f6;
+            outline: none;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #human-verify-btn {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            transition: transform 0.1s;
+        }
+
+        #human-verify-btn:active {
+            transform: scale(0.95);
+            background: #1e3a8a;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #3b82f6;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        #nav-loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .error-toast {
+            display: none;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .pfp-preview {
+            width: 80px; height: 80px; border-radius: 50%;
+            object-fit: cover; border: 2px solid #3b82f6;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="nav-loader">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p id="loader-msg" class="mt-4 text-blue-500 font-bold uppercase text-xs tracking-widest text-center px-6">Etching your soul into the database...</p>
+    </div>
+
+    <header class="p-6 text-center">
+        <h1 class="text-3xl font-black italic tracking-tighter text-blue-500">NEW DWELLER</h1>
+        <p class="text-gray-500 text-[10px] uppercase tracking-widest">Sign your life away</p>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center p-6 pb-32">
+        <div class="w-full max-w-md glass-card p-8">
+            
+            <!-- Fast Pass -->
+            <button onclick="googleFastPass()" class="w-full bg-white text-black font-black py-4 rounded-xl flex items-center justify-center gap-3 mb-8 hover:bg-gray-200 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5" alt="">
+                GOOGLE FAST PASS (NEW ONLY)
+            </button>
+
+            <div class="flex items-center gap-4 mb-8">
+                <div class="h-[1px] bg-white/10 flex-1"></div>
+                <span class="text-gray-600 text-[10px] font-bold uppercase">Manual Labor</span>
+                <div class="h-[1px] bg-white/10 flex-1"></div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">DISPLAY NAME</label>
+                    <input type="text" id="display-name" placeholder="Goon Killer 9000" class="w-full p-4 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">FULL EMAIL</label>
+                    <input type="email" id="email" placeholder="user@dungeon.com" class="w-full p-4 rounded-xl text-sm">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 mb-1 block">PASSWORD</label>
+                        <input type="password" id="password" placeholder="••••••••" class="w-full p-4 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 mb-1 block">VERIFY PASSWORD</label>
+                        <input type="password" id="password-verify" placeholder="••••••••" class="w-full p-4 rounded-xl text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">BIO (OPTIONAL)</label>
+                    <textarea id="bio" placeholder="Tell the dungeon your secrets..." class="w-full p-4 rounded-xl text-sm h-24 resize-none"></textarea>
+                </div>
+                
+                <!-- PFP Upload -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">PROFILE ROCK (OPTIONAL)</label>
+                    <div class="flex items-center gap-4">
+                        <label class="cursor-pointer bg-blue-600/20 border border-blue-600/30 text-blue-500 font-bold px-4 py-2 rounded-lg text-xs hover:bg-blue-600/30 transition">
+                            SELECT PHOTO
+                            <input type="file" id="pfp-input" accept="image/*" class="hidden" onchange="handlePfpPreview(this)">
+                        </label>
+                        <img id="pfp-preview-img" src="" class="pfp-preview" alt="Preview">
+                    </div>
+                </div>
+
+                <!-- Human Verification -->
+                <div class="mt-8">
+                    <p class="text-[10px] font-bold text-gray-400 text-center mb-2 uppercase tracking-widest">Hold for exactly 3.275 seconds</p>
+                    <div class="w-full bg-white/5 rounded-full overflow-hidden mb-2">
+                        <div id="verify-progress" class="progress-bar"></div>
+                    </div>
+                    <button id="human-verify-btn" 
+                            class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl uppercase tracking-widest text-sm shadow-lg shadow-blue-500/20">
+                        VERIFY HUMANITY
+                    </button>
+                    <p id="timer-hint" class="text-center text-[10px] text-gray-600 mt-2 italic">Don't mess up or the Oink Oink wins.</p>
+                </div>
+            </div>
+
+            <!-- Error Feedback -->
+            <div id="error-box" class="error-toast mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p id="error-msg" class="text-red-500 text-xs text-center font-bold"></p>
+            </div>
+        </div>
+    </main>
+
+    <nav class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
+        <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-[10px] mt-1">Home</span>
+        </button>
+        <button onclick="navTo('play')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-gamepad text-xl"></i>
+            <span class="text-[10px] mt-1">Play</span>
+        </button>
+        <button onclick="navTo('chat')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-comment-dots text-xl"></i>
+            <span class="text-[10px] mt-1">Chat</span>
+        </button>
+        <button onclick="navTo('call')" class="nav-item flex flex-col items-center">
+            <i class="fa-solid fa-phone text-xl"></i>
+            <span class="text-[10px] mt-1">Call</span>
+        </button>
+        <button onclick="navTo('account')" class="nav-item active flex flex-col items-center">
+            <div id="pfp-slot" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>
+            <span class="text-[10px] mt-1">Account</span>
+        </button>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, setPersistence, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        const appId = "the-game-dungeon-4d75d";
+
+        const loader = document.getElementById('nav-loader');
+        const errorBox = document.getElementById('error-box');
+        const errorMsg = document.getElementById('error-msg');
+        const verifyBtn = document.getElementById('human-verify-btn');
+        const progressBar = document.getElementById('verify-progress');
+
+        let holdStart = 0;
+        let pfpBase64 = null;
+        const TARGET_TIME = 3275; // 3.275 seconds
+        const TOLERANCE = 150; // Milliseconds of slack (don't want them to smash their iPad)
+
+        window.handlePfpPreview = (input) => {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    pfpBase64 = e.target.result;
+                    const preview = document.getElementById('pfp-preview-img');
+                    preview.src = pfpBase64;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        function showError(msg) {
+            errorMsg.innerText = msg;
+            errorBox.style.display = 'block';
+            loader.style.display = 'none';
+        }
+
+        // Logic for the annoy-o-meter (Human Verification)
+        verifyBtn.onpointerdown = (e) => {
+            holdStart = Date.now();
+            progressBar.style.width = '100%';
+            progressBar.style.transition = `width ${TARGET_TIME}ms linear`;
+        };
+
+        window.onpointerup = async (e) => {
+            if (holdStart === 0) return;
+            const holdTime = Date.now() - holdStart;
+            holdStart = 0;
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+
+            if (Math.abs(holdTime - TARGET_TIME) < TOLERANCE) {
+                verifyBtn.innerText = "VERIFIED DWELLER ✅";
+                verifyBtn.classList.remove('bg-blue-600');
+                verifyBtn.classList.add('bg-green-600');
+                // Run registration
+                processRegistration();
+            } else {
+                showError(`Nice try Connor, but you held for ${holdTime}ms. Target is ${TARGET_TIME}ms.`);
+            }
+        };
+
+        async function processRegistration() {
+            const name = document.getElementById('display-name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value;
+            const passV = document.getElementById('password-verify').value;
+            const bio = document.getElementById('bio').value;
+
+            // Validations
+            if (!name) return showError("Need a name, dweller.");
+            if (!email.includes('@')) return showError("Need a real email (with the @).");
+            if (pass !== passV) return showError("Passwords don't match. Skill issue.");
+            
+            // Password Strength: 8 chars, Upper, Lower, Number
+            const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+            if (!passRegex.test(pass)) {
+                return showError("Password too weak. Need 8+ chars, Uppercase, Lowercase, and a Number.");
+            }
+
+            loader.style.display = 'flex';
+            errorBox.style.display = 'none';
+
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCred.user;
+
+                // Update Auth Profile
+                await updateProfile(user, { displayName: name });
+
+                // Create Firestore Profile
+                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), {
+                    displayName: name,
+                    email: email,
+                    bio: bio || "Just another dweller in the dark.",
+                    pfp: pfpBase64 || null,
+                    createdAt: Date.now()
+                });
+
+                navTo('home');
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/email-already-in-use') {
+                    showError("Email taken. Use Google Fast Pass if you forgot your key.");
+                } else {
+                    showError("Auth Blicked: " + error.code);
+                }
+            }
+        }
+
+        window.googleFastPass = async () => {
+            loader.style.display = 'flex';
+            errorBox.style.display = 'none';
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // Logic: Check if they are actually new
+                // For simplicity in this demo, we'll auto-redirect to account to see if they have a profile
+                // But normally we'd check Firestore here.
+                navTo('account');
+            } catch (error) {
+                showError("Google Pass Blicked. " + error.message);
+            }
+        };
+
+        window.navTo = (page) => {
+            const url = page.startsWith('/') ? page : `/${page}/`;
+            if (window.self !== window.top) {
+                window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
+            } else {
+                window.location.href = url;
+            }
+        };
+    </script>
+</body>
+</html>
