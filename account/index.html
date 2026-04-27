@@ -74,8 +74,8 @@
             
             if (user) {
                 if (user.isAnonymous) {
-                    statusLabel.innerText = "Guest Access Denied. Redirecting Home...";
-                    setTimeout(() => navigateTo('/home/'), 1500);
+                    statusLabel.innerText = "Guest Access Denied. Redirecting To Login...";
+                    setTimeout(() => navigateTo('/account/login/'), 1500);
                 } else {
                     statusLabel.innerText = "Access Granted. Stripping Credentials...";
                     
@@ -89,7 +89,7 @@
                 }
             } else {
                 statusLabel.innerText = "No Credentials Found. Redirecting to Login...";
-                setTimeout(() => navigateTo('/login/'), 1500);
+                setTimeout(() => navigateTo('/account/login/'), 1500);
             }
         });
 
