@@ -87,7 +87,7 @@
 
     <div id="nav-loader">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 text-blue-500 font-bold uppercase text-xs tracking-widest">Verifying Sector Access...</p>
+        <p class="mt-4 text-blue-500 font-bold uppercase text-xs tracking-widest">Locking Session...</p>
     </div>
 
     <!-- Header -->
@@ -102,23 +102,23 @@
             <!-- Fast Pass -->
             <button onclick="googleFastPass()" class="w-full bg-white text-black font-black py-4 rounded-xl flex items-center justify-center gap-3 mb-8 hover:bg-gray-200 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5" alt="">
-                GOOGLE FAST PASS
+                GOOGLE FAST PASS (FAST LINE)
             </button>
 
             <div class="flex items-center gap-4 mb-8">
                 <div class="h-[1px] bg-white/10 flex-1"></div>
-                <span class="text-gray-600 text-[10px] font-bold">OR ETCH SCROLL</span>
+                <span class="text-gray-600 text-[10px] font-bold">OR SHOW YOUR SOUL (DISNEY LAND RIDE LINE)</span>
                 <div class="h-[1px] bg-white/10 flex-1"></div>
             </div>
 
             <!-- Email/Password -->
             <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">FULL EMAIL (NO USERNAMES)</label>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">EMAIL</label>
                     <input type="email" id="email" placeholder="example@gmail.com" class="w-full p-4 rounded-xl text-sm">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">SECRET KEY</label>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">PASSWORD</label>
                     <input type="password" id="password" placeholder="••••••••" class="w-full p-4 rounded-xl text-sm">
                 </div>
                 <button onclick="emailLogin()" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl mt-4 hover:bg-blue-500 transition uppercase tracking-widest">
@@ -163,7 +163,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, setPersistence, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -201,15 +201,18 @@
             errorBox.style.display = 'none';
 
             try {
+                // IMPORTANT: Wait for persistence to set before trying to sign in
                 await setPersistence(auth, browserLocalPersistence);
                 await signInWithEmailAndPassword(auth, email, password);
-                navTo('account');
+                
+                // Extra pause to let the cookie settle on iPad
+                setTimeout(() => navTo('account'), 500);
             } catch (error) {
                 console.error(error);
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
                     showError("Nice try, but you need to create an account first.");
                 } else {
-                    showError("Gate blicked: " + error.message);
+                    showError("Gate blicked: " + error.code);
                 }
             }
         };
@@ -219,14 +222,10 @@
             errorBox.style.display = 'none';
             
             try {
-                // We use a popup for iPad friendliness
                 await setPersistence(auth, browserLocalPersistence);
-                const result = await signInWithPopup(auth, provider);
+                await signInWithPopup(auth, provider);
                 
-                // Note: fetchSignInMethodsForEmail is sometimes blicked by privacy settings, 
-                // but for a "Fast Pass" we'll assume if the login succeeds, they're in.
-                // If they don't have a profile doc, the /account/ redirect logic will handle it.
-                navTo('account');
+                setTimeout(() => navTo('account'), 500);
             } catch (error) {
                 console.error(error);
                 showError("Fast Pass failed. Did you create an account first?");
