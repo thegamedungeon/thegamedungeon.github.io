@@ -29,7 +29,10 @@
 
     <!-- Auth Guard Overlay (Prevents flash of content) -->
     <div id="loading-screen" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div class="flex flex-col items-center space-y-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <p class="text-blue-500 font-mono text-sm tracking-widest animate-pulse">ENTERING THE DUNGEON...</p>
+        </div>
     </div>
 
     <!-- Top Right Nav -->
@@ -41,7 +44,7 @@
         
         <!-- Profile Picture / Guest Icon -->
         <a href="/account/" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500 hover:scale-110 transition-transform bg-neutral-800 flex items-center justify-center">
-            <img id="user-pfp" src="/storage/photos/guest.png" alt="Profile" class="w-full h-full object-cover">
+            <img id="user-pfp" src="/storage/photos/guest.png" alt="Profile" class="w-full h-full object-cover" onerror="this.src='/storage/photos/guest.png'">
         </a>
     </div>
 
@@ -62,7 +65,7 @@
     <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -79,41 +82,46 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                // If not logged in, bounce to login
-                window.location.href = "/accounts/login/";
-            } else {
-                // We are in. Get the username (email minus the domain part)
-                const username = user.email.split('@')[0];
-                const pfpImg = document.getElementById('user-pfp');
-                const loadingScreen = document.getElementById('loading-screen');
-                const nav = document.getElementById('nav-container');
+        // Safety timeout: If auth takes longer than 5 seconds, try to show the UI anyway or force redirect
+        const safetyTimeout = setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && loadingScreen.style.display !== 'none') {
+                console.log("Auth taking too long, checking status...");
+                if (!auth.currentUser) window.location.href = "/accounts/login/";
+            }
+        }, 5000);
 
-                try {
-                    // Fetch data from artifacts/{project-id}/public/data/users/{username}
-                    // Since project-id is "the-game-dungeon-4d75d"
+        onAuthStateChanged(auth, async (user) => {
+            clearTimeout(safetyTimeout);
+            const loadingScreen = document.getElementById('loading-screen');
+            const nav = document.getElementById('nav-container');
+
+            if (!user) {
+                // If there's absolutely no user, bounce
+                window.location.href = "/accounts/login/";
+                return;
+            }
+
+            // If we have a user, handle the PFP
+            const pfpImg = document.getElementById('user-pfp');
+            
+            try {
+                if (user.email) {
+                    const username = user.email.split('@')[0];
                     const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", username);
                     const docSnap = await getDoc(docRef);
 
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        if (data.pfp && data.pfp.startsWith('data:image')) {
-                            pfpImg.src = data.pfp; // It's base64
-                        } else {
-                            // Field exists but isn't valid base64 or doesn't have the prefix
-                            pfpImg.src = "/storage/photos/guest.png";
+                        if (data.pfp && (data.pfp.startsWith('data:image') || data.pfp.length > 100)) {
+                            pfpImg.src = data.pfp;
                         }
-                    } else {
-                        // Document doesn't exist yet
-                        pfpImg.src = "/storage/photos/guest.png";
                     }
-                } catch (error) {
-                    console.error("Error fetching PFP:", error);
-                    pfpImg.src = "/storage/photos/guest.png";
                 }
-
-                // Show UI
+            } catch (error) {
+                console.error("Firestore error:", error);
+            } finally {
+                // ALWAYS hide loading screen once check is done
                 loadingScreen.style.display = 'none';
                 nav.style.opacity = '1';
             }
