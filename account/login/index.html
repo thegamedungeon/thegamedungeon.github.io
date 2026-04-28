@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Dungeon | Login</title>
+    <title>The Game Dungeon | Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -52,16 +52,16 @@
         }
 
         input {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
             transition: all 0.2s;
         }
 
         input:focus {
-            border-color: #3b82f6;
+            border-color: #3b82f6 !important;
             outline: none;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.05) !important;
         }
 
         #nav-loader {
@@ -201,16 +201,17 @@
             errorBox.style.display = 'none';
 
             try {
-                // IMPORTANT: Wait for persistence to set before trying to sign in
+                // Ensure persistence is set before login
                 await setPersistence(auth, browserLocalPersistence);
+                
+                // Pure email/password login - no ghost session checks
                 await signInWithEmailAndPassword(auth, email, password);
                 
-                // Extra pause to let the cookie settle on iPad
-                setTimeout(() => navTo('account'), 500);
+                navTo('account');
             } catch (error) {
                 console.error(error);
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                    showError("Nice try, but you need to create an account first.");
+                    showError("Identification failed. Create a soul first.");
                 } else {
                     showError("Gate blicked: " + error.code);
                 }
@@ -224,11 +225,10 @@
             try {
                 await setPersistence(auth, browserLocalPersistence);
                 await signInWithPopup(auth, provider);
-                
-                setTimeout(() => navTo('account'), 500);
+                navTo('account');
             } catch (error) {
                 console.error(error);
-                showError("Fast Pass failed. Did you create an account first?");
+                showError("Fast Pass failed. Sector timed out.");
             }
         };
 
