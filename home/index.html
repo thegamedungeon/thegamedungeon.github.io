@@ -5,164 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Game Dungeon | Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background-color: #0a0a0a;
-            color: white;
+            background-color: #0b0b0b;
+            color: #ffffff;
             font-family: 'Inter', sans-serif;
-            height: 100vh;
             overflow: hidden;
-            margin: 0;
         }
-
-        /* Loading Highlight Overlay */
-        #nav-loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(59, 130, 246, 0.2);
-            backdrop-filter: blur(10px);
-            display: none;
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.3s ease;
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
         }
-
-        .taskbar {
-            background: rgba(15, 15, 15, 0.8);
-            backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
         }
-
-        .nav-item {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
-
-        .nav-item:hover {
-            transform: translateY(-5px);
-            color: #3b82f6;
-        }
-
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 5px;
-            height: 5px;
-            background: #3b82f6;
-            border-radius: 50%;
-        }
-
-        .game-card {
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .game-card:hover {
-            transform: scale(1.05);
-            border-color: #3b82f6;
-        }
-
-        .pfp-container {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #10b981; /* Default Green */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col items-center justify-center relative">
 
-    <!-- Internal Navigation Loader -->
-    <div id="nav-loader">
-        <div class="flex flex-col items-center">
-            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p id="loader-status" class="mt-4 font-bold text-blue-500 uppercase tracking-widest text-sm">Switching Sectors...</p>
+    <!-- Auth Guard Overlay (Prevents flash of content) -->
+    <div id="loading-screen" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Top Right Nav -->
+    <div id="nav-container" class="absolute top-6 right-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
+        <!-- Notification Bell -->
+        <a href="/chat/" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+        </a>
+        
+        <!-- Profile Picture / Guest Icon -->
+        <a href="/account/" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500 hover:scale-110 transition-transform bg-neutral-800 flex items-center justify-center">
+            <img id="user-pfp" src="/storage/photos/guest.png" alt="Profile" class="w-full h-full object-cover">
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="text-center space-y-8 fade-in">
+        <h1 class="text-5xl font-black tracking-tighter text-blue-500 italic">THE GAME DUNGEON</h1>
+        
+        <div class="flex flex-col space-y-4 items-center">
+            <a href="/play/" class="btn-glow px-12 py-4 bg-blue-600 text-white font-bold rounded-xl text-2xl transition-all w-64 text-center">
+                PLAY
+            </a>
+            <a href="/settings/" class="btn-glow px-12 py-4 bg-neutral-800 text-white font-bold rounded-xl text-xl transition-all w-64 text-center border border-white/10">
+                SETTINGS
+            </a>
         </div>
     </div>
 
-    <!-- Main View -->
-    <main id="main-content" class="h-full flex flex-col items-center justify-center p-6 pb-24 text-center">
-        <div class="mb-12">
-            <h1 class="text-4xl font-black italic tracking-tighter text-blue-500 mb-2">THE GAME DUNGEON</h1>
-            <p class="text-gray-500 text-sm">Welcome back. No blicked gates here.</p>
-        </div>
-
-        <!-- Random Game Selection Area -->
-        <div id="random-game-container" class="w-full max-w-sm">
-            <div onclick="playRandomGame()" class="game-card cursor-pointer rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-                <img id="game-icon" src="" alt="Icon" class="w-24 h-24 rounded-2xl mb-4 shadow-2xl">
-                <h3 id="game-name" class="text-2xl font-bold mb-1">...</h3>
-                <p class="text-blue-500 text-xs font-bold uppercase tracking-widest">Random Drop</p>
-            </div>
-            <p class="text-center text-gray-600 text-[10px] mt-4 uppercase">Click the card to jump straight in</p>
-        </div>
-    </main>
-
-    <!-- OS Taskbar -->
-    <nav class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
-        <button onclick="navTo('home')" class="nav-item active flex flex-col items-center">
-            <i class="fa-solid fa-house text-xl"></i>
-            <span class="text-[10px] mt-1">Home</span>
-        </button>
-        <button onclick="navTo('play')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-gamepad text-xl"></i>
-            <span class="text-[10px] mt-1">Play</span>
-        </button>
-        <button onclick="navTo('chat')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-comment-dots text-xl"></i>
-            <span class="text-[10px] mt-1">Chat</span>
-        </button>
-        <button onclick="navTo('account')" class="nav-item flex flex-col items-center" id="account-btn">
-            <div id="pfp-slot" class="pfp-container">
-                <i class="fa-solid fa-user text-lg"></i>
-            </div>
-            <span class="text-[10px] mt-1">Account</span>
-        </button>
-    </nav>
-
-    <div id="news-bar" style="background: #111; color: #0f0; padding: 12px; font-family: 'Courier New', monospace; border-top: 2px solid #333; border-bottom: 2px solid #333; overflow: hidden; white-space: nowrap;">
-    <span id="ticker-text" style="display: inline-block; animation: scroll-news 15s linear infinite;">
-        Initializing The Game Dungeon News Network...
-    </span>
-</div>
-
-<style>
-@keyframes scroll-news {
-    from { transform: translateX(100%); }
-    to { transform: translateX(-100%); }
-}
-
-#news-bar:hover #ticker-text {
-    animation-play-state: paused; /* Stops the scroll so you can click links easily */
-}
-
-/* Style for the clickable links inside the ticker */
-.ticker-link {
-    color: #0ff; 
-    text-decoration: underline;
-    font-weight: bold;
-}
-</style>
-    
-    <!-- Firebase Modular Imports -->
+    <!-- Firebase Logic -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -176,112 +77,47 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const pfpSlot = document.getElementById('pfp-slot');
+        const db = getFirestore(app);
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                if (user.email && user.email.endsWith('@gmail.com')) {
-                    pfpSlot.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
-                } else {
-                    const initials = user.displayName ? 
-                        user.displayName.split(' ').map(n => n[0]).join('').toUpperCase() : 
-                        "TC";
-                    pfpSlot.innerHTML = `<span>${initials}</span>`;
-                }
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                // If not logged in, bounce to login
+                window.location.href = "/accounts/login/";
             } else {
-                pfpSlot.style.background = "#262626";
-                pfpSlot.innerHTML = `<i class="fa-solid fa-user text-lg"></i>`;
+                // We are in. Get the username (email minus the domain part)
+                const username = user.email.split('@')[0];
+                const pfpImg = document.getElementById('user-pfp');
+                const loadingScreen = document.getElementById('loading-screen');
+                const nav = document.getElementById('nav-container');
+
+                try {
+                    // Fetch data from artifacts/{project-id}/public/data/users/{username}
+                    // Since project-id is "the-game-dungeon-4d75d"
+                    const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", username);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.pfp && data.pfp.startsWith('data:image')) {
+                            pfpImg.src = data.pfp; // It's base64
+                        } else {
+                            // Field exists but isn't valid base64 or doesn't have the prefix
+                            pfpImg.src = "/storage/photos/guest.png";
+                        }
+                    } else {
+                        // Document doesn't exist yet
+                        pfpImg.src = "/storage/photos/guest.png";
+                    }
+                } catch (error) {
+                    console.error("Error fetching PFP:", error);
+                    pfpImg.src = "/storage/photos/guest.png";
+                }
+
+                // Show UI
+                loadingScreen.style.display = 'none';
+                nav.style.opacity = '1';
             }
         });
     </script>
-
-    <script>
-        const games = [
-            { name: "Ragdoll Hit", img: "/storage/photos/rh.png" },
-            { name: "Geometry Dash", img: "/storage/photos/gd.png" },
-            { name: "Cookie Clicker", img: "/storage/photos/cc.png" },
-            { name: "PolyTrack", img: "/storage/photos/polytrack.png" },
-            { name: "Minecraft", img: "/storage/photos/minecraft.png" },
-            { name: "Ragdoll Melon", img: "/storage/photos/rm.png" }
-        ];
-
-        let selectedGame = null;
-
-        function initRandomGame() {
-            selectedGame = games[Math.floor(Math.random() * games.length)];
-            document.getElementById('game-icon').src = selectedGame.img;
-            document.getElementById('game-name').innerText = selectedGame.name;
-        }
-
-        function playRandomGame() {
-            const slug = selectedGame.name.toLowerCase().replace(/\s+/g, '-');
-            // Navigates to the play folder for that specific game
-            navTo(`play/${slug}`);
-        }
-
-        function navTo(page) {
-            const loader = document.getElementById('nav-loader');
-            const statusLabel = document.getElementById('loader-status');
-            const url = page === 'home' ? '/home/' : `/${page}/`;
-            
-            statusLabel.innerText = `Loading ${page}...`;
-            loader.style.display = 'flex';
-            loader.style.opacity = '1';
-
-            setTimeout(() => {
-                if (window.self !== window.top) {
-                    window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
-                } else {
-                    window.location.href = url;
-                }
-            }, 600);
-        }
-
-
-        function smoothNav(url, status) {
-            const loader = document.getElementById('nav-loader');
-            const statusLabel = document.getElementById('loader-status');
-            
-            statusLabel.innerText = status;
-            loader.style.display = 'flex';
-            loader.style.opacity = '1';
-
-            // TACTICAL SYNC: 
-            // If we are inside the iframe shell (index.html), we should tell the PARENT to change the URL.
-            // This prevents the whole site from refreshing and killing active calls.
-            setTimeout(() => {
-                if (window.self !== window.top) {
-                    // Tell index.html to update the iframe src
-                    window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
-                } else {
-                    // Fallback if opened directly
-                    window.location.href = url;
-                }
-            }, 600);
-        }
-
-        initRandomGame();
-    </script>
-    <script>
-    const headlines = [
-        "GOD LOCATED: Local man says 'God blew me a kiss.' Video ([{<here>}]'https://www.youtube.com/watch?v=elhxi38Nfx0').",
-        "BREAKING: The Game Dungeon URL falls from the sky; local iPad kid seen 'tweaking'...",
-        "ADVISORY: Connor has been officially blicked from the server. See the evidence ([{<here>}]'https://thegamedungeon.github.io/')."
-    ];
-
-    // Select a random headline
-    let rawNews = headlines[Math.floor(Math.random() * headlines.length)];
-
-    // This Regex looks for ([{<TEXT>}]'URL')
-    const linkRegex = /\(\[{<(.+?)>}\]'(.+?)'\)/g;
-
-    // Replace the custom command with a real <a> tag
-    const formattedNews = rawNews.replace(linkRegex, (match, text, url) => {
-        return `<a href="${url}" target="_blank" style="color: #0ff; text-decoration: underline;">${text}</a>`;
-    });
-
-    // Inject the final HTML into the ticker
-    document.getElementById('ticker-text').innerHTML = formattedNews;
-</script>
 </body>
 </html>
