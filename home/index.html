@@ -238,5 +238,26 @@
 
         initRandomGame();
     </script>
+    <script>
+    const headlines = [
+        "GOD LOCATED: Local man says 'God blew me a kiss.' Video ([{<here>}]'https://www.youtube.com/watch?v=elhxi38Nfx0').",
+        "BREAKING: The Game Dungeon URL falls from the sky; local iPad kid seen 'tweaking'...",
+        "ADVISORY: Connor has been officially blicked from the server. See the evidence ([{<here>}]'https://thegamedungeon.github.io/')."
+    ];
+
+    // Select a random headline
+    let rawNews = headlines[Math.floor(Math.random() * headlines.length)];
+
+    // This Regex looks for ([{<TEXT>}]'URL')
+    const linkRegex = /\(\[{<(.+?)>}\]'(.+?)'\)/g;
+
+    // Replace the custom command with a real <a> tag
+    const formattedNews = rawNews.replace(linkRegex, (match, text, url) => {
+        return `<a href="${url}" target="_blank" style="color: #0ff; text-decoration: underline;">${text}</a>`;
+    });
+
+    // Inject the final HTML into the ticker
+    document.getElementById('ticker-text').innerHTML = formattedNews;
+</script>
 </body>
 </html>
