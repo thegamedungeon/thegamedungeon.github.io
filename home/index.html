@@ -135,6 +135,30 @@
         </button>
     </nav>
 
+    <div id="news-bar" style="background: #111; color: #0f0; padding: 12px; font-family: 'Courier New', monospace; border-top: 2px solid #333; border-bottom: 2px solid #333; overflow: hidden; white-space: nowrap;">
+    <span id="ticker-text" style="display: inline-block; animation: scroll-news 15s linear infinite;">
+        Initializing The Game Dungeon News Network...
+    </span>
+</div>
+
+<style>
+@keyframes scroll-news {
+    from { transform: translateX(100%); }
+    to { transform: translateX(-100%); }
+}
+
+#news-bar:hover #ticker-text {
+    animation-play-state: paused; /* Stops the scroll so you can click links easily */
+}
+
+/* Style for the clickable links inside the ticker */
+.ticker-link {
+    color: #0ff; 
+    text-decoration: underline;
+    font-weight: bold;
+}
+</style>
+    
     <!-- Firebase Modular Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
