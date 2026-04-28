@@ -3,209 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-site-verification" content="C5Yj0Tg76rfSsIWVsVLQKA1FHPQZnhR4LSMAXbjT9Rc" />
-    <title>The Game Dungeon | Booting Up...</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Redirecting...</title>
+    <!-- Instant meta refresh redirect -->
+    <meta http-equiv="refresh" content="0; url=/home/">
+    <script>
+        // JS fallback just in case the meta tag gets blicked
+        window.location.href = "/home/";
+    </script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0a0a0a;
-            font-family: 'Inter', sans-serif;
-            color: white;
-        }
-
-        /* The Ghost Frame */
-        #content-frame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            visibility: hidden;
-        }
-
-        /* Loading Overlay */
-        #loader-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #111 0%, #000 100%);
+        body {
+            background-color: #000;
+            color: #fff;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease-out;
-        }
-
-        /* Dungeon Broke Screen */
-        #error-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: none;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(59, 130, 246, 0.1);
-            border-left-color: #3b82f6; 
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            margin-top: 20px;
-            color: #3b82f6;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .fade-out {
-            opacity: 0 !important;
-            pointer-events: none;
-        }
-
-        .error-box {
-            background: #1a1a1a;
-            border-left: 4px solid #ef4444;
-            padding: 20px;
-            margin-top: 20px;
-            max-width: 600px;
-            width: 100%;
-            font-family: monospace;
-            text-align: left;
-            overflow-x: auto;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
         }
     </style>
 </head>
 <body>
-
-    <iframe id="content-frame" title="The Crib Content"></iframe>
-
-    <div id="loader-overlay">
-        <div class="spinner"></div>
-        <div class="loading-text">Bypassing Oink Oink...</div>
-        <p id="daimyan-msg" class="text-gray-500 text-xs mt-4">Calm down Daimyan, it's almost ready.</p>
-    </div>
-
-    <div id="error-screen">
-        <h1 class="text-4xl font-bold text-red-600 mb-2">Dungeon Broke!</h1>
-        <p class="text-gray-400">Someone messed with the code and now the gates are stuck.</p>
-        <div id="error-details" class="error-box">
-            <p class="text-red-400 font-bold mb-1">Error Detected:</p>
-            <div id="error-content" class="text-gray-300 whitespace-pre"></div>
-        </div>
-        <button onclick="location.reload()" class="mt-8 bg-red-600 px-6 py-2 rounded font-bold hover:bg-red-700 transition">Try Again</button>
-    </div>
-
-    <script>
-        const frame = document.getElementById('content-frame');
-        const loader = document.getElementById('loader-overlay');
-        const errorScreen = document.getElementById('error-screen');
-        const errorContent = document.getElementById('error-content');
-        const daimyanMsg = document.getElementById('daimyan-msg');
-        let isLoaded = false;
-
-        async function initDungeon() {
-            try {
-                // 1. Check if /home/index.html actually exists
-                const response = await fetch('/home/index.html');
-                
-                if (response.status === 404) {
-                    window.location.href = "/error/fourohfour/";
-                    return;
-                }
-
-                const code = await response.text();
-
-                // 2. Bug Check: Check for basic syntax issues (unclosed tags, etc.)
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(code, "text/html");
-                const parseError = doc.querySelector("parsererror");
-
-                if (parseError) {
-                    showDungeonBroke(parseError.innerText);
-                    return;
-                }
-
-                // If everything looks clean, load the frame
-                frame.src = "/home/index.html";
-
-            } catch (err) {
-                // Fetch failed or something crashed
-                showDungeonBroke("System Failure: " + err.message);
-            }
-        }
-
-        function showDungeonBroke(msg) {
-            document.title = "The Game Dungeon | Dungeon Broke";
-            loader.style.display = 'none';
-            errorScreen.style.display = 'flex';
-            
-            // Try to find a line number in the parser message
-            errorContent.innerText = msg;
-        }
-
-        frame.onload = function() {
-            if (frame.src === "") return; // Don't trigger on initial empty state
-            isLoaded = true;
-            frame.style.visibility = 'visible';
-
-            setTimeout(() => {
-                loader.classList.add('fade-out');
-                window.history.replaceState({}, '', '/home/');
-                setTimeout(() => {
-                    loader.remove();
-                }, 800); 
-            }, 500);
-        };
-
-        // 5-second check
-        setTimeout(() => {
-            if (!isLoaded && errorScreen.style.display !== 'flex') {
-                daimyanMsg.innerText = "Gulp, this is taking a while. Please don’t snatch my backend server!😬";
-                daimyanMsg.classList.add('text-yellow-500');
-            }
-        }, 5000);
-
-        // 15-second emergency eject
-        setTimeout(() => {
-            if (!isLoaded && errorScreen.style.display !== 'flex') {
-                window.location.href = "/error/loadfailed/";
-            }
-        }, 15000);
-
-        // Fire it up
-        initDungeon();
-    </script>
+    <p>Redirecting you to the home page...</p>
 </body>
 </html>
