@@ -22,6 +22,7 @@
             transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 100;
             text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            pointer-events: none;
         }
 
         /* Game Card Styles */
@@ -45,9 +46,15 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        .game-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-8">
+<body class="min-h-screen flex flex-col items-center p-8">
 
     <!-- Auth Guard Overlay -->
     <div id="loading-screen" class="fixed inset-0 bg-black z-[200] flex items-center justify-center">
@@ -55,63 +62,68 @@
     </div>
 
     <!-- Letter Entities -->
-    <div id="L-P" class="letter" style="top: -100px; left: -100px;">P</div>
-    <div id="L-L" class="letter" style="top: -100px; right: -100px;">L</div>
-    <div id="L-A" class="letter" style="bottom: -100px; left: -100px;">A</div>
-    <div id="L-Y" class="letter" style="bottom: -100px; right: -100px;">Y</div>
+    <div id="L-P" class="letter" style="top: -150px; left: -150px;">P</div>
+    <div id="L-L" class="letter" style="top: -150px; right: -150px;">L</div>
+    <div id="L-A" class="letter" style="bottom: -150px; left: -150px;">A</div>
+    <div id="L-Y" class="letter" style="bottom: -150px; right: -150px;">Y</div>
 
     <!-- Main Content Container -->
-    <div id="game-container" class="max-w-6xl w-full hidden">
+    <div id="game-container" class="max-w-6xl w-full hidden mt-24">
         <!-- The Header where letters land -->
-        <div id="header-target" class="h-32 flex justify-center items-center mb-12">
-            <!-- Letters will move here -->
+        <div id="header-target" class="h-32 flex justify-center items-center mb-16">
+            <!-- Space reserved for letters -->
         </div>
 
         <!-- Games Grid -->
         <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Game 1 -->
-            <a href="/play/ragdoll-hit/" class="game-card group">
+            <a href="/play/ragdoll-hit/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <span class="text-neutral-500 font-mono">/storage/photos/rh.png</span>
+                    <img src="/storage/photos/rh.png" alt="Game 1" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
                 </div>
-                <div class="p-4 bg-neutral-900">
-                    <h3 class="text-xl font-bold">RAGDOLL HIT</h3>
+                <div class="p-4 bg-neutral-900 border-t border-white/5">
+                    <h3 class="text-xl font-bold tracking-tight">RAGDOLL HIT</h3>
                 </div>
             </a>
             <!-- Game 2 -->
-            <a href="/play/cookie-clicker/" class="game-card">
+            <a href="/play/geometry-dash/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <span class="text-neutral-500 font-mono">/storage/photos/cc.png</span>
+                    <img src="/storage/photos/gd.png" alt="Game 2" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
                 </div>
-                <div class="p-4 bg-neutral-900">
-                    <h3 class="text-xl font-bold">COOKIE CLICKER</h3>
+                <div class="p-4 bg-neutral-900 border-t border-white/5">
+                    <h3 class="text-xl font-bold tracking-tight">GEOMETRY DASH</h3>
                 </div>
             </a>
             <!-- Game 3 -->
-            <a href="/play/geometry-dash/" class="game-card">
+            <a href="/play/cookie-clicker/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <span class="text-neutral-500 font-mono">/storage/photos/gd.png</span>
+                    <img src="/storage/photos/cc.png" alt="Game 3" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
                 </div>
-                <div class="p-4 bg-neutral-900">
-                    <h3 class="text-xl font-bold">GEOMETRY DASH</h3>
+                <div class="p-4 bg-neutral-900 border-t border-white/5">
+                    <h3 class="text-xl font-bold tracking-tight">COOKIE CLICKER</h3>
                 </div>
             </a>
             <!-- Game 4 -->
             <a href="/play/polytrack/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <span class="text-neutral-500 font-mono">/storage/photos/polytrack.png</span>
+                    <img src="/storage/photos/polytrack.png" alt="Game 4" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
                 </div>
-                <div class="p-4 bg-neutral-900">
-                    <h3 class="text-xl font-bold">POLYTRACK</h3>
+                <div class="p-4 bg-neutral-900 border-t border-white/5">
+                    <h3 class="text-xl font-bold tracking-tight">POLYTRACK</h3>
                 </div>
             </a>
             <!-- Game 5 -->
             <a href="/play/minecraft/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <span class="text-neutral-500 font-mono">/storage/photos/minecraft.png</span>
+                    <img src="/storage/photos/minecraft.png" alt="Game 5" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
                 </div>
-                <div class="p-4 bg-neutral-900">
-                    <h3 class="text-xl font-bold">MINECRAFT</h3>
+                <div class="p-4 bg-neutral-900 border-t border-white/5">
+                    <h3 class="text-xl font-bold tracking-tight">MINECRAFT</h3>
                 </div>
             </a>
         </div>
@@ -153,28 +165,32 @@
             const a = document.getElementById('L-A');
             const y = document.getElementById('L-Y');
 
-            // Wait a split second after loading screen vanishes
             setTimeout(() => {
                 const centerX = window.innerWidth / 2;
-                const centerY = 120; // Near top
+                const targetY = 80; // Distance from top
 
-                // Lock letters into central positions
-                p.style.top = `${centerY}px`;
-                p.style.left = `${centerX - 120}px`;
+                // FLY IN: Positioning logic to spell "PLAY" centered at the top
+                // P - L - A - Y
+                
+                p.style.top = `${targetY}px`;
+                p.style.left = `${centerX - 160}px`;
 
-                l.style.top = `${centerY}px`;
-                l.style.right = `${window.innerWidth - (centerX - 40)}px`;
+                l.style.top = `${targetY}px`;
+                l.style.left = `${centerX - 60}px`;
+                l.style.right = 'auto'; // Reset corner style
 
-                a.style.bottom = `${window.innerHeight - centerY - 80}px`;
-                a.style.left = `${centerX + 20}px`;
+                a.style.top = `${targetY}px`;
+                a.style.bottom = 'auto'; // Reset corner style
+                a.style.left = `${centerX + 40}px`;
 
-                y.style.bottom = `${window.innerHeight - centerY - 80}px`;
-                y.style.right = `${window.innerWidth - (centerX + 140)}px`;
+                y.style.top = `${targetY}px`;
+                y.style.bottom = 'auto'; // Reset corner style
+                y.style.left = `${centerX + 140}px`;
+                y.style.right = 'auto'; // Reset corner style
 
-                // After letters arrive, show the grid
+                // Show the grid after letters arrive
                 setTimeout(() => {
                     document.body.classList.add('show-games');
-                    // Optional: fade out the absolute letters and show static text if preferred
                 }, 1300);
             }, 100);
         }
