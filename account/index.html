@@ -2,60 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Dungeon | Identifying...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID Scanner | The Game Dungeon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background-color: #0a0a0a;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            overflow: hidden;
+            background-color: #0b0b0b;
+            color: #ffffff;
             font-family: 'Inter', sans-serif;
         }
-
-        /* The Green Loading Circle */
-        .loader {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(34, 197, 94, 0.1);
-            border-left-color: #22c55e; /* Green belt energy */
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .id-card {
+            background: #171717;
+            border: 1px solid #262626;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .status-text {
-            margin-top: 20px;
-            color: #22c55e;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            font-size: 10px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .provider-icon {
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
         }
     </style>
 </head>
-<body>
+<body class="h-screen flex items-center justify-center p-6">
 
-    <div class="loader"></div>
-    <p id="status" class="status-text">Scanning Biometrics...</p>
+    <div class="id-card w-full max-w-sm p-8 rounded-3xl text-center space-y-6">
+        <h2 class="text-xs font-mono text-blue-500 tracking-[0.3em] uppercase">Identity Detected</h2>
+        
+        <!-- The Profile Image that changes -->
+        <div class="relative inline-block">
+            <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-600 mx-auto bg-neutral-900 flex items-center justify-center">
+                <img id="display-pfp" src="/storage/photos/guest.png" alt="Identity Icon" class="w-16 h-16 object-contain provider-icon">
+            </div>
+            <div id="status-dot" class="absolute bottom-1 right-1 w-5 h-5 bg-red-500 border-4 border-[#171717] rounded-full"></div>
+        </div>
+
+        <div class="space-y-1">
+            <p id="user-email" class="text-lg font-bold truncate text-neutral-300 italic">Scanning...</p>
+            <p id="provider-name" class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Unauthorized Access</p>
+        </div>
+
+        <button onclick="window.location.href='/accounts/login/'" class="text-[10px] font-bold text-blue-500 hover:text-white transition-colors uppercase tracking-tighter">
+            Switch Account
+        </button>
+    </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -63,43 +54,51 @@
             projectId: "the-game-dungeon-4d75d",
             storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
             messagingSenderId: "533459716906",
-            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
+        // SVGs for the providers (since we don't want to rely on broken URLs)
+        const icons = {
+            google: "https://www.gstatic.com/images/branding/product/2x/googleg_96dp.png",
+            microsoft: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/480px-Microsoft_logo.svg.png",
+            guest: "/storage/photos/guest.png"
+        };
+
         onAuthStateChanged(auth, (user) => {
-            const statusLabel = document.getElementById('status');
-            
-            if (user) {
-                if (user.isAnonymous) {
-                    statusLabel.innerText = "Guest Access Denied. Redirecting To Login...";
-                    setTimeout(() => navigateTo('/account/login/'), 1500);
-                } else {
-                    statusLabel.innerText = "Access Granted. Stripping Credentials...";
-                    
-                    // The Logic: Get email, remove the @domain.com
-                    const email = user.email || "";
-                    const answer = email.split('@')[0]; // This is the "answer" variable
-                    
-                    setTimeout(() => {
-                        navigateTo(`/${answer}/`);
-                    }, 800);
+            const emailText = document.getElementById('user-email');
+            const providerText = document.getElementById('provider-name');
+            const pfpImg = document.getElementById('display-pfp');
+            const statusDot = document.getElementById('status-dot');
+
+            if (user && !user.isAnonymous) {
+                const email = user.email.toLowerCase();
+                emailText.innerText = email;
+                statusDot.classList.replace('bg-red-500', 'bg-green-500');
+
+                // The logic for detecting the service
+                if (email.endsWith('@gmail.com') || email.endsWith('.k12.mn.us')) {
+                    pfpImg.src = icons.google;
+                    providerText.innerText = "Verified Google Identity";
+                } 
+                else if (email.endsWith('@outlook.com') || email.endsWith('@hotmail.com') || email.endsWith('@live.com')) {
+                    pfpImg.src = icons.microsoft;
+                    providerText.innerText = "Verified Microsoft Identity";
+                }
+                else {
+                    pfpImg.src = icons.guest;
+                    providerText.innerText = "Custom Domain Identity";
                 }
             } else {
-                statusLabel.innerText = "No Credentials Found. Redirecting to Login...";
-                setTimeout(() => navigateTo('/account/login/'), 1500);
+                emailText.innerText = "No Identity Found";
+                providerText.innerText = "Unauthorized Access";
+                pfpImg.src = icons.guest;
+                statusDot.classList.replace('bg-green-500', 'bg-red-500');
             }
         });
-
-        function navigateTo(url) {
-            if (window.self !== window.top) {
-                window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
-            } else {
-                window.location.href = url;
-            }
-        }
     </script>
 </body>
 </html>
