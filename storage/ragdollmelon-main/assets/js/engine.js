@@ -258,9 +258,18 @@ function handleCombat(bodyA, bodyB) {
 function updateGame() {
     if (isGameOver) return;
     const toRemove = [];
+    const VOID_LIMIT = window.innerHeight + 1000; // The "Kill Plane"
 
     dolls.forEach((doll, index) => {
+        // --- ADD THIS PART ---
+        if (doll.torso.position.y > VOID_LIMIT) {
+            toRemove.push(index);
+            return; 
+        }
+        // --- END OF ADDED PART ---
+
         if (!doll.dead) {
+            // ... (keep all your balance, health regen, and AI code here)
             balance(doll);
             if (doll.health < 100) doll.health = Math.min(100, doll.health + REGEN_RATE);
             if (doll.label === 'p1') p1Health = doll.health;
