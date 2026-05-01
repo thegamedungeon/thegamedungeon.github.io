@@ -15,18 +15,21 @@
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen p-4 pb-24">
+<body class="min-h-screen p-4 pb-24 relative">
 
-    <!-- Auth Guard -->
     <div id="loading-screen" class="fixed inset-0 bg-black z-[200] flex items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Back Button -->
+    <a href="/" class="absolute top-6 left-6 p-2 bg-neutral-900 border border-white/5 rounded-full hover:bg-neutral-800 transition-all group z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-500 group-hover:text-blue-500"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+
     <div class="max-w-2xl mx-auto mt-8">
         <div class="flex justify-between items-end mb-8">
-            <div>
-                <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter">SCROLLS</h1>
+            <div class="ml-10 sm:ml-0"> <!-- Shift header slightly on mobile to clear back button -->
+                <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter uppercase">SCROLLS</h1>
                 <p class="text-xs text-neutral-500 font-mono">ENCRYPTED COMMS SYSTEM</p>
             </div>
             <button onclick="openCompose()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20">
@@ -34,16 +37,12 @@
             </button>
         </div>
 
-        <!-- Navigation Tabs -->
         <div class="flex space-x-8 border-b border-white/10 mb-6">
             <button id="tab-inbox" onclick="switchTab('inbox')" class="pb-2 font-bold tab-active transition-all">INBOX</button>
             <button id="tab-sent" onclick="switchTab('sent')" class="pb-2 font-bold text-neutral-500 transition-all">SENT</button>
         </div>
 
-        <!-- Messages Feed -->
-        <div id="scroll-feed" class="space-y-4">
-            <!-- Scrolls injected here -->
-        </div>
+        <div id="scroll-feed" class="space-y-4"></div>
     </div>
 
     <!-- Compose Modal -->
@@ -71,7 +70,6 @@
         </div>
     </div>
 
-    <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -96,7 +94,7 @@
         const scrollPath = "artifacts/the-game-dungeon-4d75d/public/data/scrolls";
 
         onAuthStateChanged(auth, (user) => {
-            if (!user) {
+            if (!user || user.isAnonymous) {
                 window.location.href = "/accounts/login/";
             } else {
                 currentUser = user;
@@ -105,7 +103,6 @@
             }
         });
 
-        // Form Validation
         const toInp = document.getElementById('to-email');
         const textInp = document.getElementById('scroll-text');
         const sendBtn = document.getElementById('send-btn');
@@ -115,7 +112,6 @@
             const textVal = textInp.value.trim();
             const isProperEmail = emailVal.includes('@') || emailVal === 'global';
             const hasText = textVal.length > 0;
-            
             sendBtn.disabled = !(isProperEmail && hasText);
             sendBtn.classList.toggle('opacity-50', sendBtn.disabled);
             sendBtn.classList.toggle('cursor-not-allowed', sendBtn.disabled);
@@ -130,50 +126,34 @@
                 const scrolls = [];
                 snapshot.forEach(doc => scrolls.push(doc.data()));
                 renderScrolls(scrolls);
-            }, (error) => {
-                console.error("Scroll Sync Error:", error);
-            });
+            }, (error) => console.error("Scroll Sync Error:", error));
         }
 
         function renderScrolls(allScrolls) {
             const feed = document.getElementById('scroll-feed');
             feed.innerHTML = '';
-
             const filtered = allScrolls.filter(s => {
-                if (currentTab === 'sent') {
-                    return s.senderEmail === currentUser.email;
-                } else {
-                    // Inbox logic: Show if Target is null, "null", "GLOBAL", or matches Current User
-                    const isGlobal = !s.targetEmail || 
-                                   s.targetEmail === "null" || 
-                                   s.targetEmail.toString().toUpperCase() === "GLOBAL";
-                    const isForMe = s.targetEmail === currentUser.email;
-                    return isGlobal || isForMe;
-                }
+                if (currentTab === 'sent') return s.senderEmail === currentUser.email;
+                const isGlobal = !s.targetEmail || s.targetEmail === "null" || s.targetEmail.toUpperCase() === "GLOBAL";
+                return isGlobal || s.targetEmail === currentUser.email;
             });
 
             if (filtered.length === 0) {
-                feed.innerHTML = `<div class="text-center py-20 opacity-30 font-mono text-sm uppercase tracking-widest">No signals found in the static...</div>`;
+                feed.innerHTML = `<div class="text-center py-20 opacity-30 font-mono text-sm uppercase tracking-widest">No signals found...</div>`;
                 return;
             }
 
             filtered.forEach(s => {
-                const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'}) : 'SENDING...';
+                const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'}) : '...';
                 const card = document.createElement('div');
-                card.className = 'scroll-card p-5 rounded-2xl animate-fade-in';
+                card.className = 'scroll-card p-5 rounded-2xl';
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-3">
-                        <div class="flex flex-col">
-                            <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">SENDER</span>
-                            <span class="text-sm font-black text-blue-400">${s.senderEmail.split('@')[0]}</span>
-                        </div>
-                        <span class="text-[9px] text-neutral-600 font-mono bg-white/5 px-2 py-1 rounded-md">${date}</span>
+                        <span class="text-sm font-black text-blue-400">${s.senderEmail.split('@')[0]}</span>
+                        <span class="text-[9px] text-neutral-600 font-mono">${date}</span>
                     </div>
-                    <p class="text-sm leading-relaxed text-neutral-200 whitespace-pre-wrap">${s.text}</p>
-                    <div class="mt-4 flex items-center space-x-2">
-                        <div class="h-[1px] flex-1 bg-white/5"></div>
-                        <span class="text-[9px] text-neutral-700 font-mono">TO: ${s.targetEmail || 'GLOBAL'}</span>
-                    </div>
+                    <p class="text-sm text-neutral-200">${s.text}</p>
+                    <div class="mt-4 border-t border-white/5 pt-2 text-[9px] text-neutral-700 font-mono">TO: ${s.targetEmail || 'GLOBAL'}</div>
                 `;
                 feed.appendChild(card);
             });
@@ -183,41 +163,26 @@
             currentTab = tab;
             document.getElementById('tab-inbox').className = tab === 'inbox' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
             document.getElementById('tab-sent').className = tab === 'sent' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
-            // Trigger a re-render from local cache or just wait for next snap
             initScrollListener();
         };
 
         window.openCompose = () => document.getElementById('compose-modal').classList.remove('hidden');
         window.closeCompose = () => {
             document.getElementById('compose-modal').classList.add('hidden');
-            toInp.value = '';
-            textInp.value = '';
-            validate();
+            toInp.value = ''; textInp.value = ''; validate();
         };
 
         window.sendScroll = async () => {
             if (sendBtn.disabled) return;
-            
-            const target = toInp.value.trim();
-            const message = textInp.value.trim();
-            
-            sendBtn.disabled = true;
-            sendBtn.innerHTML = "SENDING...";
-
             try {
                 await addDoc(collection(db, scrollPath), {
                     senderEmail: currentUser.email,
-                    targetEmail: target,
-                    text: message,
-                    timestamp: serverTimestamp(),
-                    uid: crypto.randomUUID() // Added just in case but ignored in display
+                    targetEmail: toInp.value.trim(),
+                    text: textInp.value.trim(),
+                    timestamp: serverTimestamp()
                 });
                 closeCompose();
-            } catch (error) {
-                console.error("Scroll delivery failed:", error);
-                sendBtn.innerHTML = "FAILED - RETRY?";
-                sendBtn.disabled = false;
-            }
+            } catch (error) { console.error(error); }
         };
     </script>
 </body>
