@@ -3,230 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Game Dungeon | Ragdoll Melon</title>
+    <title>Ragdoll Melon | The Game Dungeon</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background-color: #0a0a0a;
-            color: white;
+            background-color: #0b0b0b;
+            color: #ffffff;
             font-family: 'Inter', sans-serif;
-            height: 100vh;
-            overflow: hidden; /* No scrolling to keep proportions tight */
-            margin: 0;
-            position: relative;
-        }
-
-        /* Internal Navigation Loader */
-        #nav-loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(59, 130, 246, 0.2);
-            backdrop-filter: blur(10px);
-            display: none;
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.3s ease;
-        }
-
-        /* Taskbar Styles */
-        .taskbar {
-            background: rgba(15, 15, 15, 0.8);
-            backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 40; 
-            transition: transform 0.5s ease;
-        }
-
-        .taskbar.hidden-taskbar {
-            transform: translateY(100%);
-        }
-
-        .nav-item {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            background: none;
-            border: none;
-            color: #9ca3af;
-            cursor: pointer;
-        }
-
-        .nav-item.active {
-            color: #3b82f6;
-        }
-
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 5px;
-            height: 5px;
-            background: #3b82f6;
-            border-radius: 50%;
-        }
-
-        /* Game Launcher Styles */
-        #game-hero {
-            transition: opacity 0.5s ease;
-        }
-
-        #rh-logo {
-            width: 200px;
-            height: 200px;
-            object-fit: contain;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 60; /* Initial high layer */
-        }
-
-        /* The Game Iframe Layer - Now Fades In Above Logo */
-        #game-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 80; /* Higher than expanded logo */
-            background: #000;
-            opacity: 0;
-            pointer-events: none; /* Can't touch until visible */
-            transition: opacity 0.6s ease-in-out;
-        }
-
-        #game-container.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        /* Back Button - Above everything */
-        #exit-btn {
-            position: fixed;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-left: none;
-            padding: 15px 10px;
-            border-radius: 0 10px 10px 0;
-            z-index: 100; /* Absolute Top */
-            opacity: 0;
-            pointer-events: none;
-            cursor: pointer;
-            transition: background 0.3s, opacity 0.6s ease-in-out;
-        }
-
-        #exit-btn.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        #exit-btn:hover {
-            background: #ef4444;
-        }
-
-        .pfp-container {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
             overflow: hidden;
-            background: #10b981;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
         }
 
-        /* Animation Classes */
-        .launching {
-            position: fixed !important;
-            margin: 0 !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) rotate(720deg) scale(10) !important;
+        /* Iframe spring animation */
+        #game-wrapper {
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0);
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .return-spin {
-            transform: translate(-50%, -50%) rotate(-720deg) scale(1) !important;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        #game-wrapper.expanded {
+            transform: scale(1);
+            opacity: 1;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Pull Tab */
+        #pull-tab {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%) translateX(80%);
+            background: #1e1e1e;
+            border: 1px solid #3b82f6;
+            border-right: none;
+            padding: 1rem 0.5rem;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            z-index: 100;
+            display: none;
+        }
+
+        #pull-tab:hover {
+            transform: translateY(-50%) translateX(0);
+        }
+
+        .modal-bg {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col items-center justify-center">
 
-    <!-- Internal Navigation Loader -->
-    <div id="nav-loader">
-        <div class="flex flex-col items-center">
-            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p id="loader-status" class="mt-4 font-bold text-blue-500 uppercase tracking-widest text-sm">Switching Sectors...</p>
-        </div>
+    <!-- Auth Guard Overlay -->
+    <div id="loading-screen" class="fixed inset-0 bg-black z-[200] flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
 
-    <!-- Main Menu Content -->
-    <main id="game-hero" class="h-full flex flex-col items-center justify-center p-6 pb-24">
-        <div id="logo-wrap" class="relative flex items-center justify-center mb-6">
-            <img id="rh-logo" src="/storage/photos/rm.png" alt="Ragdoll Melon">
-        </div>
+    <!-- Pre-Game Menu -->
+    <div id="launcher-menu" class="flex flex-col items-center space-y-6 fade-in">
+        <img src="/storage/photos/rm.png" alt="Ragdoll Melon" class="w-48 h-48 rounded-2xl border-4 border-blue-500 shadow-2xl shadow-blue-500/20">
+        <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter">RAGDOLL MELON</h1>
         
-        <div id="ui-content" class="text-center">
-            <h2 class="text-3xl font-black italic tracking-tighter mb-4">RAGDOLL MELON</h2>
-            <button onclick="launchGame()" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 px-12 rounded-full uppercase tracking-widest transition-all transform hover:scale-110 active:scale-95 shadow-lg shadow-blue-900/40">
-                Play Now
+        <div class="flex space-x-4">
+            <a href="/play/" class="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 font-bold rounded-xl transition-all border border-white/10">
+                BACK
+            </a>
+            <button onclick="launchGame()" class="px-12 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30">
+                PLAY
             </button>
         </div>
-    </main>
-
-    <!-- Game Layer -->
-    <div id="game-container">
-        <iframe id="game-iframe" src=""></iframe>
     </div>
 
-    <!-- Persistent Back Button -->
-    <button id="exit-btn" onclick="exitGame()">
-        <i class="fa-solid fa-chevron-left text-white text-xs"></i>
-    </button>
+    <!-- Game Container -->
+    <div id="game-wrapper" class="fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <iframe id="game-frame" src="" class="w-full h-full border-none"></iframe>
+    </div>
 
-    <!-- Taskbar -->
-    <nav id="main-taskbar" class="taskbar fixed bottom-0 left-0 w-full h-16 flex items-center justify-around px-4">
-        <button onclick="navTo('home')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-house text-xl"></i>
-            <span class="text-[10px] mt-1">Home</span>
-        </button>
-        <button onclick="navTo('play')" class="nav-item active flex flex-col items-center">
-            <i class="fa-solid fa-gamepad text-xl"></i>
-            <span class="text-[10px] mt-1">Play</span>
-        </button>
-        <button onclick="navTo('chat')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-comment-dots text-xl"></i>
-            <span class="text-[10px] mt-1">Chat</span>
-        </button>
-        <button onclick="navTo('call')" class="nav-item flex flex-col items-center">
-            <i class="fa-solid fa-phone text-xl"></i>
-            <span class="text-[10px] mt-1">Call</span>
-        </button>
-        <button onclick="navTo('account')" class="nav-item flex flex-col items-center">
-            <div id="pfp-slot" class="pfp-container">
-                <i class="fa-solid fa-user text-lg"></i>
+    <!-- Pull Tab -->
+    <div id="pull-tab" onclick="toggleQuitMenu()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </div>
+
+    <!-- Quit Confirmation Pop-up -->
+    <div id="quit-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center modal-bg">
+        <div class="bg-neutral-900 border border-white/10 p-8 rounded-2xl text-center space-y-6 shadow-2xl">
+            <h2 class="text-2xl font-bold tracking-tight">ARE YOU SURE?</h2>
+            <div class="flex space-x-4 justify-center">
+                <button onclick="closeModal()" class="px-8 py-2 bg-neutral-800 rounded-lg font-bold hover:bg-neutral-700 transition-colors">NO</button>
+                <button onclick="confirmQuit()" class="px-8 py-2 bg-red-600 rounded-lg font-bold hover:bg-red-500 transition-colors">YES</button>
             </div>
-            <span class="text-[10px] mt-1">Account</span>
-        </button>
-    </nav>
+        </div>
+    </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -240,87 +115,55 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const pfpSlot = document.getElementById('pfp-slot');
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                if (user.email && user.email.endsWith('@gmail.com')) {
-                    pfpSlot.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
-                } else {
-                    const initials = user.displayName ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase() : "TC";
-                    pfpSlot.innerHTML = `<span>${initials}</span>`;
-                }
+            if (!user) {
+                window.location.href = "/account/login/";
+            } else {
+                document.getElementById('loading-screen').style.display = 'none';
             }
         });
-    </script>
 
-    <script>
-        const logo = document.getElementById('rh-logo');
-        const ui = document.getElementById('ui-content');
-        const gameContainer = document.getElementById('game-container');
-        const iframe = document.getElementById('game-iframe');
-        const exitBtn = document.getElementById('exit-btn');
-        const taskbar = document.getElementById('main-taskbar');
-
-        function navTo(page) {
-            const loader = document.getElementById('nav-loader');
-            const statusLabel = document.getElementById('loader-status');
-            const url = page === 'home' ? '/home/' : `/${page}/`;
+        window.launchGame = function() {
+            const wrapper = document.getElementById('game-wrapper');
+            const frame = document.getElementById('game-frame');
+            const tab = document.getElementById('pull-tab');
             
-            statusLabel.innerText = `Loading ${page}...`;
-            loader.style.display = 'flex';
-            loader.style.opacity = '1';
-
+            // Set source and spring up
+            frame.src = "/storage/ragdollmelon-main/";
+            wrapper.classList.add('expanded');
+            
+            // Show pull tab after animation
             setTimeout(() => {
-                if (window.self !== window.top) {
-                    window.parent.postMessage({ type: 'NAVIGATE', url: url }, '*');
-                } else {
-                    window.location.href = url;
-                }
+                tab.style.display = 'block';
             }, 600);
-        }
+        };
 
-        function launchGame() {
-            // 1. Hide UI and Hide Taskbar
-            ui.style.opacity = '0';
-            taskbar.classList.add('hidden-taskbar');
-            
-            // 2. Start Spin and Expansion
-            logo.classList.add('launching');
+        window.toggleQuitMenu = function() {
+            document.getElementById('quit-modal').classList.remove('hidden');
+        };
 
-            // 3. Prep Iframe in background
-            iframe.src = "/storage/ragdollmelon-main/";
+        window.closeModal = function() {
+            document.getElementById('quit-modal').classList.add('hidden');
+        };
 
-            // 4. Once expanded, fade in the game layer ABOVE it
+        window.confirmQuit = function() {
+            const wrapper = document.getElementById('game-wrapper');
+            const tab = document.getElementById('pull-tab');
+            const frame = document.getElementById('game-frame');
+
+            // Hide pop-up and tab
+            closeModal();
+            tab.style.display = 'none';
+
+            // Shrink iframe
+            wrapper.classList.remove('expanded');
+
+            // Wipe src after shrink to save resources
             setTimeout(() => {
-                gameContainer.classList.add('visible');
-                exitBtn.classList.add('visible');
-            }, 800);
-        }
-
-        function exitGame() {
-            // 1. Fade the game and button out
-            gameContainer.classList.remove('visible');
-            exitBtn.classList.remove('visible');
-            
-            // 2. Wait for fade to finish, then clear iframe and reveal the rest
-            setTimeout(() => {
-                iframe.src = ""; 
-                taskbar.classList.remove('hidden-taskbar');
-
-                // 3. Spin back to life and shrink
-                logo.classList.remove('launching');
-                logo.classList.add('return-spin');
-
-                // 4. Reveal UI
-                setTimeout(() => {
-                    ui.style.opacity = '1';
-                    setTimeout(() => {
-                        logo.classList.remove('return-spin');
-                    }, 800);
-                }, 600);
+                frame.src = "";
             }, 600);
-        }
+        };
     </script>
 </body>
 </html>
