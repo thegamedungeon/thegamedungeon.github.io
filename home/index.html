@@ -84,7 +84,7 @@
 
         // Safety timeout
         const safetyTimeout = setTimeout(() => {
-            if (!auth.currentUser) window.location.href = "/accounts/login/";
+            if (!auth.currentUser) window.location.href = "/account/login/";
         }, 5000);
 
         onAuthStateChanged(auth, async (user) => {
