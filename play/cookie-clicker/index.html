@@ -169,5 +169,31 @@
             }, 600);
         };
     </script>
+    <script type="module">
+    // Import your Daimyan Proof logic
+    import { initTracker } from "/storage/js/tracker.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Standard Dungeon Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+        projectId: "the-game-dungeon-4d75d",
+        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+        messagingSenderId: "533459716906",
+        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+    };
+
+    // Initialize Firebase for this page so the tracker has an active context
+    const app = initializeApp(firebaseConfig);
+    getAuth(app);
+    getFirestore(app);
+
+    // Initialize the tracker with the specific Hall of Records name
+    // This must match your UI cards exactly!
+    initTracker("Cookie Clicker");
+</script>
 </body>
 </html>
