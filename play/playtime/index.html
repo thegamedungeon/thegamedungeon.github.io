@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall of Records | The Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0b0b0b;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+        .stat-card {
+            background: #171717;
+            border: 1px solid #262626;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        .glow-text {
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8 relative flex flex-col items-center">
+
+    <!-- Back Button -->
+    <a href="/play/" class="absolute top-6 left-6 p-2 bg-neutral-900 border border-white/5 rounded-full hover:bg-neutral-800 transition-all group z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-500 group-hover:text-blue-500"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+
+    <!-- Logo -->
+    <div class="mb-8 text-center">
+        <img src="/storage/photos/tgdtc.png" alt="The Game Dungeon" class="w-32 mx-auto mb-2">
+        <h1 class="text-xs font-mono text-neutral-600 uppercase tracking-[0.5em]">Hall of Records</h1>
+    </div>
+
+    <div id="stats-container" class="w-full max-w-4xl space-y-8">
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-xs font-mono text-blue-500 animate-pulse">RETRIVING VAULT DATA...</p>
+        </div>
+
+        <!-- Content (Hidden initially) -->
+        <div id="stats-content" class="hidden space-y-12">
+            <!-- Total Time Header -->
+            <div class="text-center bg-blue-600/5 py-10 rounded-3xl border border-blue-500/10">
+                <h2 class="text-neutral-500 font-mono text-[10px] uppercase tracking-[0.4em] mb-2">Total Dungeon Grind</h2>
+                <div id="total-time-display" class="text-7xl font-black italic text-blue-500 tracking-tighter glow-text">0.0 HRS</div>
+            </div>
+
+            <!-- Games Grid -->
+            <div>
+                <h3 class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-4 ml-2">Game Breakdown</h3>
+                <div id="games-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- No Time State -->
+        <div id="no-time" class="hidden text-center py-32 space-y-6">
+            <div class="space-y-2">
+                <h1 class="text-3xl font-black text-red-600 italic uppercase tracking-tighter">
+                    play a f*ckin game before daimyan punches you
+                </h1>
+                <p class="text-neutral-600 font-mono text-xs uppercase tracking-widest">
+                    Zero minutes detected in the vault. Don't be mid.
+                </p>
+            </div>
+            <a href="/play/" class="inline-block px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-all">
+                ENTER THE PLAYROOM
+            </a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/accounts/login/";
+                return;
+            }
+
+            try {
+                const userRef = doc(db, "playtime", user.uid);
+                const docSnap = await getDoc(userRef);
+
+                document.getElementById('loading').classList.add('hidden');
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    let totalMinutes = 0;
+                    
+                    // Filter out metadata fields to only get game titles
+                    const gamesList = Object.entries(data).filter(([key]) => 
+                        key !== 'lastPlayed' && key !== 'lastActiveGame'
+                    );
+
+                    // Check if total time across all games is effectively zero
+                    const actualTotalMinutes = gamesList.reduce((acc, [_, mins]) => acc + mins, 0);
+
+                    if (gamesList.length === 0 || actualTotalMinutes < 0.01) {
+                        document.getElementById('no-time').classList.remove('hidden');
+                        return;
+                    }
+
+                    const grid = document.getElementById('games-grid');
+                    grid.innerHTML = '';
+                    
+                    gamesList.forEach(([gameName, minutes]) => {
+                        totalMinutes += minutes;
+                        
+                        // SMART ICON LOGIC: 
+                        // 1. Trim and sense spaces
+                        // 2. If multi-word, take first char of each word, lowercase it.
+                        // 3. If single word, lowercase the whole thing.
+                        const nameParts = gameName.trim().split(/\s+/);
+                        let iconName = "";
+                        
+                        if (nameParts.length > 1) {
+                            iconName = nameParts.map(word => word[0].toLowerCase()).join('');
+                        } else {
+                            iconName = gameName.toLowerCase();
+                        }
+                        
+                        const iconPath = `/storage/photos/${iconName}.png`;
+                        const hours = (minutes / 60).toFixed(1);
+                        
+                        grid.innerHTML += `
+                            <div class="stat-card p-5 rounded-3xl flex items-center space-x-5">
+                                <div class="w-16 h-16 rounded-2xl overflow-hidden bg-neutral-800 flex-shrink-0 border border-white/5">
+                                    <img src="${iconPath}" alt="" class="w-full h-full object-cover" onerror="this.src='/storage/photos/tgdtc.png'">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-black text-lg uppercase tracking-tight truncate">${gameName}</h3>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div class="h-full bg-blue-600/50" style="width: ${Math.min(100, (minutes/60)*10)}%"></div>
+                                        </div>
+                                        <p class="text-blue-500 font-mono text-[10px] font-bold whitespace-nowrap">${hours} HRS</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('total-time-display').innerText = `${(totalMinutes / 60).toFixed(1)} HRS`;
+                    document.getElementById('stats-content').classList.remove('hidden');
+
+                } else {
+                    document.getElementById('no-time').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Dungeon statistics intercepted:", err);
+                // Fallback for safety
+                document.getElementById('loading').innerHTML = `<p class="text-red-500 font-mono text-xs">CONNECTION TO VAULT FAILED.</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
