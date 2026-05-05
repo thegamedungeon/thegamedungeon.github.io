@@ -76,6 +76,22 @@
 
         <!-- Games Grid -->
         <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Playtime -->
+<div class="absolute top-6 right-20 flex items-center">
+    <a href="/play/playtime/" 
+       class="p-2.5 bg-neutral-900 border border-white/5 rounded-xl hover:bg-blue-600/20 hover:border-blue-500/50 transition-all group relative"
+       title="Hall of Records">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 group-hover:text-blue-500">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <!-- Tooltip for the low-IQ users (Connor) -->
+        <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-all bg-blue-600 text-[10px] font-bold px-2 py-1 rounded text-white uppercase tracking-tighter">
+            Stats
+        </span>
+    </a>
+</div>
             <!-- Game 1 -->
             <a href="/play/ragdoll-hit/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
