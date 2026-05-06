@@ -5,6 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Playroom | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Make sure this is in your <head> -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, arrayUnion, arrayRemove, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+        projectId: "the-game-dungeon-4d75d",
+        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+        messagingSenderId: "533459716906",
+        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = "the-game-dungeon-4d75d";
+
+    // Initialize EmailJS with your Public Key
+    (function() {
+        emailjs.init("B27WRyM1IvaQI_Ysy");
+    })();
+
+    let currentUserData = null;
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.href = "/account/login/";
+            return;
+        }
+        initSocial(user);
+    });
+
+    // ... [initSocial, renderFriends, renderRequests, getPfpUrl functions remain the same] ...
+
+    // The Email Courier Function
+    window.sendEmailNotification = (targetEmail, senderName) => {
+        const templateParams = {
+            to_email: targetEmail,
+            from_name: senderName,
+            message: `${senderName} just sent you a friend request on The Crib! Hop on to accept it.`
+        };
+
+        emailjs.send('service_zywiuax', 'template_58qiu5r', templateParams)
+            .then(() => {
+                console.log('Email delivered by the Courier!');
+            }, (error) => {
+                console.error('Email blicked:', error);
+            });
+    };
+
+    window.sendRequest = async (targetEmail) => {
+        const myEmail = auth.currentUser.email;
+        const myPrefix = myEmail.split('@')[0];
+        const targetPrefix = targetEmail.split('@')[0];
+        
+        try {
+            // 1. Update the Vault (Firestore)
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { 
+                requests: arrayUnion(myEmail) 
+            });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { 
+                sentRequests: arrayUnion(targetEmail) 
+            });
+            
+            // 2. Trigger the Email Notification
+            sendEmailNotification(targetEmail, myPrefix);
+            
+            closeModals();
+        } catch (e) {
+            console.error("Dungeon Error:", e);
+        }
+    };
+
+    // ... [rest of the unfriend and modal logic remains the same] ...
+</script>
     <style>
         body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
