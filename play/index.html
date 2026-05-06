@@ -18,12 +18,17 @@
 
     <!-- Top Navigation Bar -->
     <nav class="p-6 flex items-center justify-between sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-md">
-        <div class="flex items-center space-x-6">
+        <div class="flex items-center space-x-4">
+            <!-- Home Button -->
+            <a href="/home/" class="p-3 glass rounded-2xl hover:bg-white/10 transition-all group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 group-hover:text-white"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </a>
+
             <!-- Playtime Button (Hall of Records) -->
             <a href="/play/playtime/" class="p-3 glass rounded-2xl hover:bg-blue-600/20 hover:border-blue-500/30 transition-all group">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 group-hover:scale-110 transition-transform"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </a>
-            <h1 class="text-4xl font-black italic tracking-tighter uppercase">Play</h1>
+            <h1 class="text-4xl font-black italic tracking-tighter uppercase ml-2">Play</h1>
         </div>
 
         <!-- Social Bar -->
@@ -32,14 +37,6 @@
             <div id="friends-list" class="flex items-center space-x-2"></div>
             
             <div class="w-px h-6 bg-white/10 mx-1"></div>
-
-            <div class="flex items-center space-x-6">
-            <!-- Playtime Button (Hall of Records) -->
-            <a href="/home/" class="p-3 glass rounded-2xl hover:bg-blue-600/20 hover:border-blue-500/30 transition-all group">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 group-hover:scale-110 transition-transform"><p>X</p></svg>
-            </a>
-            <h1 class="text-4xl font-black italic tracking-tighter uppercase">Play</h1>
-        </div>
             
             <!-- Friend Actions -->
             <button onclick="openRequestsModal()" class="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-yellow-500/20 text-yellow-500 relative">
@@ -195,14 +192,12 @@
             const prefix = user.email.split('@')[0];
             const userDocPath = `artifacts/${appId}/public/data/users/${prefix}`;
             
-            // Listen to User Doc for real-time friends/requests updates
             onSnapshot(doc(db, userDocPath), (snap) => {
                 if (snap.exists()) {
                     currentUserData = snap.data();
                     renderFriends(currentUserData.friends || []);
                     renderRequests(currentUserData.requests || []);
                 } else {
-                    // Create basic doc if first time
                     setDoc(doc(db, userDocPath), { email: user.email, friends: [], requests: [] });
                 }
             });
@@ -248,13 +243,12 @@
         function getPfpUrl(email) {
             const domain = email.split('@')[1];
             const prefix = email.split('@')[0];
-            // Deterministic placeholders for now based on email service
             if (domain.includes('gmail')) return `https://ui-avatars.com/api/?name=${prefix}&background=ea4335&color=fff`;
             if (domain.includes('outlook') || domain.includes('hotmail')) return `https://ui-avatars.com/api/?name=${prefix}&background=0078d4&color=fff`;
             return `https://ui-avatars.com/api/?name=${prefix}&background=333&color=fff`;
         }
 
-        window.showUserDetail = async (email, type = 'friend') => {
+        window.showUserDetail = async (email) => {
             const prefix = email.split('@')[0];
             document.getElementById('modal-name').innerText = prefix;
             document.getElementById('modal-email').innerText = email;
@@ -286,7 +280,7 @@
 
             if (snap.exists()) {
                 closeModals();
-                showUserDetail(email, 'search');
+                showUserDetail(email);
             } else {
                 alert("User not found in the Dungeon.");
             }
@@ -295,36 +289,30 @@
         window.sendRequest = async (targetEmail) => {
             const myPrefix = auth.currentUser.email.split('@')[0];
             const targetPrefix = targetEmail.split('@')[0];
-            
-            // Add to their requests
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), {
-                requests: arrayUnion(auth.currentUser.email)
-            });
-            
-            // Track in my sent
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), {
-                sentRequests: arrayUnion(targetEmail)
-            });
-
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { requests: arrayUnion(auth.currentUser.email) });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { sentRequests: arrayUnion(targetEmail) });
             closeModals();
         };
 
         window.handleRequest = async (email, action) => {
             const myPrefix = auth.currentUser.email.split('@')[0];
             const targetPrefix = email.split('@')[0];
-            
             const myRef = doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`);
             const targetRef = doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`);
-
             await updateDoc(myRef, { requests: arrayRemove(email) });
-
             if (action === 'accept') {
                 await updateDoc(myRef, { friends: arrayUnion(email) });
                 await updateDoc(targetRef, { friends: arrayUnion(auth.currentUser.email) });
             }
-            
-            // Clean up sent tracking
             await updateDoc(targetRef, { sentRequests: arrayRemove(auth.currentUser.email) });
+        };
+
+        window.bulkHandle = async (action) => {
+            if (!currentUserData.requests || currentUserData.requests.length === 0) return;
+            for (const email of [...currentUserData.requests]) {
+                await handleRequest(email, action);
+            }
+            closeModals();
         };
 
         window.unfriend = async (email) => {
@@ -341,7 +329,7 @@
             document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
         };
 
-   const grid = document.getElementById('game-grid');
+        const grid = document.getElementById('game-grid');
         games.forEach(g => {
             grid.innerHTML += `
                 <a href="/play/${g.icon}/" class="glass rounded-[2rem] p-4 flex flex-col items-center hover:bg-white/5 transition-all">
