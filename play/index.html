@@ -367,13 +367,32 @@
             }
         };
 
-        window.sendRequest = async (targetEmail) => {
-            const myPrefix = auth.currentUser.email.split('@')[0];
-            const targetPrefix = targetEmail.split('@')[0];
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { requests: arrayUnion(auth.currentUser.email) });
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { sentRequests: arrayUnion(targetEmail) });
-            closeModals();
-        };
+        // Update THIS version in the bottom script tag
+window.sendRequest = async (targetEmail) => {
+    const myEmail = auth.currentUser.email;
+    const myPrefix = myEmail.split('@')[0];
+    const targetPrefix = targetEmail.split('@')[0];
+    
+    try {
+        // 1. Update the Vault (Firestore)
+        await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { 
+            requests: arrayUnion(myEmail) 
+        });
+        await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { 
+            sentRequests: arrayUnion(targetEmail) 
+        });
+        
+        // 2. Trigger the Email Notification (The Courier)
+        // We call the function defined in your first script tag
+        if (window.sendEmailNotification) {
+            window.sendEmailNotification(targetEmail, myPrefix);
+        }
+        
+        closeModals();
+    } catch (e) {
+        console.error("Dungeon Error:", e);
+    }
+};
 
         window.handleRequest = async (email, action) => {
             const myPrefix = auth.currentUser.email.split('@')[0];
