@@ -4,20 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Unfair Mario - The Game Dungeon</title>
-    <!-- Ruffle Engine Script -->
+
+    <!-- Ruffle Engine -->
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #000000;
-            color: #ffffff;
+            background-color: #000;
+            color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             height: 100vh;
             width: 100vw;
         }
@@ -30,13 +28,12 @@
             justify-content: center;
         }
 
-        /* Make the Ruffle player fill the screen */
         ruffle-player {
             width: 100%;
             height: 100%;
         }
 
-        /* The Loading Overlay */
+        /* Loading Screen */
         #loader {
             position: fixed;
             top: 0;
@@ -66,102 +63,120 @@
             100% { transform: rotate(360deg); }
         }
 
-              .touch-btn {
-    position: absolute;
-    bottom: 20px;
-    width: 80px;
-    height: 80px;
-    background: rgba(255, 255, 255, 0.2); /* Light transparent white */
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    z-index: 10;
-    user-select: none;
-    touch-action: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-family: sans-serif;
-    font-weight: bold;
-}
+        /* Touch Buttons */
+        .touch-btn {
+            position: absolute;
+            bottom: 20px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            z-index: 20;
+            user-select: none;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 24px;
+        }
 
-/* Right Side: Gas and Boost */
-#gasBtn { right: 30px; bottom: 120px; background: rgba(0, 255, 0, 0.2); }
-
-/* Left Side: Tilt */
-#tiltLeftBtn { left: 30px; bottom: 70px; }
-#tiltRightBtn { left: 130px; bottom: 70px; }
-
-        h2 { margin-top: 20px; letter-spacing: 2px; color: #00ff00; }
+        #jumpBtn { right: 30px; bottom: 120px; background: rgba(0,255,0,0.25); }
+        #leftBtn { left: 30px; bottom: 70px; }
+        #rightBtn { left: 130px; bottom: 70px; }
     </style>
 </head>
 <body>
 
+    <!-- Loader -->
     <div id="loader">
         <div class="spinner"></div>
-        <h2>LOADING "MARIO"...</h2>
-        <p style="color: #666;">Bypassing Bot-Brained Security...</p>
+        <h2 style="color:#00ff00;">LOADING "MARIO"...</h2>
+        <p style="color:#666;">Bypassing Bot-Brained Security...</p>
     </div>
 
+    <!-- Game -->
     <div id="game-container">
-        <div id="player" style="width: 100%; height: 100%;"></div>
+        <div id="player" style="width:100%; height:100%;"></div>
     </div>
 
-<div id="gasBtn" class="touch-btn">JUMP</div>
-<div id="tiltLeftBtn" class="touch-btn">←</div>
-<div id="tiltRightBtn" class="touch-btn">→</div>
+    <!-- Touch Controls -->
+    <div id="jumpBtn" class="touch-btn">JUMP</div>
+    <div id="leftBtn" class="touch-btn">←</div>
+    <div id="rightBtn" class="touch-btn">→</div>
 
-    <script src="/storage/unfair-mario-browser-port-main/assets/js/c.js"></script>
+    <!-- Load CSS -->
     <link rel="stylesheet" href="/storage/unfair-mario-browser-port-main/assets/css/c.css">
+
+    <!-- Ruffle Loader -->
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
-        window.addEventListener("load", (event) => {
+        window.addEventListener("load", () => {
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
-            const container = document.getElementById("player");
-            container.appendChild(player);
+            document.getElementById("player").appendChild(player);
 
-            // Using your direct GitHub Pages URL for the SWF
-            player.load("https://thegamedungeon.github.io/storage/unfair-mario-browser-port-main/assets/unfair-mario.swf").then(() => {
-                console.log("Flash game loaded successfully!");
-                
-                // Keep the loader up for a bit to ensure the canvas is ready
-                setTimeout(() => {
-                    const loader = document.getElementById('loader');
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.remove(), 500);
-                }, 1500);
-            }).catch((e) => {
-                document.querySelector('h2').innerText = "FAILED TO LOAD SWF";
-                document.querySelector('h2').style.color = "red";
-                console.error("Ruffle failed:", e);
-            });
+            player.load("https://thegamedungeon.github.io/storage/unfair-mario-browser-port-main/assets/unfair-mario.swf")
+                .then(() => {
+                    console.log("Flash game loaded successfully!");
+
+                    setTimeout(() => {
+                        const loader = document.getElementById("loader");
+                        loader.style.opacity = "0";
+                        setTimeout(() => loader.remove(), 500);
+                    }, 1500);
+                })
+                .catch((e) => {
+                    document.querySelector("h2").innerText = "FAILED TO LOAD SWF";
+                    document.querySelector("h2").style.color = "red";
+                    console.error("Ruffle failed:", e);
+                });
         });
     </script>
+
+    <!-- FIXED BUTTON SCRIPT -->
     <script>
-  function simulateKey(code, type) {
-    const event = new KeyboardEvent(type, {
-      key: code,
-      keyCode: code === 'ArrowUp' ? 38 : code === 'ArrowLeft' ? 37 : code === 'ArrowRight' ? 39 : 88, // 88 is 'X' for boost
-      which: code === 'ArrowUp' ? 38 : 0,
-      bubbles: true
-    });
-    document.dispatchEvent(event);
-    // Also try dispatching to the canvas specifically
-    const canvas = document.querySelector('canvas');
-    if (canvas) canvas.dispatchEvent(event);
-  }
+        function sendKey(key, type) {
+            const keyCodes = {
+                ArrowLeft: 37,
+                ArrowUp: 38,
+                ArrowRight: 39
+            };
 
-  const setupBtn = (id, key) => {
-    const btn = document.getElementById(id);
-    btn.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKey(key, 'keydown'); });
-    btn.addEventListener('touchend', (e) => { e.preventDefault(); simulateKey(key, 'keyup'); });
-  };
+            const event = new KeyboardEvent(type, {
+                key: key,
+                code: key,
+                keyCode: keyCodes[key],
+                which: keyCodes[key],
+                bubbles: true,
+                cancelable: true
+            });
 
-  // Map your buttons to keys (ETD2 usually uses Arrows and X or Ctrl)
-  setupBtn('jumpBtn', 'ArrowUp');
-  setupBtn('tiltLeftBtn', 'ArrowLeft');
-  setupBtn('tiltRightBtn', 'ArrowRight');
-</script>
+            document.dispatchEvent(event);
+
+            const canvas = document.querySelector("canvas");
+            if (canvas) canvas.dispatchEvent(event);
+        }
+
+        function bindButton(id, key) {
+            const btn = document.getElementById(id);
+            btn.addEventListener("touchstart", e => {
+                e.preventDefault();
+                sendKey(key, "keydown");
+            });
+            btn.addEventListener("touchend", e => {
+                e.preventDefault();
+                sendKey(key, "keyup");
+            });
+        }
+
+        bindButton("jumpBtn", "ArrowUp");
+        bindButton("leftBtn", "ArrowLeft");
+        bindButton("rightBtn", "ArrowRight");
+    </script>
+
 </body>
 </html>
