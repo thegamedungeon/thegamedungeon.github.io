@@ -66,6 +66,32 @@
             100% { transform: rotate(360deg); }
         }
 
+              .touch-btn {
+    position: absolute;
+    bottom: 20px;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2); /* Light transparent white */
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    z-index: 10;
+    user-select: none;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: sans-serif;
+    font-weight: bold;
+}
+
+/* Right Side: Gas and Boost */
+#gasBtn { right: 30px; bottom: 120px; background: rgba(0, 255, 0, 0.2); }
+
+/* Left Side: Tilt */
+#tiltLeftBtn { left: 30px; bottom: 70px; }
+#tiltRightBtn { left: 130px; bottom: 70px; }
+
         h2 { margin-top: 20px; letter-spacing: 2px; color: #00ff00; }
     </style>
 </head>
@@ -81,11 +107,9 @@
         <div id="player" style="width: 100%; height: 100%;"></div>
     </div>
 
-<div id="joystick">
-  <div id="stick"></div>
-</div>
-
-<button id="jumpBtn">JUMP</button>
+<div id="gasBtn" class="touch-btn">JUMP</div>
+<div id="tiltLeftBtn" class="touch-btn">←</div>
+<div id="tiltRightBtn" class="touch-btn">→</div>
 
     <script src="/storage/unfair-mario-browser-port-main/assets/js/c.js"></script>
     <link rel="stylesheet" href="/storage/unfair-mario-browser-port-main/assets/css/c.css">
@@ -114,5 +138,30 @@
             });
         });
     </script>
+    <script>
+  function simulateKey(code, type) {
+    const event = new KeyboardEvent(type, {
+      key: code,
+      keyCode: code === 'ArrowUp' ? 38 : code === 'ArrowLeft' ? 37 : code === 'ArrowRight' ? 39 : 88, // 88 is 'X' for boost
+      which: code === 'ArrowUp' ? 38 : 0,
+      bubbles: true
+    });
+    document.dispatchEvent(event);
+    // Also try dispatching to the canvas specifically
+    const canvas = document.querySelector('canvas');
+    if (canvas) canvas.dispatchEvent(event);
+  }
+
+  const setupBtn = (id, key) => {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKey(key, 'keydown'); });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); simulateKey(key, 'keyup'); });
+  };
+
+  // Map your buttons to keys (ETD2 usually uses Arrows and X or Ctrl)
+  setupBtn('jumpBtn', 'ArrowUp');
+  setupBtn('tiltLeftBtn', 'ArrowLeft');
+  setupBtn('tiltRightBtn', 'ArrowRight');
+</script>
 </body>
 </html>
