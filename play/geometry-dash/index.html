@@ -198,5 +198,16 @@ window.gameName = "Geometry Dash"; // Or whatever the title of the game is
     // This must match your UI cards exactly!
     initTracker("Geometry Dash");
 </script>
+<script>
+  // Replace this with the actual game name for this page
+  const currentGame = "Geometry Dash";
+</script>
+
+<script src="/storage/js/bff.js"></script>
+
+<script>
+  // Call the presence system once the script loads
+  startPresence(currentGame);
+</script>   
 </body>
 </html>
