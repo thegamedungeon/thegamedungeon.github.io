@@ -198,5 +198,17 @@ window.gameName = "Cookie Clicker"; // Or whatever the title of the game is
     // This must match your UI cards exactly!
     initTracker("Cookie Clicker");
 </script>
+    <script>
+  // Replace this with the actual game name for this page
+  const currentGame = "Cookie Clicker";
+</script>
+
+<script src="/storage/js/bff.js"></script>
+
+<script>
+  // Call the presence system once the script loads
+  startPresence(currentGame);
+</script>
+
 </body>
 </html>
