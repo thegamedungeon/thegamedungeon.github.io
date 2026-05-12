@@ -70,6 +70,12 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+    (function() {
+        emailjs.init("B27WRyM1IvaQI_Ysy");
+    })();
+</script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -172,18 +178,46 @@
             toInp.value = ''; textInp.value = ''; validate();
         };
 
+        async function sendEmailNotification(targetEmail, senderEmail, message) {
+    try {
+        await emailjs.send("service_n2hsxcf", "template_rip4cmz", {
+            to_email: targetEmail,
+            to_name: targetEmail.split("@")[0],   // optional but funny
+            from_name: senderEmail.split("@")[0],
+            message: message
+        });
+
+        console.log("EmailJS: Scroll notification sent.");
+    } catch (err) {
+        console.error("EmailJS Error:", err);
+    }
+}
+
         window.sendScroll = async () => {
-            if (sendBtn.disabled) return;
-            try {
-                await addDoc(collection(db, scrollPath), {
-                    senderEmail: currentUser.email,
-                    targetEmail: toInp.value.trim(),
-                    text: textInp.value.trim(),
-                    timestamp: serverTimestamp()
-                });
-                closeCompose();
-            } catch (error) { console.error(error); }
-        };
+    if (sendBtn.disabled) return;
+
+    const target = toInp.value.trim();
+    const text = textInp.value.trim();
+
+    try {
+        // Save scroll to Firestore
+        await addDoc(collection(db, scrollPath), {
+            senderEmail: currentUser.email,
+            targetEmail: target,
+            text: text,
+            timestamp: serverTimestamp()
+        });
+
+        // Send email notification
+        if (target.toLowerCase() !== "global") {
+            sendEmailNotification(target, currentUser.email, text);
+        }
+
+        closeCompose();
+    } catch (error) {
+        console.error(error);
+    }
+};
     </script>
 </body>
 </html>
