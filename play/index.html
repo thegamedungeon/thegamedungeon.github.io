@@ -5,191 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Playroom | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Your custom status tracker -->
     <script type="module" src="/storage/js/status.js" data-game="Play"></script>
-    <!-- Make sure this is in your <head> -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc, arrayUnion, arrayRemove, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // Firebase Config
-    const firebaseConfig = {
-        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-        projectId: "the-game-dungeon-4d75d",
-        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-        messagingSenderId: "533459716906",
-        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = "the-game-dungeon-4d75d";
-
-    // Initialize EmailJS with your Public Key
-    (function() {
-        emailjs.init("B27WRyM1IvaQI_Ysy");
-    })();
-
-    let currentUserData = null;
-
-    onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            window.location.href = "/account/login/";
-            return;
-        }
-        initSocial(user);
-    });
-
-    // ... [initSocial, renderFriends, renderRequests, getPfpUrl functions remain the same] ...
-
-    // The Email Courier Function
-    window.sendEmailNotification = (targetEmail, senderName) => {
-        const templateParams = {
-            to_email: targetEmail,
-            from_name: senderName,
-            message: `${senderName} just sent you a friend request on The Crib! Hop on to accept it.`
-        };
-
-        emailjs.send('service_zywiuax', 'template_58qiu5r', templateParams)
-            .then(() => {
-                console.log('Email delivered by the Courier!');
-            }, (error) => {
-                console.error('Email blicked:', error);
-            });
-    };
-
-    window.sendRequest = async (targetEmail) => {
-        const myEmail = auth.currentUser.email;
-        const myPrefix = myEmail.split('@')[0];
-        const targetPrefix = targetEmail.split('@')[0];
-        
-        try {
-            // 1. Update the Vault (Firestore)
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { 
-                requests: arrayUnion(myEmail) 
-            });
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { 
-                sentRequests: arrayUnion(targetEmail) 
-            });
-            
-            // 2. Trigger the Email Notification
-            sendEmailNotification(targetEmail, myPrefix);
-            
-            closeModals();
-        } catch (e) {
-            console.error("Dungeon Error:", e);
-        }
-    };
-window.sendRequest = async (targetEmail) => {
-    const myEmail = auth.currentUser.email;
-    const myPrefix = myEmail.split('@')[0];
-    const targetPrefix = targetEmail.split('@')[0];
-    
-    try {
-        // 1. Update the Vault (Firestore)
-        await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { 
-            requests: arrayUnion(myEmail) 
-        });
-        await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { 
-            sentRequests: arrayUnion(targetEmail) 
-        });
-        
-        // 2. Trigger the Email Notification (The Courier)
-        // We call the function defined in your first script tag
-        if (window.sendEmailNotification) {
-            window.sendEmailNotification(targetEmail, myPrefix);
-        }
-        
-        closeModals();
-    } catch (e) {
-        console.error("Dungeon Error:", e);
-    }
-};
-
-        window.handleRequest = async (email, action) => {
-            const myPrefix = auth.currentUser.email.split('@')[0];
-            const targetPrefix = email.split('@')[0];
-            const myRef = doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`);
-            const targetRef = doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`);
-            await updateDoc(myRef, { requests: arrayRemove(email) });
-            if (action === 'accept') {
-                await updateDoc(myRef, { friends: arrayUnion(email) });
-                await updateDoc(targetRef, { friends: arrayUnion(auth.currentUser.email) });
-            }
-            await updateDoc(targetRef, { sentRequests: arrayRemove(auth.currentUser.email) });
-        };
-
-        window.bulkHandle = async (action) => {
-            if (!currentUserData.requests || currentUserData.requests.length === 0) return;
-            for (const email of [...currentUserData.requests]) {
-                await handleRequest(email, action);
-            }
-            closeModals();
-        };
-
-        window.unfriend = async (email) => {
-            const myPrefix = auth.currentUser.email.split('@')[0];
-            const targetPrefix = email.split('@')[0];
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { friends: arrayRemove(email) });
-            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { friends: arrayRemove(auth.currentUser.email) });
-            closeModals();
-        };
-
-        window.openAddFriendModal = () => document.getElementById('add-modal').classList.remove('hidden');
-        window.openRequestsModal = () => document.getElementById('requests-modal').classList.remove('hidden');
-        window.closeModals = () => {
-            document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
-        };
-
-        const grid = document.getElementById('game-grid');
-        games.forEach(g => {
-            grid.innerHTML += `
-                <a href="/play/${g.icon}/" class="glass rounded-[2rem] p-4 flex flex-col items-center hover:bg-white/5 transition-all">
-                    <img src="/storage/photos/${g.icon}.png" class="w-full aspect-square rounded-3xl object-cover mb-4" onerror="this.src='/storage/photos/tgdtc.png'">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400">${g.name}</span>
-                </a>
-            `;
-        });
-    // ... [rest of the unfriend and modal logic remains the same] ...
-</script>
     <style>
         body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .friend-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .friend-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
         .friend-btn:active { transform: scale(0.9); }
         .modal-bg { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); }
         ::-webkit-scrollbar { width: 0px; }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #050505;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+        .online { background-color: #22c55e; }
+        .offline { background-color: #ef4444; }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <!-- Top Navigation Bar -->
     <nav class="p-6 flex items-center justify-between sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-md">
         <div class="flex items-center space-x-4">
-            <!-- Home Button -->
             <a href="/home/" class="p-3 glass rounded-2xl hover:bg-white/10 transition-all group">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 group-hover:text-white"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </a>
-
-            <!-- Playtime Button (Hall of Records) -->
             <a href="/play/playtime/" class="p-3 glass rounded-2xl hover:bg-blue-600/20 hover:border-blue-500/30 transition-all group">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 group-hover:scale-110 transition-transform"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </a>
             <h1 class="text-4xl font-black italic tracking-tighter uppercase ml-2">Play</h1>
         </div>
 
-        <!-- Social Bar -->
         <div id="social-bar" class="flex items-center space-x-2 glass p-2 rounded-full max-w-[50vw] overflow-x-auto no-scrollbar">
-            <!-- Friends will be injected here -->
             <div id="friends-list" class="flex items-center space-x-2"></div>
-            
             <div class="w-px h-6 bg-white/10 mx-1"></div>
-            
-            <!-- Friend Actions -->
             <button onclick="openRequestsModal()" class="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-yellow-500/20 text-yellow-500 relative">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <div id="request-count" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-[10px] flex items-center justify-center font-bold">0</div>
@@ -200,7 +56,7 @@ window.sendRequest = async (targetEmail) => {
         </div>
     </nav>
 
-    <!-- Main Game Grid (No Animation) -->
+        <!-- Main Game Grid (No Animation) -->
     <main class="p-6">
         <div id="game-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <!-- Game 1 -->
@@ -295,3 +151,277 @@ window.sendRequest = async (targetEmail) => {
             </a>
         </div>
     </main>
+
+
+    <!-- Modals -->
+    <div id="user-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="glass w-full max-w-sm rounded-[2rem] p-8 relative flex flex-col items-center text-center">
+            <button onclick="closeModals()" class="absolute top-6 right-6 text-neutral-500 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="relative">
+                <img id="modal-pfp" src="" class="w-24 h-24 rounded-full border-4 border-blue-500/20 mb-4 object-cover">
+                <div id="modal-status-dot" class="status-dot w-6 h-6 border-4"></div>
+            </div>
+            <h2 id="modal-name" class="text-2xl font-black italic tracking-tight">--</h2>
+            <p id="modal-email" class="text-neutral-500 font-mono text-xs mb-4">--</p>
+            <div id="modal-game-info" class="mb-8 flex flex-col items-center hidden">
+                <span class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-2">Current Game</span>
+                <img id="modal-game-icon" src="" class="w-16 h-16 rounded-2xl border border-white/10 mb-2">
+                <p id="modal-game-name" class="text-blue-400 font-bold uppercase text-sm italic tracking-tighter">--</p>
+            </div>
+            <div id="modal-actions" class="w-full space-y-3"></div>
+        </div>
+    </div>
+
+    <div id="requests-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-[2rem] p-8 relative">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black italic uppercase">Requests</h2>
+                <div class="flex space-x-2">
+                    <button onclick="bulkHandle('accept')" class="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-3 py-1 rounded-lg">Confirm All</button>
+                    <button onclick="bulkHandle('deny')" class="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-3 py-1 rounded-lg">Deny All</button>
+                </div>
+            </div>
+            <div id="requests-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2"></div>
+            <button onclick="closeModals()" class="w-full mt-6 py-3 glass rounded-xl font-bold text-neutral-400">Close</button>
+        </div>
+    </div>
+
+    <div id="add-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="glass w-full max-w-sm rounded-[2rem] p-8">
+            <h2 class="text-xl font-black italic uppercase mb-6">Add Friend</h2>
+            <input type="email" id="add-email-input" placeholder="friend@service.com" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 mb-4 focus:outline-none focus:border-blue-500">
+            <button onclick="findUserByEmail()" class="w-full py-4 bg-blue-600 rounded-xl font-black italic uppercase tracking-tighter">Find User</button>
+            <button onclick="closeModals()" class="w-full mt-3 py-2 text-neutral-500 text-sm">Cancel</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, setDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = "the-game-dungeon-4d75d";
+
+        (function() { emailjs.init("B27WRyM1IvaQI_Ysy"); })();
+
+        let currentUserData = null;
+        let myPrefix = "";
+        const activeListeners = {};
+
+        function getGameFileName(gameName) {
+            if (!gameName || gameName === "null") return "tgdtc";
+            const words = gameName.trim().split(/\s+/);
+            return words.length === 1 ? words[0].toLowerCase() : words.map(w => w[0]).join('').toLowerCase();
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { 
+                window.location.href = "/account/login/"; 
+                return; 
+            }
+            myPrefix = user.email.split('@')[0];
+            await initSocial(user);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (myPrefix) {
+                updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { status: 'offline' });
+            }
+        });
+
+        async function initSocial(user) {
+            const userDocPath = `artifacts/${appId}/public/data/users/${myPrefix}`;
+            
+            // Check if profile exists, if not create it immediately
+            const snap = await getDoc(doc(db, userDocPath));
+            if (!snap.exists()) {
+                await setDoc(doc(db, userDocPath), { 
+                    email: user.email, 
+                    friends: [], 
+                    requests: [], 
+                    sentRequests: [],
+                    status: 'online',
+                    game: 'The Crib' 
+                });
+            }
+
+            onSnapshot(doc(db, userDocPath), (snap) => {
+                if (snap.exists()) {
+                    currentUserData = snap.data();
+                    renderFriends(currentUserData.friends || []);
+                    renderRequests(currentUserData.requests || []);
+                }
+            });
+        }
+
+        function renderFriends(friends) {
+            const list = document.getElementById('friends-list');
+            list.innerHTML = '';
+            
+            friends.filter(f => f && f !== 'null' && f.includes('@')).forEach(email => {
+                const prefix = email.split('@')[0];
+                const btn = document.createElement('button');
+                btn.id = `f-btn-${prefix}`;
+                btn.onclick = () => window.showUserDetail(email);
+                btn.className = "friend-btn w-10 h-10 rounded-full border-2 border-white/5 overflow-hidden flex-shrink-0";
+                btn.innerHTML = `
+                    <img src="${getPfpUrl(email)}" class="w-full h-full object-cover">
+                    <div id="f-dot-${prefix}" class="status-dot offline"></div>
+                `;
+                list.appendChild(btn);
+
+                if (!activeListeners[prefix]) {
+                    const friendRef = doc(db, `artifacts/${appId}/public/data/users/${prefix}`);
+                    activeListeners[prefix] = onSnapshot(friendRef, (snap) => {
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            const dot = document.getElementById(`f-dot-${prefix}`);
+                            if (dot) dot.className = `status-dot ${data.status === 'online' ? 'online' : 'offline'}`;
+                        }
+                    });
+                }
+            });
+        }
+
+        function renderRequests(requests) {
+            const list = document.getElementById('requests-list');
+            const badge = document.getElementById('request-count');
+            const validRequests = requests.filter(r => r && r !== 'null');
+            
+            if (validRequests.length > 0) { 
+                badge.innerText = validRequests.length; 
+                badge.classList.remove('hidden'); 
+            } else { 
+                badge.classList.add('hidden'); 
+            }
+
+            list.innerHTML = validRequests.map(email => `
+                <div class="flex items-center justify-between p-3 glass rounded-2xl">
+                    <div class="flex items-center space-x-3">
+                        <img src="${getPfpUrl(email)}" class="w-8 h-8 rounded-full">
+                        <span class="text-xs font-bold truncate max-w-[120px]">${email.split('@')[0]}</span>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="handleRequest('${email}', 'accept')" class="p-2 bg-green-500/20 text-green-500 rounded-lg hover:bg-green-500/40"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                        <button onclick="handleRequest('${email}', 'deny')" class="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/40"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-neutral-600 text-xs py-4">No pending requests</p>';
+        }
+
+        function getPfpUrl(email) {
+            const prefix = email.split('@')[0];
+            const domain = email.split('@')[1] || "";
+            let bg = "333";
+            if (domain.includes('gmail')) bg = "ea4335";
+            else if (domain.includes('outlook') || domain.includes('hotmail')) bg = "0078d4";
+            return `https://ui-avatars.com/api/?name=${prefix}&background=${bg}&color=fff`;
+        }
+
+        window.showUserDetail = async (email) => {
+            const prefix = email.split('@')[0];
+            const snap = await getDoc(doc(db, `artifacts/${appId}/public/data/users/${prefix}`));
+            const data = snap.exists() ? snap.data() : { status: 'offline', game: null };
+
+            document.getElementById('modal-name').innerText = prefix;
+            document.getElementById('modal-email').innerText = email;
+            document.getElementById('modal-pfp').src = getPfpUrl(email);
+            
+            const modalDot = document.getElementById('modal-status-dot');
+            modalDot.className = `status-dot w-6 h-6 border-4 ${data.status === 'online' ? 'online' : 'offline'}`;
+
+            const gameInfo = document.getElementById('modal-game-info');
+            if (data.status === 'online' && data.game) {
+                gameInfo.classList.remove('hidden');
+                document.getElementById('modal-game-name').innerText = data.game;
+                document.getElementById('modal-game-icon').src = `/storage/photos/${getGameFileName(data.game)}.png`;
+            } else {
+                gameInfo.classList.add('hidden');
+            }
+
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = '';
+            const isFriend = currentUserData?.friends?.includes(email);
+            const isPending = currentUserData?.sentRequests?.includes(email);
+
+            if (isFriend) {
+                actions.innerHTML = `<button onclick="unfriend('${email}')" class="w-full py-4 bg-red-600/10 text-red-500 rounded-2xl font-bold uppercase text-xs hover:bg-red-600/20">Unfriend</button>`;
+            } else if (isPending) {
+                actions.innerHTML = `<button class="w-full py-4 glass text-neutral-500 rounded-2xl font-bold uppercase text-xs" disabled>Pending...</button>`;
+            } else if (email !== auth.currentUser.email) {
+                actions.innerHTML = `<button onclick="sendRequest('${email}')" class="w-full py-4 bg-blue-600 rounded-2xl font-black italic uppercase tracking-tighter">Add Friend</button>`;
+            }
+
+            document.getElementById('user-modal').classList.remove('hidden');
+        };
+
+        window.sendEmailNotification = (targetEmail, senderName) => {
+            const templateParams = { to_email: targetEmail, from_name: senderName, message: `${senderName} just sent you a friend request on The Crib! Hop on to accept it.` };
+            emailjs.send('service_zywiuax', 'template_58qiu5r', templateParams).catch(e => console.error('Email error:', e));
+        };
+
+        window.sendRequest = async (targetEmail) => {
+            const targetPrefix = targetEmail.split('@')[0];
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { requests: arrayUnion(auth.currentUser.email) });
+                await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { sentRequests: arrayUnion(targetEmail) });
+                window.sendEmailNotification(targetEmail, myPrefix);
+                window.closeModals();
+            } catch (e) { console.error("Request Error:", e); }
+        };
+
+        window.handleRequest = async (email, action) => {
+            const targetPrefix = email.split('@')[0];
+            const myRef = doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`);
+            const targetRef = doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`);
+            await updateDoc(myRef, { requests: arrayRemove(email) });
+            if (action === 'accept') {
+                await updateDoc(myRef, { friends: arrayUnion(email) });
+                await updateDoc(targetRef, { friends: arrayUnion(auth.currentUser.email) });
+            }
+            await updateDoc(targetRef, { sentRequests: arrayRemove(auth.currentUser.email) });
+        };
+
+        window.findUserByEmail = async () => {
+            const email = document.getElementById('add-email-input').value.trim();
+            if (!email || !email.includes('@')) return;
+            const prefix = email.split('@')[0];
+            const snap = await getDoc(doc(db, `artifacts/${appId}/public/data/users/${prefix}`));
+            if (snap.exists()) { window.closeModals(); window.showUserDetail(email); } 
+            else { alert("User not found."); }
+        };
+
+        window.unfriend = async (email) => {
+            const targetPrefix = email.split('@')[0];
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { friends: arrayRemove(email) });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { friends: arrayRemove(auth.currentUser.email) });
+            window.closeModals();
+        };
+
+        window.bulkHandle = async (action) => {
+            if (!currentUserData.requests) return;
+            for (const email of [...currentUserData.requests]) { await window.handleRequest(email, action); }
+            window.closeModals();
+        };
+
+        window.openAddFriendModal = () => document.getElementById('add-modal').classList.remove('hidden');
+        window.openRequestsModal = () => document.getElementById('requests-modal').classList.remove('hidden');
+        window.closeModals = () => document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
+
+    </script>
+</body>
+</html>
