@@ -274,7 +274,7 @@
 
             // ENCODING: This is how Scramjet handles URLs. 
             // We prepend /service/ which is intercepted by the SW
-            const proxiedUrl = window.location.origin + '/service/' + btoa(url).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
+            const proxiedUrl = window.location.origin + 'service/' + btoa(url).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
             
             let iframe = document.getElementById(`iframe-${currentTabId}`);
             if (!iframe) {
