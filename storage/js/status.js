@@ -28,15 +28,28 @@ window.addEventListener('load', () => {
             }
         });
 
-        // Handle "Offline" Status on Tab Close
-        window.addEventListener('beforeunload', () => {
-            if (currentUserRef) {
-                updateDoc(currentUserRef, {
-                    status: "offline",
-                    game: null
-                });
-            }
+// Function to cut the lights when someone leaves
+const setOffline = () => {
+    const prefix = auth.currentUser?.email.split('@')[0];
+    if (prefix) {
+        const userDocRef = doc(db, `artifacts/${appId}/public/data/users/${prefix}`);
+        // We use updateDoc, but since the page is closing, 
+        // we don't 'await' it because we need it to fire and forget.
+        updateDoc(userDocRef, {
+            currentGame: "Offline"
         });
+    }
+};
+
+// The modern way to catch an iPad user leaving
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        setOffline();
+    }
+});
+
+// Keep beforeunload as a backup for desktop druggies
+window.addEventListener("beforeunload", setOffline);
 
     } catch (e) {
         console.log("Firebase sync waiting for main app...");
