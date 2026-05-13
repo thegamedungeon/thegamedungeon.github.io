@@ -84,7 +84,76 @@
             console.error("Dungeon Error:", e);
         }
     };
+window.sendRequest = async (targetEmail) => {
+    const myEmail = auth.currentUser.email;
+    const myPrefix = myEmail.split('@')[0];
+    const targetPrefix = targetEmail.split('@')[0];
+    
+    try {
+        // 1. Update the Vault (Firestore)
+        await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { 
+            requests: arrayUnion(myEmail) 
+        });
+        await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { 
+            sentRequests: arrayUnion(targetEmail) 
+        });
+        
+        // 2. Trigger the Email Notification (The Courier)
+        // We call the function defined in your first script tag
+        if (window.sendEmailNotification) {
+            window.sendEmailNotification(targetEmail, myPrefix);
+        }
+        
+        closeModals();
+    } catch (e) {
+        console.error("Dungeon Error:", e);
+    }
+};
 
+        window.handleRequest = async (email, action) => {
+            const myPrefix = auth.currentUser.email.split('@')[0];
+            const targetPrefix = email.split('@')[0];
+            const myRef = doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`);
+            const targetRef = doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`);
+            await updateDoc(myRef, { requests: arrayRemove(email) });
+            if (action === 'accept') {
+                await updateDoc(myRef, { friends: arrayUnion(email) });
+                await updateDoc(targetRef, { friends: arrayUnion(auth.currentUser.email) });
+            }
+            await updateDoc(targetRef, { sentRequests: arrayRemove(auth.currentUser.email) });
+        };
+
+        window.bulkHandle = async (action) => {
+            if (!currentUserData.requests || currentUserData.requests.length === 0) return;
+            for (const email of [...currentUserData.requests]) {
+                await handleRequest(email, action);
+            }
+            closeModals();
+        };
+
+        window.unfriend = async (email) => {
+            const myPrefix = auth.currentUser.email.split('@')[0];
+            const targetPrefix = email.split('@')[0];
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { friends: arrayRemove(email) });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/users/${targetPrefix}`), { friends: arrayRemove(auth.currentUser.email) });
+            closeModals();
+        };
+
+        window.openAddFriendModal = () => document.getElementById('add-modal').classList.remove('hidden');
+        window.openRequestsModal = () => document.getElementById('requests-modal').classList.remove('hidden');
+        window.closeModals = () => {
+            document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
+        };
+
+        const grid = document.getElementById('game-grid');
+        games.forEach(g => {
+            grid.innerHTML += `
+                <a href="/play/${g.icon}/" class="glass rounded-[2rem] p-4 flex flex-col items-center hover:bg-white/5 transition-all">
+                    <img src="/storage/photos/${g.icon}.png" class="w-full aspect-square rounded-3xl object-cover mb-4" onerror="this.src='/storage/photos/tgdtc.png'">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400">${g.name}</span>
+                </a>
+            `;
+        });
     // ... [rest of the unfriend and modal logic remains the same] ...
 </script>
     <style>
