@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tunnel | Loading...</title>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(56, 189, 248, 0.1);
+            border-top: 5px solid #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .error-msg {
+            color: #ef4444;
+            display: none;
+            margin-top: 10px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="spinner"></div>
+    <div id="status" class="status-text">Waking up Engine...</div>
+    <div id="error" class="error-msg">Engine Failed. Check /service/ folder.</div>
+
+    <!-- These files MUST exist in your /service/ folder -->
+    <script src="./service/scramjet.codecs.js"></script>
+    <script src="./service/scramjet.config.js"></script>
+    
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUrl = urlParams.get('url');
+        const status = document.getElementById('status');
+        const error = document.getElementById('error');
+
+        // Check if the service worker is supported and we have a target
+        if (targetUrl && 'serviceWorker' in navigator) {
+            
+            // Registering the worker in the /service/ folder scope
+            navigator.serviceWorker.register('./service/sw.js', { scope: './service/' })
+                .then(registration => {
+                    status.innerText = "Engine Active. Connecting to Tunnel...";
+                    console.log('SW Registered with scope:', registration.scope);
+
+                    // Wait a tiny bit to ensure SW is ready to intercept
+                    setTimeout(() => {
+                        try {
+                            // Scramble the URL using the Scramjet codec
+                            const encoded = __scramjet$codec.encode(targetUrl);
+                            
+                            // Redirect to the proxied path
+                            // This path is what the Service Worker intercepts
+                            window.location.href = './service/' + encoded;
+                        } catch (e) {
+                            status.innerText = "Encoding Error.";
+                            console.error(e);
+                        }
+                    }, 800);
+                })
+                .catch(err => {
+                    status.innerText = "Critical Failure.";
+                    error.style.display = 'block';
+                    console.error('Service Worker registration failed:', err);
+                });
+        } else {
+            status.innerText = "No URL provided or Browser Incompatible.";
+        }
+    </script>
+</body>
+</html>
