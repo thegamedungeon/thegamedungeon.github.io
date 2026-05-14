@@ -1,0 +1,31 @@
+name: Send Weekly Scroll
+
+on:
+  schedule:
+    # This runs every Friday at 12:00 UTC (around 7 AM if you're in Central Time)
+    - cron: '0 17 * * 5'
+  workflow_dispatch: # This adds a button so you can test it manually right now
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        # This installs the tool needed to talk to your Firestore
+        run: npm install firebase-admin
+
+      - name: Run Scroll Logic
+        # Pointing to your specific folder structure
+        run: node storage/js/send-scroll.js
+        env:
+          # This pulls the secret key you'll add to GitHub later
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
