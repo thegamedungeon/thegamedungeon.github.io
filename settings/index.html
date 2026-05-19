@@ -4,35 +4,188 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings | The Game Dungeon</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" src="/storage/js/status.js" data-game="Settings"></script>
+    <script src="/storage/js/hex.js"></script>
     <style>
         body {
-            background-color: #0b0b0b;
+            background-color: #050505;
             color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
-        .glow-text {
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 0.3rem;
+            margin-bottom: 2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .config-box {
+            background: #111111;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #222222;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            color: #888888;
+        }
+
+        .inputs-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            background-color: #1a1a1a;
+            border: 1px solid #333333;
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: monospace;
+            flex-grow: 1;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #555555;
+        }
+
+        button {
+            background-color: #ffffff;
+            color: #050505;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #dddddd;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Presets Layout styling */
+        .presets-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 0.5rem;
+            justify-content: space-between;
+        }
+
+        .preset-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #222222;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            padding: 0;
+        }
+
+        .preset-btn:hover {
+            transform: scale(1.15);
+            border-color: #ffffff;
         }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center relative">
+<body>
 
-    <!-- Back Button -->
-    <a href="/" class="absolute top-6 left-6 p-2 bg-neutral-900 border border-white/5 rounded-full hover:bg-neutral-800 transition-all group">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-500 group-hover:text-blue-500"><path d="m15 18-6-6 6-6"/></svg>
-    </a>
+    <h1>Settings</h1>
 
-    <div class="text-center space-y-4">
-        <h1 class="text-3xl font-black italic text-blue-500 uppercase tracking-tighter glow-text">
-            Settings is for the future!!!
-        </h1>
-        <p class="text-neutral-500 font-mono text-xs uppercase tracking-[0.2em]">
-            System under construction. No oink oink allowed.
-        </p>
+    <div class="config-box">
+        <div class="input-group">
+            <label for="hexInput">URL Bar Theme Color</label>
+            <div class="inputs-container">
+                <input type="text" id="hexInput" placeholder="#050505" maxlength="7">
+                <button id="setBtn">Set</button>
+            </div>
+            
+            <label style="margin-top: 1rem;">Quick Presets</label>
+            <div class="presets-container">
+                <button class="preset-btn" style="background-color: #8b0000;" data-color="#8b0000" title="Crimson"></button>
+                <button class="preset-btn" style="background-color: #0f2027;" data-color="#0f2027" title="Midnight Navy"></button>
+                <button class="preset-btn" style="background-color: #004d40;" data-color="#004d40" title="Deep Emerald"></button>
+                <button class="preset-btn" style="background-color: #4a148c;" data-color="#4a148c" title="Cyber Purple"></button>
+                <button class="preset-btn" style="background-color: #333333;" data-color="#333333" title="Stealth Gray"></button>
+            </div>
+        </div>
     </div>
 
+    <script>
+        const hexInput = document.getElementById('hexInput');
+        const setBtn = document.getElementById('setBtn');
+        const presetBtns = document.querySelectorAll('.preset-btn');
+
+        // Grab current saved color to populate the text box if it exists
+        const savedColor = localStorage.getItem('urlBarColor');
+        if (savedColor) {
+            hexInput.value = savedColor;
+        }
+
+        // Preset click handler to fill the input box automatically
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                hexInput.value = btn.getAttribute('data-color');
+            });
+        });
+
+        setBtn.addEventListener('click', () => {
+            let colorValue = hexInput.value.trim();
+
+            // Auto-add the '#' if it's missing and looks like a valid hex code
+            if (colorValue && !colorValue.startsWith('#')) {
+                colorValue = '#' + colorValue;
+            }
+
+            // Simple validation regex for 3 or 6 digit hex codes
+            const isValidHex = /^#([A-Fa-f0-9]{3}){1,2}$/.test(colorValue);
+
+            if (isValidHex || colorValue === '') {
+                if (colorValue === '') {
+                    localStorage.removeItem('urlBarColor');
+                } else {
+                    localStorage.setItem('urlBarColor', colorValue);
+                }
+                // Refresh the page to lock it in
+                window.location.reload();
+            } else {
+                alert('Drop a valid hex code, bro. (e.g., #050505 or #FF0000)');
+            }
+        });
+    </script>
 </body>
 </html>
