@@ -71,26 +71,15 @@
         <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter">RAGDOLL HIT</h1>
         
         <div class="flex space-x-4">
-            <a href="/play/" class="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 font-bold rounded-xl transition-all border border-white/10">
-                BACK
-            </a>
             <button onclick="launchGame()" class="px-12 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30">
                 PLAY
             </button>
-            <a href="/play/ragdoll-hit/?fs=true" class="px-8 py-3 bg-green-800 hover:bg-neutral-700 font-bold rounded-xl transition-all border border-white/10">
-                FULLSCREEN
-            </a>
         </div>
     </div>
 
     <!-- Game Container -->
     <div id="game-wrapper" class="fixed inset-0 z-50 flex items-center justify-center bg-black">
         <iframe id="game-frame" src="" class="w-full h-full border-none"></iframe>
-    </div>
-
-    <!-- Pull Tab -->
-    <div id="pull-tab" onclick="toggleQuitMenu()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     </div>
 
     <!-- Quit Confirmation Pop-up -->
@@ -170,31 +159,5 @@
             }, 600);
         };
     </script>
-    <script type="module">
-    // Import your Daimyan Proof logic
-    import { initTracker } from "/storage/js/tracker.js";
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // Standard Dungeon Config
-    const firebaseConfig = {
-        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-        projectId: "the-game-dungeon-4d75d",
-        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-        messagingSenderId: "533459716906",
-        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
-    };
-
-    // Initialize Firebase for this page so the tracker has an active context
-    const app = initializeApp(firebaseConfig);
-    getAuth(app);
-    getFirestore(app);
-
-    // Initialize the tracker with the specific Hall of Records name
-    // This must match your UI cards exactly!
-    initTracker("Ragdoll Hit");
-</script>
 </body>
 </html>
