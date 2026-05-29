@@ -176,6 +176,11 @@
                     <span>Firestore Connected</span>
                 </div>
 
+                <!-- Custom Gear Settings Icon to prevent GitHub Pages pipeline errors -->
+                <button onclick="openSettingsModal()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors focus:outline-none" title="AI Studio Configuration">
+                    <i class="fa-solid fa-gear text-slate-400 hover:text-white text-base"></i>
+                </button>
+
                 <div id="auth-container" class="relative">
                     <!-- Loaded dynamically in module scope -->
                 </div>
@@ -346,6 +351,49 @@
         </div>
     </div>
 
+    <!-- SETTINGS MODAL FOR GITHUB PAGES KEY CONFIG -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-sliders text-brand-violet text-xl"></i>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-white">AI Engine Configuration</h3>
+                        <p class="text-xs text-slate-400">Manage developer keys and custom API connections.</p>
+                    </div>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Google AI Studio API Key</label>
+                    <div class="relative flex items-center">
+                        <input id="settings-api-key" type="password" placeholder="Paste your API key here..." class="w-full bg-brand-black border border-slate-800 rounded-lg p-3 text-xs text-cyan-400 focus:border-brand-violet/50 focus:outline-none focus:ring-1 focus:ring-brand-violet/40 pr-10">
+                        <button onclick="toggleApiKeyVisibility()" type="button" class="absolute right-3 text-slate-500 hover:text-slate-300 focus:outline-none" title="Toggle visibility">
+                            <i id="api-key-visibility-icon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="text-[11px] text-slate-500 leading-normal space-y-1.5 mt-2">
+                        <p>
+                            <i class="fa-solid fa-circle-info text-brand-cyan mr-1"></i>
+                            <strong>Leaving this blank</strong> relies on the local environment's custom auto-injection while editing.
+                        </p>
+                        <p>
+                            <i class="fa-solid fa-cloud-arrow-up text-brand-violet mr-1"></i>
+                            <strong>For Standalone / GitHub Pages:</strong> You must paste your free API key from <a href="https://aistudio.google.com/" target="_blank" class="text-brand-violet underline hover:text-brand-cyan font-bold">Google AI Studio</a> to power CribMan in production.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3 shrink-0">
+                <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
+                <button onclick="saveSettings()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Config</button>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICATION TOAST -->
     <div id="notification-toast" class="fixed bottom-6 right-6 bg-brand-card border border-brand-cyan/40 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
         <div class="w-7 h-7 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan" id="toast-icon">
@@ -419,6 +467,9 @@
                     "tuff": "Trying to act tough"
                 }
             },
+            settings: {
+                apiKey: ""
+            },
             isAiGenerating: false
         };
 
@@ -438,6 +489,7 @@
         let activeFriendsListener = null;
         let activeMemoryListener = null;
         let activeScrollsListener = null;
+        let activeSettingsListener = null;
 
         async function setupFirestoreSync(userId) {
             // Unsubscribe existing listeners to prevent leaks
@@ -445,11 +497,13 @@
             if (activeFriendsListener) activeFriendsListener();
             if (activeMemoryListener) activeMemoryListener();
             if (activeScrollsListener) activeScrollsListener();
+            if (activeSettingsListener) activeSettingsListener();
 
             // Synced collection paths following strict RULE 1 parameters
             const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
             const memoryDoc = doc(db, 'artifacts', appId, 'users', userId, 'memoryBank', 'current');
             const scrollsCol = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
+            const settingsDoc = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'current');
 
             // Resolve the current user's profile document name (email without domain)
             const userEmail = appState.currentUser.email || "";
@@ -461,6 +515,22 @@
             if (pathTag) {
                 pathTag.textContent = `users/${username}`;
             }
+
+            // Sync Settings Document (Rule 1 Compliant)
+            activeSettingsListener = onSnapshot(settingsDoc, (docSnap) => {
+                if (docSnap.exists()) {
+                    appState.settings = docSnap.data();
+                    const keyInput = document.getElementById('settings-api-key');
+                    if (keyInput) {
+                        keyInput.value = appState.settings.apiKey || "";
+                    }
+                } else {
+                    // Pull fallback from local storage cache first
+                    const cachedKey = localStorage.getItem('cribman_custom_api_key') || "";
+                    appState.settings = { apiKey: cachedKey };
+                    setDoc(settingsDoc, appState.settings);
+                }
+            }, (error) => console.error("Firestore Settings sync failed", error));
 
             // Listen for user chat arrays with state safeguards to prevent overwrite conflicts
             activeChatListener = onSnapshot(chatsCol, (snapshot) => {
@@ -1001,6 +1071,7 @@
             const userId = auth.currentUser?.uid;
             if (!userId) return;
 
+            const apiKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
             const searchIntent = checkForScrollIntent(userText);
             let chatId = appState.activeChatId;
             let isNewChat = false;
@@ -1046,6 +1117,32 @@
                 document.getElementById('active-chat-viewport').classList.remove('hidden');
                 renderMessages();
 
+                // If the API Key is blank, intercept and write a helpful custom model response containing instructions
+                if (!apiKey) {
+                    const instructions = `Yo, bro! I see you trying to send a message, but your AI Studio API key is completely blank! 🛠️\n\n` +
+                        `Since you are running this standalone or on GitHub Pages, CribMan needs a personal API key to talk to Google's servers. Here is exactly how to lock one in for free in 10 seconds:\n\n` +
+                        `1. Go to **[Google AI Studio](https://aistudio.google.com/)** (it is 100% free, no credit card required).\n` +
+                        `2. Click on **Get API Key** or **Create API Key**.\n` +
+                        `3. Copy your unique API Key.\n` +
+                        `4. Click the **Gear Icon (⚙️)** on the top-right corner of this screen, paste your key, and save!\n\n` +
+                        `Once that is saved to your cloud context, we will be officially back to cooking, bro!`;
+                    
+                    const finalMessages = [...messagesToSend, { role: 'model', parts: [{ text: instructions }] }];
+                    currentChat.messages = finalMessages;
+                    
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    if (isNewChat) {
+                        await updateDoc(chatRef, { title: "Setup Required", messages: finalMessages });
+                        document.getElementById('active-chat-title').textContent = "Setup Required";
+                    } else {
+                        await updateDoc(chatRef, { messages: finalMessages });
+                    }
+                    
+                    renderMessages();
+                    renderChatList();
+                    return; // Gracefully stop here without making the fetch call
+                }
+
                 if (searchIntent && searchIntent.isScrollIntent) {
                     await handleScrollIntent(searchIntent, chatId, messagesToSend);
                 } else {
@@ -1057,9 +1154,12 @@
                     const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
                     const currentChat = appState.chats.find(c => c.id === chatId);
                     if (currentChat) {
+                        const errorNotice = `Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!\n\n` +
+                            `💡 **Deployment Fix:** If you are running this standalone (on GitHub Pages/outside the preview), you need to add your custom Google AI Studio API Key in the Settings panel (gear icon at the top right) to connect CribMan directly to the cloud!`;
+                        
                         const errorLogs = [...currentChat.messages, {
                             role: 'model',
-                            parts: [{ text: "Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!" }]
+                            parts: [{ text: errorNotice }]
                         }];
                         currentChat.messages = errorLogs;
                         await updateDoc(chatRef, { messages: errorLogs });
@@ -1221,7 +1321,9 @@
         }
 
         async function executeGeminiCall(contentsArray, systemInstructionText = "") {
-            const apiKey = ""; 
+            // Read configured key prioritising synced setting -> localStorage cache -> empty default (for automatic in-canvas injection)
+            const savedKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
+            const apiKey = savedKey; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -1255,6 +1357,50 @@
                 return textResult;
             } else {
                 throw new Error("Empty candidate parameters returned");
+            }
+        }
+
+        // Custom standalone API settings loaders
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+            // Pull local storage fallback on boot if snapshot hasn't resolved
+            const keyInput = document.getElementById('settings-api-key');
+            if (keyInput && !keyInput.value) {
+                keyInput.value = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
+            }
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        async function saveSettings() {
+            const keyInput = document.getElementById('settings-api-key');
+            const keyVal = keyInput ? keyInput.value.trim() : "";
+
+            // Keep locally cached for high performance on offline boots
+            localStorage.setItem('cribman_custom_api_key', keyVal);
+            appState.settings.apiKey = keyVal;
+
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                const settingsDoc = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'current');
+                await setDoc(settingsDoc, { apiKey: keyVal });
+            }
+
+            closeSettingsModal();
+            showToast("AI Studio Engine configured successfully!", "success");
+        }
+
+        function toggleApiKeyVisibility() {
+            const keyInput = document.getElementById('settings-api-key');
+            const icon = document.getElementById('api-key-visibility-icon');
+            if (keyInput.type === "password") {
+                keyInput.type = "text";
+                icon.className = "fa-solid fa-eye-slash text-xs";
+            } else {
+                keyInput.type = "password";
+                icon.className = "fa-solid fa-eye text-xs";
             }
         }
 
@@ -1323,6 +1469,10 @@
         window.saveMemoryBank = saveMemoryBank;
         window.openFriendsList = openFriendsList;
         window.closeFriendsList = closeFriendsList;
+        window.openSettingsModal = openSettingsModal;
+        window.closeSettingsModal = closeSettingsModal;
+        window.saveSettings = saveSettings;
+        window.toggleApiKeyVisibility = toggleApiKeyVisibility;
         window.addFriend = addFriend;
         window.removeFriend = removeFriend;
         window.deleteChat = deleteChat;
