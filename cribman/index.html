@@ -462,7 +462,7 @@
                 pathTag.textContent = `users/${username}`;
             }
 
-            // Listen for user chat arrays
+            // Listen for user chat arrays with state safeguards to prevent overwrite conflicts
             activeChatListener = onSnapshot(chatsCol, (snapshot) => {
                 const list = [];
                 snapshot.forEach(d => {
@@ -470,10 +470,23 @@
                 });
                 // Sort chats in memory (Rule 2 requirement)
                 list.sort((a, b) => b.createdAt - a.createdAt);
-                appState.chats = list;
-                renderChatList();
-                if (appState.activeChatId) {
-                    renderMessages();
+                
+                if (!appState.isAiGenerating) {
+                    appState.chats = list;
+                    renderChatList();
+                    if (appState.activeChatId) {
+                        renderMessages();
+                    }
+                } else {
+                    // Update metadata and external list elements but protect the active chat messages during generation
+                    appState.chats = list.map(c => {
+                        if (c.id === appState.activeChatId) {
+                            const localActive = appState.chats.find(la => la.id === appState.activeChatId);
+                            return localActive ? { ...c, messages: localActive.messages } : c;
+                        }
+                        return c;
+                    });
+                    renderChatList();
                 }
             }, (error) => console.error("Firestore Chats load failed", error));
 
@@ -995,42 +1008,63 @@
             renderSkeletonLoading(true);
 
             try {
-                if (!chatId) {
+                let messagesToSend = [];
+                let currentChat = null;
+
+                if (chatId) {
+                    currentChat = appState.chats.find(c => c.id === chatId);
+                }
+
+                // If starting a fresh chat session or active chat can't be resolved
+                if (!chatId || !currentChat) {
                     isNewChat = true;
+                    messagesToSend = [{ role: 'user', parts: [{ text: userText }] }];
                     const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
                     const initialChat = {
                         title: "Connecting...",
-                        messages: [{ role: 'user', parts: [{ text: userText }] }],
+                        messages: messagesToSend,
                         createdAt: Date.now()
                     };
                     const docRef = await addDoc(chatsCol, initialChat);
                     chatId = docRef.id;
                     appState.activeChatId = chatId;
+
+                    // Optimistically add to local memory cache to keep rendering smooth
+                    currentChat = { id: chatId, ...initialChat };
+                    appState.chats.unshift(currentChat);
                 } else {
+                    // Update and compile message history lists directly
+                    messagesToSend = [...currentChat.messages, { role: 'user', parts: [{ text: userText }] }];
+                    currentChat.messages = messagesToSend;
+
                     const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    const currentChat = appState.chats.find(c => c.id === chatId);
-                    if (currentChat) {
-                        const updatedMessages = [...currentChat.messages, { role: 'user', parts: [{ text: userText }] }];
-                        await updateDoc(chatRef, { messages: updatedMessages });
-                    }
+                    await updateDoc(chatRef, { messages: messagesToSend });
                 }
 
+                // Push dynamic updates to viewports optimistically
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('active-chat-viewport').classList.remove('hidden');
+                renderMessages();
+
                 if (searchIntent && searchIntent.isScrollIntent) {
-                    await handleScrollIntent(searchIntent, chatId);
+                    await handleScrollIntent(searchIntent, chatId, messagesToSend);
                 } else {
-                    await queryGeminiAPI(chatId, isNewChat, userText);
+                    await queryGeminiAPI(chatId, isNewChat, messagesToSend);
                 }
             } catch (error) {
                 console.error("AI Generation Error", error);
-                const currentChat = appState.chats.find(c => c.id === chatId);
-                if (currentChat) {
+                if (chatId) {
                     const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    await updateDoc(chatRef, {
-                        messages: [...currentChat.messages, {
+                    const currentChat = appState.chats.find(c => c.id === chatId);
+                    if (currentChat) {
+                        const errorLogs = [...currentChat.messages, {
                             role: 'model',
                             parts: [{ text: "Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!" }]
-                        }]
-                    });
+                        }];
+                        currentChat.messages = errorLogs;
+                        await updateDoc(chatRef, { messages: errorLogs });
+                        renderMessages();
+                    }
                 }
             } finally {
                 renderSkeletonLoading(false);
@@ -1057,7 +1091,7 @@
             };
         }
 
-        async function handleScrollIntent(intentData, chatId) {
+        async function handleScrollIntent(intentData, chatId, currentMessages) {
             const userId = auth.currentUser?.uid;
             if (!userId) return;
 
@@ -1068,21 +1102,17 @@
                 targetName = intentData.friend.name;
                 targetEmail = intentData.friend.email;
             } else {
-                // Friendly modal prompt bypassing the browser block
-                const promptName = prompt("Bro, I see you want to send a scroll but I don't know who. What is their name/alias?", "Daimyan");
-                if (!promptName) {
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    const currentChat = appState.chats.find(c => c.id === chatId);
-                    await updateDoc(chatRef, {
-                        messages: [...currentChat.messages, {
-                            role: 'model',
-                            parts: [{ text: "Operation cancelled, bro. I need a valid name to look up in the logs." }]
-                        }]
-                    });
-                    return;
-                }
-                targetName = promptName;
-                targetEmail = `${promptName.toLowerCase().replace(/\s+/g, '')}@school.edu`;
+                // Friendly system notice block instead of browser prompt checks which get blocked in sub-iframes
+                const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                const currentChat = appState.chats.find(c => c.id === chatId);
+                const missingContactMessages = [...currentMessages, {
+                    role: 'model',
+                    parts: [{ text: "Bro, I see you want to transmit a scroll, but I don't know who you're talking to! Make sure they're listed in your **Game Dungeon Friends** sync file first so I can fetch their secure routing address. Let me know their name when you've synced them up!" }]
+                }];
+                if (currentChat) currentChat.messages = missingContactMessages;
+                await updateDoc(chatRef, { messages: missingContactMessages });
+                renderMessages();
+                return;
             }
 
             const simulatedAIPrompt = `Create an ultra-high energy, epic gaming-bro message to ${targetName} (${targetEmail}) describing: "${intentData.rawText}". Ensure to speak like CribMan, the ultimate Game Dungeon helper.`;
@@ -1104,47 +1134,52 @@
 
                 const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
                 const currentChat = appState.chats.find(c => c.id === chatId);
-                await updateDoc(chatRef, {
-                    messages: [...currentChat.messages, {
-                        role: 'model',
-                        parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to the cloud path for **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
-                    }]
-                });
+                const finalMessages = [...currentMessages, {
+                    role: 'model',
+                    parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to the cloud path for **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
+                }];
+                if (currentChat) currentChat.messages = finalMessages;
+                await updateDoc(chatRef, { messages: finalMessages });
+                renderMessages();
                 showToast(`Scroll transmitted to ${targetName}!`, "success");
             });
 
             const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
             const currentChat = appState.chats.find(c => c.id === chatId);
-            await updateDoc(chatRef, {
-                messages: [...currentChat.messages, {
-                    role: 'model',
-                    parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
-                }]
-            });
+            const draftingMessages = [...currentMessages, {
+                role: 'model',
+                parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
+            }];
+            if (currentChat) currentChat.messages = draftingMessages;
+            await updateDoc(chatRef, { messages: draftingMessages });
+            renderMessages();
         }
 
-        async function queryGeminiAPI(chatId, isNewChat, userText) {
+        async function queryGeminiAPI(chatId, isNewChat, currentMessages) {
             const userId = auth.currentUser?.uid;
             if (!userId) return;
 
             const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-            const currentChat = appState.chats.find(c => c.id === chatId);
-            if (!currentChat) return;
+            let chatTitle = "";
 
             if (isNewChat) {
                 try {
-                    const titlePrompt = `Given the user's starting message, generate a 2-4 word punchy title for this conversation log. Do not use markdown or quotes. Return only the title. User text: "${userText}"`;
+                    const firstQueryText = currentMessages[0]?.parts[0]?.text || "New Log";
+                    const titlePrompt = `Given the user's starting message, generate a 2-4 word punchy title for this conversation log. Do not use markdown or quotes. Return only the title. User text: "${firstQueryText}"`;
                     const generatedTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: titlePrompt }] }]);
-                    currentChat.title = generatedTitle.trim().replace(/^["']|["']$/g, '');
-                    await updateDoc(chatRef, { title: currentChat.title });
-                    
-                    const url = new URL(window.location);
-                    url.searchParams.set('chat', generateUrlSlug(currentChat.title));
-                    window.history.pushState({}, '', url);
+                    chatTitle = generatedTitle.trim().replace(/^["']|["']$/g, '');
                 } catch(e) {
-                    currentChat.title = userText.split(' ').slice(0, 3).join(' ') + "...";
-                    await updateDoc(chatRef, { title: currentChat.title });
+                    chatTitle = "New Conversation";
                 }
+                
+                const currentChat = appState.chats.find(c => c.id === chatId);
+                if (currentChat) currentChat.title = chatTitle;
+                await updateDoc(chatRef, { title: chatTitle });
+                
+                document.getElementById('active-chat-title').textContent = chatTitle;
+                const url = new URL(window.location);
+                url.searchParams.set('chat', generateUrlSlug(chatTitle));
+                window.history.pushState({}, '', url);
             }
 
             const systemPrompt = `
@@ -1169,11 +1204,20 @@
                 - If talking about security or boring tasks, refer to it as "oink oink" behavior.
             `;
 
-            const fullHistory = [...currentChat.messages];
-            const responseText = await executeGeminiCall(fullHistory, systemPrompt);
+            // Deliver explicit compiled messages array to prevent async snapshot leaks
+            const responseText = await executeGeminiCall(currentMessages, systemPrompt);
+            const finalMessages = [...currentMessages, { role: 'model', parts: [{ text: responseText }] }];
 
-            const updatedMessages = [...currentChat.messages, { role: 'model', parts: [{ text: responseText }] }];
-            await updateDoc(chatRef, { messages: updatedMessages });
+            // Optimistically append results to local cache state
+            const currentChat = appState.chats.find(c => c.id === chatId);
+            if (currentChat) {
+                currentChat.messages = finalMessages;
+            }
+
+            await updateDoc(chatRef, { messages: finalMessages });
+            
+            renderMessages();
+            renderChatList();
         }
 
         async function executeGeminiCall(contentsArray, systemInstructionText = "") {
