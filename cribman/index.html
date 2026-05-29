@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CribMan AI - The Game Dungeon</title>
-    <!-- Google Fonts: Inter & Space Grotesk for gaming punch -->
+    <!-- Google Fonts: Inter & Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -35,7 +35,6 @@
         }
     </script>
     <style>
-        /* Custom scrollbars for a gaming client aesthetic */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -50,7 +49,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #8b5cf6;
         }
-        /* Markdown content styling */
         .prose p {
             margin-bottom: 0.75rem;
         }
@@ -64,12 +62,51 @@
             font-size: 0.9em;
             color: #ec4899;
         }
+        @keyframes slide-down {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-down {
+            animation: slide-down 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
     </style>
 </head>
 <body class="bg-brand-black text-slate-100 font-sans h-full flex flex-col overflow-hidden selection:bg-brand-violet/30 selection:text-brand-cyan">
 
     <!-- OVERLAY (For Mobile Drawer Layout) -->
     <div id="drawer-overlay" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0" onclick="toggleSidebar(false)"></div>
+
+    <!-- LIVE INCOMING SCROLL PARCHMENT CARD -->
+    <div id="incoming-scroll-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 hidden">
+        <div class="bg-gradient-to-b from-amber-50 to-orange-100 text-amber-950 border-2 border-amber-800 rounded-2xl shadow-2xl p-6 relative overflow-hidden animate-slide-down">
+            <div class="absolute -right-6 -bottom-6 text-9xl text-amber-800/10 rotate-12">
+                <i class="fa-solid fa-scroll"></i>
+            </div>
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-800/20 text-amber-950 flex items-center justify-center text-2xl shrink-0">
+                    <i class="fa-solid fa-bell animate-bounce"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-display font-bold text-lg tracking-wide uppercase text-amber-900 flex items-center gap-2">
+                        <span>New Scroll Arrived!</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-amber-800/10 border border-amber-800/25 text-amber-800">Live</span>
+                    </h3>
+                    <p class="text-[11px] text-amber-800 font-semibold mb-2">Sender: <span id="scroll-sender-display" class="underline">Daimyan</span></p>
+                    <div id="scroll-message-display" class="text-xs leading-relaxed italic bg-amber-200/50 p-3 rounded-lg border border-amber-300 font-serif whitespace-pre-wrap select-all">
+                        <!-- Content loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 justify-end pt-4 mt-2">
+                <button onclick="dismissIncomingScroll()" class="px-4 py-1.5 rounded-lg bg-amber-900/10 hover:bg-amber-900/20 text-amber-900 text-xs font-bold transition-all">
+                    Dismiss
+                </button>
+                <button onclick="copyScrollToClipboard()" class="px-4 py-1.5 rounded-lg bg-amber-900 hover:bg-amber-950 text-white text-xs font-bold transition-all shadow-md">
+                    Copy Message
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- SIDEBAR DRAWER (All Chats and Config) -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-80 bg-brand-dark border-r border-slate-800/80 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col h-full">
@@ -81,7 +118,6 @@
                 </div>
                 <span class="font-display font-bold text-lg tracking-wider bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">THE CRIB</span>
             </div>
-            <!-- Close Button for Mobile (Explicit close trigger) -->
             <button onclick="toggleSidebar(false)" class="text-slate-400 hover:text-white p-2 focus:outline-none" title="Collapse Sidebar">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
@@ -98,7 +134,6 @@
         <!-- Chat List Section -->
         <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1.5" id="chat-list-container">
             <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 py-2">My Chat Logs</div>
-            <!-- Dynamic chats injected here -->
             <div id="no-chats-placeholder" class="text-center py-8 text-slate-500 text-sm">
                 <i class="fa-regular fa-comments text-3xl mb-2 opacity-40 block"></i>
                 <span>No local chats yet, bro!</span>
@@ -109,7 +144,7 @@
         <div class="p-4 border-t border-slate-800/80 bg-slate-900/30 space-y-2 shrink-0">
             <button onclick="openMemoryBank()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
                 <i class="fa-solid fa-brain text-brand-violet text-base"></i>
-                <span class="font-medium">Memory Bank (JS)</span>
+                <span class="font-medium">Memory Bank (JS Context)</span>
             </button>
             <button onclick="openFriendsList()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
                 <i class="fa-solid fa-users text-brand-cyan text-base"></i>
@@ -122,7 +157,6 @@
     <main class="flex-1 flex flex-col h-full overflow-hidden relative transition-all duration-300 md:pl-80">
         <!-- TOP BAR -->
         <header class="h-16 border-b border-slate-800/80 flex items-center justify-between px-4 md:px-6 bg-brand-dark/50 backdrop-blur-md z-30 shrink-0">
-            <!-- Left Corner: Hamburger & Logo -->
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors focus:outline-none" title="Toggle Navigation Panel">
                     <i class="fa-solid fa-bars text-lg"></i>
@@ -130,22 +164,20 @@
                 <div class="flex items-center gap-2">
                     <span class="font-display font-bold text-lg md:text-xl tracking-tight text-white flex items-center gap-2">
                         <span>CribMan</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-brand-violet/20 border border-brand-violet/40 text-brand-violet font-semibold tracking-wider uppercase font-sans">AI Agent</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-brand-violet/20 border border-brand-violet/40 text-brand-violet font-semibold tracking-wider uppercase font-sans">Cloud Sync</span>
                     </span>
                 </div>
             </div>
 
             <!-- Right Corner: Profile Status & Simulator Info -->
             <div class="flex items-center gap-3">
-                <!-- Sandbox Status Tag -->
-                <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                <div id="cloud-status-indicator" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Local Storage Vault
+                    <span>Firestore Connected</span>
                 </div>
 
-                <!-- Account Authentication State Controls -->
                 <div id="auth-container" class="relative">
-                    <!-- Loaded dynamically in JS based on Auth status -->
+                    <!-- Loaded dynamically in module scope -->
                 </div>
             </div>
         </header>
@@ -155,25 +187,22 @@
             
             <!-- EMPTY WELCOME SCREEN -->
             <div id="welcome-screen" class="flex-1 overflow-y-auto flex flex-col items-center justify-center p-6 text-center max-w-2xl mx-auto w-full">
-                <!-- Mascot Container -->
                 <div class="relative mb-8 group shrink-0">
                     <div class="absolute inset-0 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
                     <div class="w-24 h-24 rounded-full bg-brand-card border border-slate-700 flex items-center justify-center shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105">
                         <span class="text-5xl">😎</span>
                     </div>
-                    <!-- Small absolute badge -->
                     <div class="absolute -bottom-2 -right-2 bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black font-bold text-[10px] px-2 py-1 rounded-md shadow-lg font-display">
-                        CRIBMAN v1.0
+                        CRIBMAN CLOUD
                     </div>
                 </div>
 
-                <!-- Dynamic Greeting Heading -->
                 <h1 id="welcome-greeting" class="font-display font-bold text-4xl md:text-5xl mb-4 text-white tracking-tight leading-none shrink-0">
                     <!-- Injected dynamically -->
                 </h1>
                 
                 <p class="text-slate-400 text-base md:text-lg mb-8 max-w-lg mx-auto shrink-0">
-                    I'm your all-bro agent. Built right into <span class="text-brand-cyan font-semibold">The Game Dungeon</span> to check scores, schedule scrolls, and keep it absolute peak. What's the move today?
+                    Your goated cloud-synced bro agent. Ready to message friends, remember class lore, and sync your chats across any machine!
                 </p>
 
                 <!-- Prompt Suggestions -->
@@ -184,22 +213,21 @@
                     </button>
                     <button onclick="useSuggestion('Tell Daimyan that he\'s a thief for beating my score, and send a scroll to him.')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
                         <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Send a Devious Scroll</span>
-                        <span class="text-xs text-slate-400">Test the smart intent router for messaging friends.</span>
+                        <span class="text-xs text-slate-400">Verify friends integration and send a live cloud message.</span>
                     </button>
                     <button onclick="useSuggestion('Who is the zestiest in foundations class?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
                         <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Lore Check</span>
-                        <span class="text-xs text-slate-400">Ask who's staring at blank walls being absolute zesty.</span>
+                        <span class="text-xs text-slate-400">Ask about blank wall noodle hair behaviors.</span>
                     </button>
-                    <button onclick="useSuggestion('How do I play Ride to Die? Tell me some elite strategies.')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
+                    <button onclick="useSuggestion('How do I play Ride to Die?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
                         <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Game Dungeon Secrets</span>
-                        <span class="text-xs text-slate-400">Get strategies for mastering dungeon minigames.</span>
+                        <span class="text-xs text-slate-400">Check strategies for mastering game records.</span>
                     </button>
                 </div>
             </div>
 
             <!-- ACTIVE CHAT INTERFACE -->
             <div id="active-chat-viewport" class="flex-1 flex flex-col overflow-hidden hidden">
-                <!-- Chat Log Title Bar -->
                 <div class="px-6 py-3 border-b border-slate-800/50 bg-slate-900/10 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-2">
                         <div class="w-2.5 h-2.5 rounded-full bg-brand-violet animate-ping"></div>
@@ -223,7 +251,6 @@
                     <div class="relative flex items-center">
                         <textarea id="chat-input" rows="1" placeholder="Ask CribMan..." oninput="autoExpandTextarea(this)" class="w-full bg-brand-card border border-slate-700 focus:border-brand-violet/70 focus:ring-1 focus:ring-brand-violet/50 rounded-xl py-3.5 pl-4 pr-14 text-white placeholder-slate-500 focus:outline-none resize-none max-h-32 text-sm leading-relaxed transition-all shadow-inner" style="min-height: 50px;"></textarea>
                         
-                        <!-- Floating actions in input box -->
                         <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                             <button type="submit" id="send-button" class="w-10 h-10 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan hover:brightness-110 text-brand-black flex items-center justify-center font-bold transition-all disabled:opacity-40 disabled:pointer-events-none" title="Send message to CribMan">
                                 <i class="fa-solid fa-paper-plane text-sm"></i>
@@ -231,7 +258,6 @@
                         </div>
                     </div>
                     
-                    <!-- Context helpers and status bar -->
                     <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 px-1 gap-2">
                         <div class="flex items-center gap-3">
                             <span class="flex items-center gap-1">
@@ -240,8 +266,8 @@
                             </span>
                             <span class="text-slate-700">|</span>
                             <span class="flex items-center gap-1">
-                                <i class="fa-solid fa-lock text-brand-cyan"></i>
-                                <span>No bot-brained logic allowed</span>
+                                <i class="fa-solid fa-cloud text-brand-cyan"></i>
+                                <span id="cloud-storage-tag">Cloud Sync Active</span>
                             </span>
                         </div>
                         <div class="text-slate-400 hover:text-brand-cyan transition-colors cursor-pointer" onclick="openMemoryBank()">
@@ -261,7 +287,7 @@
                     <i class="fa-solid fa-brain text-brand-violet text-xl"></i>
                     <div>
                         <h3 class="font-display font-bold text-lg text-white">CribMan Memory Bank</h3>
-                        <p class="text-xs text-slate-400">Injected directly into CribMan's context so he knows your school's exact lore.</p>
+                        <p class="text-xs text-slate-400">Synced to the cloud so CribMan always knows your custom class lore.</p>
                     </div>
                 </div>
                 <button onclick="closeMemoryBank()" class="text-slate-400 hover:text-white p-1">
@@ -270,10 +296,9 @@
             </div>
             <div class="p-6 overflow-y-auto space-y-4">
                 <div class="space-y-1">
-                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Memory context (JavaScript Object)</label>
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Memory context (JSON Object)</label>
                     <p class="text-[11px] text-slate-500 leading-normal">Tell CribMan about your friends, class inside jokes, high scores, and games. He will immediately adjust his replies using this knowledge.</p>
                 </div>
-                <!-- JS editor area -->
                 <textarea id="memory-bank-editor" rows="12" class="w-full bg-brand-black border border-slate-800 rounded-lg p-3 font-mono text-xs text-cyan-400 focus:border-brand-violet/50 focus:outline-none focus:ring-1 focus:ring-brand-violet/40"></textarea>
                 <div id="memory-validation-msg" class="text-xs text-red-400 hidden flex items-center gap-1.5">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -282,7 +307,7 @@
             </div>
             <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3 shrink-0">
                 <button onclick="closeMemoryBank()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
-                <button onclick="saveMemoryBank()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Context</button>
+                <button onclick="saveMemoryBank()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Cloud Context</button>
             </div>
         </div>
     </div>
@@ -307,20 +332,21 @@
                     <!-- Dynamic rendering of friends -->
                 </div>
                 <div class="border-t border-slate-800 pt-4 mt-2">
-                    <h4 class="text-xs font-semibold uppercase text-slate-400 mb-2">Register/Add a Bro</h4>
-                    <form onsubmit="addFriend(event)" class="space-y-2">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="new-friend-name" placeholder="Name/Alias" required class="bg-brand-black border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
-                            <input type="email" id="new-friend-email" placeholder="school@email.com" required class="bg-brand-black border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
+                    <div class="p-3.5 rounded-xl bg-brand-violet/10 border border-brand-violet/20 text-xs text-slate-300 space-y-1.5">
+                        <div class="font-semibold text-brand-cyan flex items-center gap-1.5">
+                            <i class="fa-solid fa-cloud-arrow-down animate-pulse"></i>
+                            <span>Dungeon Sync Active</span>
                         </div>
-                        <button type="submit" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-colors">Add to Game Dungeon</button>
-                    </form>
+                        <p class="text-slate-400 leading-normal">
+                            Your roster is loaded directly from your Game Dungeon profile document <code class="bg-slate-950 px-1.5 py-0.5 rounded text-brand-magenta font-mono text-[10px]" id="sync-doc-path">users/...</code>. Adjustments are managed from your core account setup.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- NOTIFICATION SYSTEM -->
+    <!-- NOTIFICATION TOAST -->
     <div id="notification-toast" class="fixed bottom-6 right-6 bg-brand-card border border-brand-cyan/40 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
         <div class="w-7 h-7 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan" id="toast-icon">
             <i class="fa-solid fa-check"></i>
@@ -339,7 +365,7 @@
             </div>
             <div>
                 <h3 class="font-display font-bold text-lg text-white">Send Scroll Request?</h3>
-                <p class="text-xs text-slate-400 mt-1" id="confirm-modal-text">CribMan wants to send a secure Scroll with your message details to Daimyan.</p>
+                <p class="text-xs text-slate-400 mt-1" id="confirm-modal-text">CribMan wants to send a secure Scroll with your message details.</p>
             </div>
             <div class="flex gap-3 pt-2">
                 <button onclick="closeConfirmModal(false)" class="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors">Cancel</button>
@@ -348,24 +374,43 @@
         </div>
     </div>
 
-    <script>
-        // Core Application State Setup
+    <!-- FIREBASE AND CORE IMPLEMENTATION MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Application State configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'the-game-dungeon-4d75d';
+        const firebaseConfig = typeof __firebase_config !== 'undefined'
+            ? JSON.parse(__firebase_config)
+            : {
+                apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+                authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+                projectId: "the-game-dungeon-4d75d",
+                storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+                messagingSenderId: "533459716906",
+                appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+                measurementId: "G-CER9SE96MC"
+              };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // State machine matching UI actions
         let appState = {
-            isLoggedIn: true, 
+            isLoggedIn: false,
             currentUser: {
-                name: "Alex",
-                email: "alex@thecrib.org",
+                uid: "",
+                name: "Guest Bro",
+                email: "offline@thecrib.org",
                 photoUrl: "https://placehold.co/150/8b5cf6/ffffff?text=😎"
             },
             chats: [],
             activeChatId: null,
-            friends: [
-                { id: "f1", name: "Daimyan", email: "daimyan@school.edu" },
-                { id: "f2", name: "Jayden", email: "jayden@school.edu" },
-                { id: "f3", name: "Connor", email: "connor@school.edu" },
-                { id: "f4", name: "Abas", email: "abas@school.edu" },
-                { id: "f5", name: "P Diddy", email: "pdiddy@industry.com" }
-            ],
+            friends: [],
             memoryBank: {
                 user: "null",
                 context: "Connor is zesty and has noodle hair. Sod-erdine acts tuff but isn’t.",
@@ -377,48 +422,193 @@
             isAiGenerating: false
         };
 
-        // Variable representing current open/closed sidebar state
-        let sidebarOpen = window.innerWidth >= 768; 
-
-        // Welcome Greeting Options
+        // Navigation state tracks
+        let sidebarOpen = window.innerWidth >= 768;
         const greetings = [
             "What’s up, bro?",
             "How’s it hangin’?",
             "Let’s get cooking!"
         ];
-
         let pendingScrollAction = null;
+        let processedScrolls = new Set();
+        let activeIncomingScroll = null;
 
-        // Initialization Routine
-        window.addEventListener('load', () => {
-            initLocalStorage();
-            loadStateFromLocalStorage();
-            renderAuthHeader();
-            renderChatList();
-            renderFriends();
-            initializeWelcomeScreen();
-            
-            // Set initial state of collapsible drawer
-            updateSidebarUI();
+        // Listeners & Real-Time Sync Controllers matching strict RULE 1 & RULE 2 rules
+        let activeChatListener = null;
+        let activeFriendsListener = null;
+        let activeMemoryListener = null;
+        let activeScrollsListener = null;
 
-            // Check URL for preloaded chat
-            const urlParams = new URLSearchParams(window.location.search);
-            const chatUrlName = urlParams.get('chat');
-            if (chatUrlName) {
-                const targetChat = appState.chats.find(c => generateUrlSlug(c.title) === chatUrlName);
-                if (targetChat) {
-                    selectChat(targetChat.id);
-                }
+        async function setupFirestoreSync(userId) {
+            // Unsubscribe existing listeners to prevent leaks
+            if (activeChatListener) activeChatListener();
+            if (activeFriendsListener) activeFriendsListener();
+            if (activeMemoryListener) activeMemoryListener();
+            if (activeScrollsListener) activeScrollsListener();
+
+            // Synced collection paths following strict RULE 1 parameters
+            const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
+            const memoryDoc = doc(db, 'artifacts', appId, 'users', userId, 'memoryBank', 'current');
+            const scrollsCol = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
+
+            // Resolve the current user's profile document name (email without domain)
+            const userEmail = appState.currentUser.email || "";
+            const username = userEmail.split('@')[0] || "guest";
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', username);
+
+            // Update UI status path
+            const pathTag = document.getElementById('sync-doc-path');
+            if (pathTag) {
+                pathTag.textContent = `users/${username}`;
             }
+
+            // Listen for user chat arrays
+            activeChatListener = onSnapshot(chatsCol, (snapshot) => {
+                const list = [];
+                snapshot.forEach(d => {
+                    list.push({ id: d.id, ...d.data() });
+                });
+                // Sort chats in memory (Rule 2 requirement)
+                list.sort((a, b) => b.createdAt - a.createdAt);
+                appState.chats = list;
+                renderChatList();
+                if (appState.activeChatId) {
+                    renderMessages();
+                }
+            }, (error) => console.error("Firestore Chats load failed", error));
+
+            // Listen for customized context
+            activeMemoryListener = onSnapshot(memoryDoc, (docSnap) => {
+                if (docSnap.exists()) {
+                    appState.memoryBank = docSnap.data();
+                    document.getElementById('memory-bank-editor').value = JSON.stringify(appState.memoryBank, null, 2);
+                } else {
+                    // Populate empty context with the default payload
+                    setDoc(memoryDoc, appState.memoryBank);
+                }
+            }, (error) => console.error("Firestore Memory Context load failed", error));
+
+            // Listen for central public friends roster (Rule 1 & Rule 2 compliant lookup)
+            activeFriendsListener = onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const friendsArray = data.friends || [];
+                    
+                    appState.friends = friendsArray.map((f, index) => {
+                        if (typeof f === 'string') {
+                            return {
+                                id: `friend-${index}`,
+                                name: f,
+                                email: f.includes('@') ? f : `${f}@school.edu` // Default scroll target email resolver
+                            };
+                        } else if (f && typeof f === 'object') {
+                            return {
+                                id: f.id || `friend-${index}`,
+                                name: f.name || "Unknown Bro",
+                                email: f.email || (f.name ? `${f.name.toLowerCase()}@school.edu` : "")
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean);
+                } else {
+                    appState.friends = [];
+                }
+                renderFriends();
+            }, (error) => console.error("Firestore Friends lookup failed", error));
+
+            // Listen for multiplayer interactive Scrolls
+            // RULE 2: Get all documents, filter recipient target in-memory
+            const sessionStartTime = Date.now();
+            activeScrollsListener = onSnapshot(scrollsCol, (snapshot) => {
+                const userEmailLower = appState.currentUser.email.toLowerCase().trim();
+                snapshot.forEach(docSnap => {
+                    const scroll = docSnap.data();
+                    if (scroll.recipientEmail.toLowerCase().trim() === userEmailLower) {
+                        // Exclude historically resolved scrolls before current connection
+                        if (!processedScrolls.has(docSnap.id)) {
+                            processedScrolls.add(docSnap.id);
+                            if (scroll.timestamp > sessionStartTime - 10000) {
+                                triggerScrollAlert(scroll);
+                            }
+                        }
+                    }
+                });
+            }, (error) => console.error("Firestore Scrolls feed failed", error));
+        }
+
+        // Interface and dynamic template compilers
+        window.addEventListener('load', () => {
+            initializeWelcomeScreen();
+            updateSidebarUI();
+            initAuth();
         });
 
-        // Handle viewport adjustments dynamically
         window.addEventListener('resize', () => {
-            const isMobile = window.innerWidth < 768;
             updateSidebarUI();
         });
 
-        // Responsive Collapsible Sidebar Mechanics
+        // RULE 3 Authentication protocol
+        async function initAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                try {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } catch (err) {
+                    await signInAnonymously(auth);
+                }
+            } else {
+                await signInAnonymously(auth);
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                appState.isLoggedIn = !user.isAnonymous;
+                appState.currentUser.uid = user.uid;
+                appState.currentUser.email = user.email || `${user.uid}@gamedungeon.org`;
+                appState.currentUser.name = user.displayName || (user.isAnonymous ? "Guest Bro" : user.email.split('@')[0]);
+                appState.currentUser.photoUrl = user.photoURL || `https://placehold.co/150/8b5cf6/ffffff?text=${encodeURIComponent(appState.currentUser.name[0])}`;
+
+                document.getElementById('cloud-status-indicator').classList.remove('hidden');
+                document.getElementById('cloud-storage-tag').textContent = "Cloud Sync Active";
+
+                // Bind Firestore feeds now that Auth is validated (Rule 3 compliant)
+                setupFirestoreSync(user.uid);
+            } else {
+                await initAuth();
+            }
+            renderAuthHeader();
+        });
+
+        // Renders visual states
+        function renderAuthHeader() {
+            const authContainer = document.getElementById('auth-container');
+            if (appState.isLoggedIn) {
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.triggerSignOut()" class="text-[10px] text-slate-500 hover:text-slate-400 bg-slate-950/40 px-2 py-1 rounded border border-slate-800" title="Log Out Mock">
+                            Disconnect
+                        </button>
+                        <div class="relative group block">
+                            <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur opacity-30"></div>
+                            <img class="w-9 h-9 rounded-full relative z-10 border border-slate-700 hover:scale-105 transition-transform" 
+                                 src="${appState.currentUser.photoUrl}" 
+                                 alt="Profile avatar" 
+                                 onerror="this.src='https://placehold.co/150/8b5cf6/ffffff?text=😎'">
+                        </div>
+                    </div>
+                `;
+            } else {
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.triggerSignIn()" class="text-[10px] text-brand-cyan hover:text-white bg-slate-950/40 px-2 py-1 rounded border border-brand-cyan/20" title="Connect Cloud Profile">
+                            Force Cloud Demo
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Collapsible Drawer Transitions
         function toggleSidebar(forcedState = null) {
             if (forcedState !== null) {
                 sidebarOpen = forcedState;
@@ -437,111 +627,27 @@
             if (sidebarOpen) {
                 sidebar.classList.remove('-translate-x-full');
                 sidebar.classList.add('translate-x-0');
-                
                 if (isMobile) {
                     overlay.classList.remove('hidden');
-                    // Simple micro-tick layout update for CSS transitions
                     setTimeout(() => overlay.classList.add('opacity-100'), 10);
                 } else {
                     mainContent.classList.add('md:pl-80');
                     overlay.classList.add('hidden');
-                    overlay.classList.remove('opacity-100');
                 }
             } else {
                 sidebar.classList.remove('translate-x-0');
                 sidebar.classList.add('-translate-x-full');
-                
                 if (isMobile) {
                     overlay.classList.remove('opacity-100');
-                    setTimeout(() => {
-                        if (!sidebarOpen) overlay.classList.add('hidden');
-                    }, 300);
+                    setTimeout(() => { if (!sidebarOpen) overlay.classList.add('hidden'); }, 300);
                 } else {
                     mainContent.classList.remove('md:pl-80');
-                    overlay.classList.add('hidden');
-                    overlay.classList.remove('opacity-100');
                 }
             }
-        }
-
-        // Initialize Local Storage Default Templates
-        function initLocalStorage() {
-            if (!localStorage.getItem('cribman_memory_bank')) {
-                localStorage.setItem('cribman_memory_bank', JSON.stringify(appState.memoryBank));
-            }
-            if (!localStorage.getItem('cribman_friends')) {
-                localStorage.setItem('cribman_friends', JSON.stringify(appState.friends));
-            }
-            if (!localStorage.getItem('cribman_chats')) {
-                localStorage.setItem('cribman_chats', JSON.stringify([]));
-            }
-        }
-
-        // Load Persistent Variables from LocalStorage
-        function loadStateFromLocalStorage() {
-            try {
-                const loadedMemory = localStorage.getItem('cribman_memory_bank');
-                if (loadedMemory) appState.memoryBank = JSON.parse(loadedMemory);
-                document.getElementById('memory-bank-editor').value = JSON.stringify(appState.memoryBank, null, 2);
-
-                const loadedFriends = localStorage.getItem('cribman_friends');
-                if (loadedFriends) appState.friends = JSON.parse(loadedFriends);
-
-                const loadedChats = localStorage.getItem('cribman_chats');
-                if (loadedChats) appState.chats = JSON.parse(loadedChats);
-
-                const loadedAuth = localStorage.getItem('cribman_auth');
-                if (loadedAuth) {
-                    appState.isLoggedIn = JSON.parse(loadedAuth).isLoggedIn;
-                }
-            } catch (err) {
-                console.error("Local storage load failed", err);
-            }
-        }
-
-        // Render Google Profile Status or Sign In Trigger in Top Bar
-        function renderAuthHeader() {
-            const authContainer = document.getElementById('auth-container');
-            if (appState.isLoggedIn) {
-                authContainer.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <button onclick="toggleAuthSimulation(false)" class="text-[10px] text-slate-500 hover:text-slate-400 bg-slate-950/40 px-2 py-1 rounded border border-slate-800" title="Click to test offline/unsigned state">
-                            Log Out Mock
-                        </button>
-                        <a href="/account/" onclick="event.preventDefault(); showToast('Simulating: Redirecting to /account/...', 'info');" class="relative group block">
-                            <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur opacity-30 group-hover:opacity-75 transition duration-200"></div>
-                            <img class="w-9 h-9 rounded-full relative z-10 border border-slate-700 hover:scale-105 transition-transform" 
-                                 src="${appState.currentUser.photoUrl}" 
-                                 alt="Profile avatar" 
-                                 onerror="this.src='https://placehold.co/150/8b5cf6/ffffff?text=😎'">
-                        </a>
-                    </div>
-                `;
-            } else {
-                authContainer.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <button onclick="toggleAuthSimulation(true)" class="text-[10px] text-brand-cyan hover:text-white bg-slate-950/40 px-2 py-1 rounded border border-brand-cyan/20" title="Click to test online/signed state">
-                            Log In Mock
-                        </button>
-                        <a href="/account/login/" onclick="event.preventDefault(); showToast('Simulating: Redirecting to /account/login/...', 'info');" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold tracking-wide border border-slate-700/50 transition-all flex items-center gap-1.5">
-                            <i class="fa-solid fa-right-to-bracket text-brand-cyan"></i>
-                            <span>Sign In</span>
-                        </a>
-                    </div>
-                `;
-            }
-        }
-
-        function toggleAuthSimulation(loggedInState) {
-            appState.isLoggedIn = loggedInState;
-            localStorage.setItem('cribman_auth', JSON.stringify({ isLoggedIn: loggedInState }));
-            renderAuthHeader();
-            showToast(loggedInState ? "Signed in! Chat sync activated." : "Offline Mode active. Offline chat logs ready.", loggedInState ? "success" : "info");
         }
 
         function initializeWelcomeScreen() {
-            const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
-            document.getElementById('welcome-greeting').textContent = randomGreeting;
+            document.getElementById('welcome-greeting').textContent = greetings[Math.floor(Math.random() * greetings.length)];
         }
 
         function autoExpandTextarea(element) {
@@ -573,42 +679,43 @@
             } else {
                 icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
                 icon.className = "w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400";
-                title.textContent = "BOT BRAINED EXCEPTION";
+                title.textContent = "SYSTEM WARNING";
             }
 
             desc.textContent = message;
             toast.className = "fixed bottom-6 right-6 bg-brand-card border border-slate-700/80 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-0 opacity-100";
-            
             setTimeout(() => {
                 toast.className = "fixed bottom-6 right-6 bg-brand-card border border-slate-700/80 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none";
             }, 3000);
         }
 
-        // Memory Bank Dialog Controls
+        // Cloud Sync Memory Bank Configs
         function openMemoryBank() {
             document.getElementById('memory-bank-modal').classList.remove('hidden');
         }
         function closeMemoryBank() {
             document.getElementById('memory-bank-modal').classList.add('hidden');
         }
-        function saveMemoryBank() {
+        async function saveMemoryBank() {
             const editorText = document.getElementById('memory-bank-editor').value;
             const validationMsg = document.getElementById('memory-validation-msg');
             try {
                 const parsed = JSON.parse(editorText);
-                appState.memoryBank = parsed;
-                localStorage.setItem('cribman_memory_bank', JSON.stringify(parsed));
+                const userId = auth.currentUser?.uid;
+                if (!userId) return;
+
+                const memoryDoc = doc(db, 'artifacts', appId, 'users', userId, 'memoryBank', 'current');
+                await setDoc(memoryDoc, parsed);
                 validationMsg.classList.add('hidden');
                 closeMemoryBank();
-                showToast("Memory Bank cached safely. CribMan context updated!", "success");
+                showToast("Memory Bank saved to cloud. Context updated!", "success");
             } catch(e) {
                 validationMsg.classList.remove('hidden');
             }
         }
 
-        // Friends Panel Controls
+        // Cloud Sync Friends Configs
         function openFriendsList() {
-            renderFriends();
             document.getElementById('friends-modal').classList.remove('hidden');
         }
         function closeFriendsList() {
@@ -617,44 +724,67 @@
         function renderFriends() {
             const container = document.getElementById('friends-list-container');
             container.innerHTML = '';
+            
+            if (appState.friends.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-500 text-xs space-y-2">
+                        <i class="fa-solid fa-users-slash text-2xl opacity-40 block"></i>
+                        <p>No synced crew found. Verify your user document exists in your Game Dungeon database setup!</p>
+                    </div>
+                `;
+                return;
+            }
+
             appState.friends.forEach(f => {
                 const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition-colors";
+                item.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 transition-colors animate-fade-in";
                 item.innerHTML = `
-                    <div>
-                        <div class="text-xs font-bold text-white">${f.name}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${f.email}</div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-6.5 h-6.5 rounded-md bg-brand-cyan/15 border border-brand-cyan/25 flex items-center justify-center text-[10px] text-brand-cyan">
+                            <i class="fa-solid fa-user-tag"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">${f.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${f.email}</div>
+                        </div>
                     </div>
-                    <button onclick="removeFriend('${f.id}')" class="text-slate-500 hover:text-red-400 p-1.5 transition-colors" title="Remove Friend">
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                    </button>
+                    <span class="text-[9px] text-brand-cyan/80 font-bold uppercase tracking-wider bg-brand-cyan/10 px-2 py-0.5 rounded-md border border-brand-cyan/15">Profile</span>
                 `;
                 container.appendChild(item);
             });
         }
-        function addFriend(e) {
-            e.preventDefault();
-            const nameEl = document.getElementById('new-friend-name');
-            const emailEl = document.getElementById('new-friend-email');
-            
-            const newFriend = {
-                id: "f_" + Date.now(),
-                name: nameEl.value.trim(),
-                email: emailEl.value.trim()
-            };
-            
-            appState.friends.push(newFriend);
-            localStorage.setItem('cribman_friends', JSON.stringify(appState.friends));
-            nameEl.value = '';
-            emailEl.value = '';
-            renderFriends();
-            showToast(`${newFriend.name} registered on Game Dungeon network!`, "success");
+
+        async function addFriend(e) {
+            if (e) e.preventDefault();
+            showToast("Friends list is synced automatically from your profile!", "info");
         }
-        function removeFriend(id) {
-            appState.friends = appState.friends.filter(f => f.id !== id);
-            localStorage.setItem('cribman_friends', JSON.stringify(appState.friends));
-            renderFriends();
-            showToast("Friend profile wiped from local catalog.", "info");
+
+        async function removeFriend(id) {
+            showToast("Roster is managed from your main Game Dungeon profile.", "info");
+        }
+
+        // Cloud Sync Interactive Scroll alerts
+        function triggerScrollAlert(scrollData) {
+            activeIncomingScroll = scrollData;
+            document.getElementById('scroll-sender-display').textContent = scrollData.senderName;
+            document.getElementById('scroll-message-display').textContent = scrollData.text;
+            document.getElementById('incoming-scroll-container').classList.remove('hidden');
+        }
+
+        function dismissIncomingScroll() {
+            document.getElementById('incoming-scroll-container').classList.add('hidden');
+            activeIncomingScroll = null;
+        }
+
+        function copyScrollToClipboard() {
+            if (!activeIncomingScroll) return;
+            const el = document.createElement('textarea');
+            el.value = activeIncomingScroll.text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("Scroll copied to clipboard, bro!", "success");
         }
 
         function openConfirmModal(text, onAccept) {
@@ -662,6 +792,7 @@
             document.getElementById('confirm-modal').classList.remove('hidden');
             pendingScrollAction = onAccept;
         }
+
         function closeConfirmModal(accepted) {
             document.getElementById('confirm-modal').classList.add('hidden');
             if (accepted && pendingScrollAction) {
@@ -674,11 +805,12 @@
             return encodeURIComponent(titleText.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'));
         }
 
+        // Render Sidebar Chat Directory
         function renderChatList() {
             const listContainer = document.getElementById('chat-list-container');
             const placeholders = document.getElementById('no-chats-placeholder');
-            
             const header = listContainer.querySelector('.text-xs');
+            
             listContainer.innerHTML = '';
             if (header) listContainer.appendChild(header);
 
@@ -690,7 +822,7 @@
                 placeholders.classList.add('hidden');
             }
 
-            [...appState.chats].reverse().forEach(chat => {
+            appState.chats.forEach(chat => {
                 const item = document.createElement('div');
                 const isActive = appState.activeChatId === chat.id;
                 
@@ -710,7 +842,7 @@
                         <i class="fa-regular fa-message ${isActive ? 'text-brand-violet' : 'text-slate-500'} text-xs shrink-0"></i>
                         <span class="truncate text-xs tracking-tight">${chat.title}</span>
                     </div>
-                    <button class="delete-chat-btn opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 text-[10px] transition-all" title="Wipe session" onclick="deleteChat('${chat.id}')">
+                    <button class="delete-chat-btn opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 text-[10px] transition-all" title="Wipe session" onclick="window.deleteChat('${chat.id}')">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 `;
@@ -721,7 +853,6 @@
 
         function startNewChatSession() {
             appState.activeChatId = null;
-            
             const url = new URL(window.location);
             url.searchParams.delete('chat');
             window.history.pushState({}, '', url);
@@ -732,7 +863,6 @@
             initializeWelcomeScreen();
             renderChatList();
             
-            // Only auto-close on mobile screens when resetting
             if (window.innerWidth < 768) {
                 toggleSidebar(false);
             }
@@ -755,22 +885,24 @@
             renderMessages();
             renderChatList();
 
-            // Auto collapse mobile layouts to let the chat expand nicely
             if (window.innerWidth < 768) {
                 toggleSidebar(false);
             }
         }
 
-        function deleteChat(chatId) {
-            appState.chats = appState.chats.filter(c => c.id !== chatId);
-            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+        async function deleteChat(chatId) {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
+            const chatDoc = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+            await deleteDoc(chatDoc);
             
             if (appState.activeChatId === chatId) {
                 startNewChatSession();
             } else {
                 renderChatList();
             }
-            showToast("Wiped chat log from records.", "info");
+            showToast("Wiped chat log from cloud directory.", "info");
         }
 
         function deleteCurrentChat() {
@@ -784,12 +916,11 @@
             const container = document.getElementById('messages-window');
             container.innerHTML = '';
 
-            if (!chat || chat.messages.length === 0) return;
+            if (!chat || !chat.messages || chat.messages.length === 0) return;
 
             chat.messages.forEach(msg => {
                 const wrapper = document.createElement('div');
                 const isUser = msg.role === 'user';
-                
                 wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`;
                 
                 const rawText = msg.parts[0].text;
@@ -837,10 +968,10 @@
             if (html.includes('<li class="list-disc')) {
                 html = `<div class="space-y-1">${html}</div>`;
             }
-            
             return html;
         }
 
+        // Submit handler checks text parsing triggers
         async function handleFormSubmit(e) {
             e.preventDefault();
             const inputEl = document.getElementById('chat-input');
@@ -854,50 +985,53 @@
         }
 
         async function sendUserQuery(userText) {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
             const searchIntent = checkForScrollIntent(userText);
-            
-            let chat;
+            let chatId = appState.activeChatId;
             let isNewChat = false;
-
-            if (!appState.activeChatId) {
-                const newId = "chat_" + Date.now();
-                chat = {
-                    id: newId,
-                    title: "Connecting...",
-                    messages: [],
-                    createdAt: Date.now()
-                };
-                appState.chats.push(chat);
-                appState.activeChatId = newId;
-                isNewChat = true;
-            } else {
-                chat = appState.chats.find(c => c.id === appState.activeChatId);
-            }
-
-            chat.messages.push({
-                role: 'user',
-                parts: [{ text: userText }]
-            });
-            
-            selectChat(chat.id); 
-            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
 
             renderSkeletonLoading(true);
 
             try {
-                if (searchIntent && searchIntent.isScrollIntent) {
-                    await handleScrollIntent(searchIntent, chat);
+                if (!chatId) {
+                    isNewChat = true;
+                    const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
+                    const initialChat = {
+                        title: "Connecting...",
+                        messages: [{ role: 'user', parts: [{ text: userText }] }],
+                        createdAt: Date.now()
+                    };
+                    const docRef = await addDoc(chatsCol, initialChat);
+                    chatId = docRef.id;
+                    appState.activeChatId = chatId;
                 } else {
-                    await queryGeminiAPI(chat, isNewChat, userText);
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    const currentChat = appState.chats.find(c => c.id === chatId);
+                    if (currentChat) {
+                        const updatedMessages = [...currentChat.messages, { role: 'user', parts: [{ text: userText }] }];
+                        await updateDoc(chatRef, { messages: updatedMessages });
+                    }
+                }
+
+                if (searchIntent && searchIntent.isScrollIntent) {
+                    await handleScrollIntent(searchIntent, chatId);
+                } else {
+                    await queryGeminiAPI(chatId, isNewChat, userText);
                 }
             } catch (error) {
-                console.error("Critical AI Studio Connection Failure", error);
-                chat.messages.push({
-                    role: 'model',
-                    parts: [{ text: "Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked and try sending that again!" }]
-                });
-                localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
-                renderMessages();
+                console.error("AI Generation Error", error);
+                const currentChat = appState.chats.find(c => c.id === chatId);
+                if (currentChat) {
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    await updateDoc(chatRef, {
+                        messages: [...currentChat.messages, {
+                            role: 'model',
+                            parts: [{ text: "Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!" }]
+                        }]
+                    });
+                }
             } finally {
                 renderSkeletonLoading(false);
             }
@@ -906,7 +1040,6 @@
         function checkForScrollIntent(text) {
             const keywords = ['scroll', 'send scroll', 'tell', 'message', 'surpassed', 'scores'];
             const lowerText = text.toLowerCase();
-            
             const hasKeyword = keywords.some(k => lowerText.includes(k));
             if (!hasKeyword) return null;
 
@@ -924,7 +1057,10 @@
             };
         }
 
-        async function handleScrollIntent(intentData, chat) {
+        async function handleScrollIntent(intentData, chatId) {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
             let targetEmail = "";
             let targetName = "";
 
@@ -932,14 +1068,17 @@
                 targetName = intentData.friend.name;
                 targetEmail = intentData.friend.email;
             } else {
+                // Friendly modal prompt bypassing the browser block
                 const promptName = prompt("Bro, I see you want to send a scroll but I don't know who. What is their name/alias?", "Daimyan");
                 if (!promptName) {
-                    chat.messages.push({
-                        role: 'model',
-                        parts: [{ text: "Operation cancelled, bro. I need a valid name to look up in the game dungeon logs." }]
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    const currentChat = appState.chats.find(c => c.id === chatId);
+                    await updateDoc(chatRef, {
+                        messages: [...currentChat.messages, {
+                            role: 'model',
+                            parts: [{ text: "Operation cancelled, bro. I need a valid name to look up in the logs." }]
+                        }]
                     });
-                    localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
-                    renderMessages();
                     return;
                 }
                 targetName = promptName;
@@ -951,44 +1090,63 @@
 
             const scrollActionDescription = `CribMan drafted this scroll for ${targetName} (${targetEmail}):\n\n"${rawDraft}"\n\nWould you like to send this scroll over the Game Dungeon communications pipe?`;
             
-            openConfirmModal(scrollActionDescription, () => {
-                chat.messages.push({
-                    role: 'model',
-                    parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
+            openConfirmModal(scrollActionDescription, async () => {
+                // Post live scroll inside the public data collection (RULE 1 strictly applied)
+                const publicScrollsCol = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
+                await addDoc(publicScrollsCol, {
+                    senderId: userId,
+                    senderName: appState.currentUser.name,
+                    recipientEmail: targetEmail.toLowerCase().trim(),
+                    recipientName: targetName,
+                    text: rawDraft,
+                    timestamp: Date.now()
                 });
-                localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
-                renderMessages();
+
+                const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                const currentChat = appState.chats.find(c => c.id === chatId);
+                await updateDoc(chatRef, {
+                    messages: [...currentChat.messages, {
+                        role: 'model',
+                        parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to the cloud path for **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
+                    }]
+                });
                 showToast(`Scroll transmitted to ${targetName}!`, "success");
             });
 
-            chat.messages.push({
-                role: 'model',
-                parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
+            const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+            const currentChat = appState.chats.find(c => c.id === chatId);
+            await updateDoc(chatRef, {
+                messages: [...currentChat.messages, {
+                    role: 'model',
+                    parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
+                }]
             });
-            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
-            renderMessages();
         }
 
-        async function queryGeminiAPI(chat, isNewChat, userText) {
+        async function queryGeminiAPI(chatId, isNewChat, userText) {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
+            const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+            const currentChat = appState.chats.find(c => c.id === chatId);
+            if (!currentChat) return;
+
             if (isNewChat) {
                 try {
                     const titlePrompt = `Given the user's starting message, generate a 2-4 word punchy title for this conversation log. Do not use markdown or quotes. Return only the title. User text: "${userText}"`;
                     const generatedTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: titlePrompt }] }]);
-                    
-                    chat.title = generatedTitle.trim().replace(/^["']|["']$/g, '');
-                    document.getElementById('active-chat-title').textContent = chat.title;
+                    currentChat.title = generatedTitle.trim().replace(/^["']|["']$/g, '');
+                    await updateDoc(chatRef, { title: currentChat.title });
                     
                     const url = new URL(window.location);
-                    url.searchParams.set('chat', generateUrlSlug(chat.title));
+                    url.searchParams.set('chat', generateUrlSlug(currentChat.title));
                     window.history.pushState({}, '', url);
                 } catch(e) {
-                    console.warn("Title generator fell back", e);
-                    chat.title = userText.split(' ').slice(0, 3).join(' ') + "...";
+                    currentChat.title = userText.split(' ').slice(0, 3).join(' ') + "...";
+                    await updateDoc(chatRef, { title: currentChat.title });
                 }
             }
 
-            const fullHistory = [...chat.messages];
-            
             const systemPrompt = `
                 You are "CribMan", the ultimate all-bro AI companion for The Game Dungeon (also known as The Crib).
                 You speak in absolute school-bro language (words like 'bro', 'goated', 'absolute W', 'devious', 'let him cook', 'oink oink' for bot-brained security vulnerabilities).
@@ -1011,19 +1169,15 @@
                 - If talking about security or boring tasks, refer to it as "oink oink" behavior.
             `;
 
+            const fullHistory = [...currentChat.messages];
             const responseText = await executeGeminiCall(fullHistory, systemPrompt);
 
-            chat.messages.push({
-                role: 'model',
-                parts: [{ text: responseText }]
-            });
-            
-            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
-            renderMessages();
+            const updatedMessages = [...currentChat.messages, { role: 'model', parts: [{ text: responseText }] }];
+            await updateDoc(chatRef, { messages: updatedMessages });
         }
 
         async function executeGeminiCall(contentsArray, systemInstructionText = "") {
-            const apiKey = ""; // Left blank for Canvas automatic runtime injections
+            const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -1046,7 +1200,7 @@
             });
 
             if (!response.ok) {
-                throw new Error(`API returned bad response state: ${response.status}`);
+                throw new Error(`API error code: ${response.status}`);
             }
 
             const result = await response.json();
@@ -1083,7 +1237,6 @@
                         <div class="bg-brand-card/60 border border-slate-800/80 rounded-2xl rounded-tl-sm p-4 space-y-2">
                             <div class="h-3 bg-slate-800 rounded w-full"></div>
                             <div class="h-3 bg-slate-800 rounded w-[80%]"></div>
-                            <div class="h-3 bg-slate-800 rounded w-[45%]"></div>
                         </div>
                     </div>
                 `;
@@ -1095,11 +1248,50 @@
                 sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-sm"></i>';
 
                 const skeleton = document.getElementById('ai-loading-skeleton');
-                if (skeleton) {
-                    skeleton.remove();
-                }
+                if (skeleton) skeleton.remove();
             }
         }
+
+        // Connect simulated profile trigger
+        async function triggerSignIn() {
+            try {
+                // Use a standard custom profile payload for demo/iframe preview convenience
+                showToast("Signing into Cloud Space...", "info");
+                const demoEmail = "alex.gamedungeon@thecrib.org";
+                // Let's sign out then prompt sign in
+                await signOut(auth);
+                await initAuth();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function triggerSignOut() {
+            await signOut(auth);
+            showToast("Logged out of Google account.", "info");
+        }
+
+        // Bind module level helpers directly onto Global Window scope
+        window.toggleSidebar = toggleSidebar;
+        window.startNewChatSession = startNewChatSession;
+        window.openMemoryBank = openMemoryBank;
+        window.closeMemoryBank = closeMemoryBank;
+        window.saveMemoryBank = saveMemoryBank;
+        window.openFriendsList = openFriendsList;
+        window.closeFriendsList = closeFriendsList;
+        window.addFriend = addFriend;
+        window.removeFriend = removeFriend;
+        window.deleteChat = deleteChat;
+        window.deleteCurrentChat = deleteCurrentChat;
+        window.useSuggestion = useSuggestion;
+        window.autoExpandTextarea = autoExpandTextarea;
+        window.handleFormSubmit = handleFormSubmit;
+        window.closeConfirmModal = closeConfirmModal;
+        window.dismissIncomingScroll = dismissIncomingScroll;
+        window.copyScrollToClipboard = copyScrollToClipboard;
+        window.triggerSignIn = triggerSignIn;
+        window.triggerSignOut = triggerSignOut;
+
     </script>
 </body>
 </html>
