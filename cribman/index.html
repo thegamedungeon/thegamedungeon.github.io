@@ -936,9 +936,13 @@
 
         function startNewChatSession() {
             appState.activeChatId = null;
-            const url = new URL(window.location);
-            url.searchParams.delete('chat');
-            window.history.pushState({}, '', url);
+            try {
+                const url = new URL(window.location);
+                url.searchParams.delete('chat');
+                window.history.pushState({}, '', url);
+            } catch (historyError) {
+                console.warn("History state modification blocked by sandbox container", historyError);
+            }
 
             document.getElementById('active-chat-viewport').classList.add('hidden');
             document.getElementById('welcome-screen').classList.remove('hidden');
@@ -957,9 +961,13 @@
 
             appState.activeChatId = chatId;
             
-            const url = new URL(window.location);
-            url.searchParams.set('chat', generateUrlSlug(chat.title));
-            window.history.pushState({}, '', url);
+            try {
+                const url = new URL(window.location);
+                url.searchParams.set('chat', generateUrlSlug(chat.title));
+                window.history.pushState({}, '', url);
+            } catch (historyError) {
+                console.warn("History state modification blocked by sandbox container", historyError);
+            }
 
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('active-chat-viewport').classList.remove('hidden');
@@ -1277,9 +1285,13 @@
                 await updateDoc(chatRef, { title: chatTitle });
                 
                 document.getElementById('active-chat-title').textContent = chatTitle;
-                const url = new URL(window.location);
-                url.searchParams.set('chat', generateUrlSlug(chatTitle));
-                window.history.pushState({}, '', url);
+                try {
+                    const url = new URL(window.location);
+                    url.searchParams.set('chat', generateUrlSlug(chatTitle));
+                    window.history.pushState({}, '', url);
+                } catch (historyError) {
+                    console.warn("History state modification blocked by sandbox container", historyError);
+                }
             }
 
             const systemPrompt = `
@@ -1324,7 +1336,7 @@
             // Read configured key prioritising synced setting -> localStorage cache -> empty default (for automatic in-canvas injection)
             const savedKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
             const apiKey = savedKey; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
             const payload = {
                 contents: contentsArray.map(item => ({
