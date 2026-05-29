@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CribMan AI - The Game Dungeon</title>
+    <!-- Google Fonts: Inter & Space Grotesk for gaming punch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            black: '#070a13',
+                            dark: '#0f1322',
+                            card: '#181e36',
+                            violet: '#8b5cf6',
+                            cyan: '#06b6d4',
+                            magenta: '#ec4899'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbars for a gaming client aesthetic */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f1322;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6;
+        }
+        /* Markdown content styling */
+        .prose p {
+            margin-bottom: 0.75rem;
+        }
+        .prose p:last-child {
+            margin-bottom: 0;
+        }
+        .prose code {
+            background: #070a13;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            color: #ec4899;
+        }
+    </style>
+</head>
+<body class="bg-brand-black text-slate-100 font-sans h-full flex flex-col overflow-hidden selection:bg-brand-violet/30 selection:text-brand-cyan">
+
+    <!-- OVERLAY (For Mobile Drawer) -->
+    <div id="drawer-overlay" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0" onclick="toggleSidebar(false)"></div>
+
+    <!-- SIDEBAR DRAWSER (All Chats and Config) -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-80 bg-brand-dark border-r border-slate-800/80 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full">
+        <!-- Sidebar Header -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-violet to-brand-cyan flex items-center justify-center shadow-lg shadow-brand-violet/20">
+                    <i class="fa-solid fa-gamepad text-brand-black text-sm font-bold"></i>
+                </div>
+                <span class="font-display font-bold text-lg tracking-wider bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">THE CRIB</span>
+            </div>
+            <!-- Close Button for Mobile -->
+            <button onclick="toggleSidebar(false)" class="md:hidden text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Create New Chat Button -->
+        <div class="p-4">
+            <button onclick="startNewChatSession()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-violet/20 to-brand-cyan/20 hover:from-brand-violet/35 hover:to-brand-cyan/35 border border-brand-violet/30 hover:border-brand-violet/60 text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg shadow-brand-violet/5 hover:shadow-brand-violet/10 group">
+                <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform duration-200 text-brand-cyan"></i>
+                <span>Start Fresh Chat</span>
+            </button>
+        </div>
+
+        <!-- Chat List Section -->
+        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1.5" id="chat-list-container">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 py-2">My Chat Logs</div>
+            <!-- Dynamic chats injected here -->
+            <div id="no-chats-placeholder" class="text-center py-8 text-slate-500 text-sm">
+                <i class="fa-regular fa-comments text-3xl mb-2 opacity-40 block"></i>
+                <span>No local chats yet, bro!</span>
+            </div>
+        </div>
+
+        <!-- Sidebar Footer Actions -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-900/30 space-y-2">
+            <button onclick="openMemoryBank()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
+                <i class="fa-solid fa-brain text-brand-violet text-base"></i>
+                <span class="font-medium">Memory Bank (JS)</span>
+            </button>
+            <button onclick="openFriendsList()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
+                <i class="fa-solid fa-users text-brand-cyan text-base"></i>
+                <span class="font-medium">Game Dungeon Friends</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- TOP BAR -->
+        <header class="h-16 border-b border-slate-800/80 flex items-center justify-between px-4 md:px-6 bg-brand-dark/50 backdrop-blur-md z-30">
+            <!-- Left Corner: Hamburger & Logo -->
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar(true)" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors" title="Toggle Sidebar">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="font-display font-bold text-lg md:text-xl tracking-tight text-white flex items-center gap-2">
+                        <span>CribMan</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-brand-violet/20 border border-brand-violet/40 text-brand-violet font-semibold tracking-wider uppercase font-sans">AI Agent</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Right Corner: Profile Status & Simulator Info -->
+            <div class="flex items-center gap-3">
+                <!-- Sandbox Status Tag -->
+                <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Local Storage Vault
+                </div>
+
+                <!-- Account Authentication State Controls -->
+                <div id="auth-container" class="relative">
+                    <!-- Loaded dynamically in JS based on Auth status -->
+                </div>
+            </div>
+        </header>
+
+        <!-- CHAT VIEWPORT -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-brand-black" id="workspace-viewport">
+            
+            <!-- EMPTY WELCOME SCREEN -->
+            <div id="welcome-screen" class="flex-1 overflow-y-auto flex flex-col items-center justify-center p-6 text-center max-w-2xl mx-auto w-full">
+                <!-- Mascot Container -->
+                <div class="relative mb-8 group">
+                    <div class="absolute inset-0 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+                    <div class="w-24 h-24 rounded-full bg-brand-card border border-slate-700 flex items-center justify-center shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105">
+                        <span class="text-5xl">😎</span>
+                    </div>
+                    <!-- Small absolute badge -->
+                    <div class="absolute -bottom-2 -right-2 bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black font-bold text-[10px] px-2 py-1 rounded-md shadow-lg font-display">
+                        CRIBMAN v1.0
+                    </div>
+                </div>
+
+                <!-- Dynamic Greeting Heading -->
+                <h1 id="welcome-greeting" class="font-display font-bold text-4xl md:text-5xl mb-4 text-white tracking-tight leading-none">
+                    <!-- Injected dynamically -->
+                </h1>
+                
+                <p class="text-slate-400 text-base md:text-lg mb-8 max-w-lg mx-auto">
+                    I'm your all-bro agent. Built right into <span class="text-brand-cyan font-semibold">The Game Dungeon</span> to check scores, schedule scrolls, and keep it absolute peak. What's the move today?
+                </p>
+
+                <!-- Prompt Suggestions -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full max-w-xl text-left mb-6">
+                    <button onclick="useSuggestion('How is Five Nights at Sod\'s coming along on Scratch?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
+                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Five Nights at Sod's Hype</span>
+                        <span class="text-xs text-slate-400">Ask CribMan what the latest school lore is on the game.</span>
+                    </button>
+                    <button onclick="useSuggestion('Tell Daimyan that he\'s a thief for beating my score, and send a scroll to him.')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
+                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Send a Devious Scroll</span>
+                        <span class="text-xs text-slate-400">Test the smart intent router for messaging friends.</span>
+                    </button>
+                    <button onclick="useSuggestion('Who is the zestiest in foundations class?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
+                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Lore Check</span>
+                        <span class="text-xs text-slate-400">Ask who's staring at blank walls being absolute zesty.</span>
+                    </button>
+                    <button onclick="useSuggestion('How do I play Ride to Die? Tell me some elite strategies.')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
+                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Game Dungeon Secrets</span>
+                        <span class="text-xs text-slate-400">Get strategies for mastering dungeon minigames.</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ACTIVE CHAT INTERFACE -->
+            <div id="active-chat-viewport" class="flex-1 flex flex-col overflow-hidden hidden">
+                <!-- Chat Log Title Bar -->
+                <div class="px-6 py-3 border-b border-slate-800/50 bg-slate-900/10 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-brand-violet animate-ping"></div>
+                        <span id="active-chat-title" class="font-display font-semibold text-white">Chat Session</span>
+                    </div>
+                    <button onclick="deleteCurrentChat()" class="text-slate-500 hover:text-red-400 px-2 py-1 rounded transition-colors text-xs flex items-center gap-1.5" title="Delete current chat log">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Delete Logs</span>
+                    </button>
+                </div>
+
+                <!-- Messages Window -->
+                <div id="messages-window" class="flex-1 overflow-y-auto px-4 py-6 md:px-6 space-y-6">
+                    <!-- Messages get injected here -->
+                </div>
+            </div>
+
+            <!-- CHAT INTERFACE BOTTOM AREA (INPUT) -->
+            <div class="p-4 border-t border-slate-800/80 bg-brand-dark/40 backdrop-blur-sm">
+                <form id="chat-input-form" onsubmit="handleFormSubmit(event)" class="max-w-3xl mx-auto relative flex flex-col gap-2">
+                    <div class="relative flex items-center">
+                        <textarea id="chat-input" rows="1" placeholder="Ask CribMan..." oninput="autoExpandTextarea(this)" class="w-full bg-brand-card border border-slate-700 focus:border-brand-violet/70 focus:ring-1 focus:ring-brand-violet/50 rounded-xl py-3.5 pl-4 pr-14 text-white placeholder-slate-500 focus:outline-none resize-none max-h-32 text-sm leading-relaxed transition-all shadow-inner" style="min-height: 50px;"></textarea>
+                        
+                        <!-- Floating actions in input box -->
+                        <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                            <button type="submit" id="send-button" class="w-10 h-10 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan hover:brightness-110 text-brand-black flex items-center justify-center font-bold transition-all disabled:opacity-40 disabled:pointer-events-none" title="Send message to CribMan">
+                                <i class="fa-solid fa-paper-plane text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Context helpers and status bar -->
+                    <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 px-1">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1">
+                                <i class="fa-solid fa-bolt text-amber-500"></i>
+                                <span>Powered by Google AI Studio</span>
+                            </span>
+                            <span class="text-slate-700">|</span>
+                            <span class="flex items-center gap-1">
+                                <i class="fa-solid fa-lock text-brand-cyan"></i>
+                                <span>No bot-brained logic allowed</span>
+                            </span>
+                        </div>
+                        <div class="text-slate-400 hover:text-brand-cyan transition-colors cursor-pointer" onclick="openMemoryBank()">
+                            Memory Bank: <span id="memory-bank-indicator" class="font-semibold text-brand-violet">Ready</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- MEMORY BANK MODAL -->
+    <div id="memory-bank-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-brain text-brand-violet text-xl"></i>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-white">CribMan Memory Bank</h3>
+                        <p class="text-xs text-slate-400">Injected directly into CribMan's context so he knows your school's exact lore.</p>
+                    </div>
+                </div>
+                <button onclick="closeMemoryBank()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Memory context (JavaScript Object)</label>
+                    <p class="text-[11px] text-slate-500 leading-normal">Tell CribMan about your friends, class inside jokes, high scores, and games. He will immediately adjust his replies using this knowledge.</p>
+                </div>
+                <!-- JS editor area -->
+                <textarea id="memory-bank-editor" rows="12" class="w-full bg-brand-black border border-slate-800 rounded-lg p-3 font-mono text-xs text-cyan-400 focus:border-brand-violet/50 focus:outline-none focus:ring-1 focus:ring-brand-violet/40"></textarea>
+                <div id="memory-validation-msg" class="text-xs text-red-400 hidden flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Invalid JSON. Make sure your context is written correctly, bro!</span>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3">
+                <button onclick="closeMemoryBank()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
+                <button onclick="saveMemoryBank()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Context</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME DUNGEON FRIENDS MODAL -->
+    <div id="friends-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-users text-brand-cyan text-xl"></i>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-white">Your Friends List</h3>
+                        <p class="text-xs text-slate-400">Game Dungeon users. CribMan checks this to route scrolls securely.</p>
+                    </div>
+                </div>
+                <button onclick="closeFriendsList()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div id="friends-list-container" class="space-y-2.5">
+                    <!-- Dynamic rendering of friends -->
+                </div>
+                <div class="border-t border-slate-800 pt-4 mt-2">
+                    <h4 class="text-xs font-semibold uppercase text-slate-400 mb-2">Register/Add a Bro</h4>
+                    <form onsubmit="addFriend(event)" class="space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="new-friend-name" placeholder="Name/Alias" required class="bg-brand-black border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
+                            <input type="email" id="new-friend-email" placeholder="school@email.com" required class="bg-brand-black border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
+                        </div>
+                        <button type="submit" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-colors">Add to Game Dungeon</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION SYSTEM -->
+    <div id="notification-toast" class="fixed bottom-6 right-6 bg-brand-card border border-brand-cyan/40 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <div class="w-7 h-7 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan" id="toast-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider" id="toast-title">Success</h4>
+            <p class="text-xs text-slate-400 font-medium" id="toast-message">Task updated, bro!</p>
+        </div>
+    </div>
+
+    <!-- CONFIRM DIALOG FOR MOCK ACTION (SCROLL TRIGGER) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center space-y-4">
+            <div class="w-14 h-14 rounded-full bg-brand-violet/20 text-brand-violet mx-auto flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-scroll"></i>
+            </div>
+            <div>
+                <h3 class="font-display font-bold text-lg text-white">Send Scroll Request?</h3>
+                <p class="text-xs text-slate-400 mt-1" id="confirm-modal-text">CribMan wants to send a secure Scroll with your message details to Daimyan.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeConfirmModal(false)" class="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors">Cancel</button>
+                <button onclick="closeConfirmModal(true)" class="flex-1 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-xs font-bold shadow-lg transition-all">Send Scroll</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default Core Application Settings & State
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-cribman-app';
+        
+        let appState = {
+            isLoggedIn: true, // Defaults to simulated login
+            currentUser: {
+                name: "Alex",
+                email: "alex@thecrib.org",
+                photoUrl: "https://placehold.co/150/8b5cf6/ffffff?text=😎"
+            },
+            chats: [],
+            activeChatId: null,
+            friends: [
+                { id: "f1", name: "Daimyan", email: "daimyan@school.edu" },
+                { id: "f2", name: "Jayden", email: "jayden@school.edu" },
+                { id: "f3", name: "Connor", email: "connor@school.edu" },
+                { id: "f4", name: "Abas", email: "abas@school.edu" },
+                { id: "f5", name: "P Diddy", email: "pdiddy@industry.com" }
+            ],
+            memoryBank: {
+                user: "null",
+                context: "Connor is zesty and has noodle hair. Sod-erdine acts tuff but isn’t.",
+                insideJokes: {
+                    "oink oink": "Bot-brained security issue",
+                    "tuff": "Trying to act tough"
+                }
+            },
+            isAiGenerating: false
+        };
+
+        // Welcome Greeting Options
+        const greetings = [
+            "What’s up, bro?",
+            "How’s it hangin’?",
+            "Let’s get cooking!"
+        ];
+
+        // Pending Actions Registry (e.g. for user approval flows)
+        let pendingScrollAction = null;
+
+        window.addEventListener('load', () => {
+            initLocalStorage();
+            loadStateFromLocalStorage();
+            renderAuthHeader();
+            renderChatList();
+            renderFriends();
+            initializeWelcomeScreen();
+            
+            // Check URL for preloaded chat
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatUrlName = urlParams.get('chat');
+            if (chatUrlName) {
+                const targetChat = appState.chats.find(c => generateUrlSlug(c.title) === chatUrlName);
+                if (targetChat) {
+                    selectChat(targetChat.id);
+                }
+            }
+        });
+
+        // Initialize Local Storage Default Templates
+        function initLocalStorage() {
+            if (!localStorage.getItem('cribman_memory_bank')) {
+                localStorage.setItem('cribman_memory_bank', JSON.stringify(appState.memoryBank));
+            }
+            if (!localStorage.getItem('cribman_friends')) {
+                localStorage.setItem('cribman_friends', JSON.stringify(appState.friends));
+            }
+            if (!localStorage.getItem('cribman_chats')) {
+                localStorage.setItem('cribman_chats', JSON.stringify([]));
+            }
+        }
+
+        // Load Persistent Variables from LocalStorage
+        function loadStateFromLocalStorage() {
+            try {
+                const loadedMemory = localStorage.getItem('cribman_memory_bank');
+                if (loadedMemory) appState.memoryBank = JSON.parse(loadedMemory);
+                document.getElementById('memory-bank-editor').value = JSON.stringify(appState.memoryBank, null, 2);
+
+                const loadedFriends = localStorage.getItem('cribman_friends');
+                if (loadedFriends) appState.friends = JSON.parse(loadedFriends);
+
+                const loadedChats = localStorage.getItem('cribman_chats');
+                if (loadedChats) appState.chats = JSON.parse(loadedChats);
+
+                const loadedAuth = localStorage.getItem('cribman_auth');
+                if (loadedAuth) {
+                    appState.isLoggedIn = JSON.parse(loadedAuth).isLoggedIn;
+                }
+            } catch (err) {
+                console.error("Local storage load failed", err);
+            }
+        }
+
+        // Render Google Profile Status or Sign In Trigger in Top Bar
+        function renderAuthHeader() {
+            const authContainer = document.getElementById('auth-container');
+            if (appState.isLoggedIn) {
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleAuthSimulation(false)" class="text-[10px] text-slate-500 hover:text-slate-400 bg-slate-950/40 px-2 py-1 rounded border border-slate-800" title="Click to test offline/unsigned state">
+                            Log Out Mock
+                        </button>
+                        <a href="/account/" onclick="event.preventDefault(); showToast('Simulating: Redirecting to /account/...', 'info');" class="relative group block">
+                            <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur opacity-30 group-hover:opacity-75 transition duration-200"></div>
+                            <img class="w-9 h-9 rounded-full relative z-10 border border-slate-700 hover:scale-105 transition-transform" 
+                                 src="${appState.currentUser.photoUrl}" 
+                                 alt="Profile avatar" 
+                                 onerror="this.src='https://placehold.co/150/8b5cf6/ffffff?text=😎'">
+                        </a>
+                    </div>
+                `;
+            } else {
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleAuthSimulation(true)" class="text-[10px] text-brand-cyan hover:text-white bg-slate-950/40 px-2 py-1 rounded border border-brand-cyan/20" title="Click to test online/signed state">
+                            Log In Mock
+                        </button>
+                        <a href="/account/login/" onclick="event.preventDefault(); showToast('Simulating: Redirecting to /account/login/...', 'info');" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold tracking-wide border border-slate-700/50 transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-right-to-bracket text-brand-cyan"></i>
+                            <span>Sign In</span>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
+        // Mock login / logout changes
+        function toggleAuthSimulation(loggedInState) {
+            appState.isLoggedIn = loggedInState;
+            localStorage.setItem('cribman_auth', JSON.stringify({ isLoggedIn: loggedInState }));
+            renderAuthHeader();
+            showToast(loggedInState ? "Signed in! Chat sync activated." : "Offline Mode active. Offline chat logs ready.", loggedInState ? "success" : "info");
+        }
+
+        // Select randomly from greetings to show on fresh screen
+        function initializeWelcomeScreen() {
+            const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+            document.getElementById('welcome-greeting').textContent = randomGreeting;
+        }
+
+        // Auto-grow Textarea heights for better UX typing multi-lines
+        function autoExpandTextarea(element) {
+            element.style.height = "auto";
+            element.style.height = (element.scrollHeight) + "px";
+        }
+
+        // Handle suggestion quick clicks
+        function useSuggestion(text) {
+            const chatInput = document.getElementById('chat-input');
+            chatInput.value = text;
+            chatInput.focus();
+            autoExpandTextarea(chatInput);
+        }
+
+        // Side drawer controls (responsive mobile drawers)
+        function toggleSidebar(isOpen) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('drawer-overlay');
+            if (isOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('opacity-100'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.remove('opacity-100');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        // Floating notification toast system
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('notification-toast');
+            const icon = document.getElementById('toast-icon');
+            const title = document.getElementById('toast-title');
+            const desc = document.getElementById('toast-message');
+
+            if (type === "success") {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                icon.className = "w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400";
+                title.textContent = "DEAL SECURED";
+            } else if (type === "info") {
+                icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+                icon.className = "w-7 h-7 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan";
+                title.textContent = "CRIB LOG";
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                icon.className = "w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400";
+                title.textContent = "BOT BRAINED EXCEPTION";
+            }
+
+            desc.textContent = message;
+            toast.className = "fixed bottom-6 right-6 bg-brand-card border border-slate-700/80 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-0 opacity-100";
+            
+            setTimeout(() => {
+                toast.className = "fixed bottom-6 right-6 bg-brand-card border border-slate-700/80 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none";
+            }, 3000);
+        }
+
+        // Memory bank panel controls
+        function openMemoryBank() {
+            document.getElementById('memory-bank-modal').classList.remove('hidden');
+        }
+        function closeMemoryBank() {
+            document.getElementById('memory-bank-modal').classList.add('hidden');
+        }
+        function saveMemoryBank() {
+            const editorText = document.getElementById('memory-bank-editor').value;
+            const validationMsg = document.getElementById('memory-validation-msg');
+            try {
+                const parsed = JSON.parse(editorText);
+                appState.memoryBank = parsed;
+                localStorage.setItem('cribman_memory_bank', JSON.stringify(parsed));
+                validationMsg.classList.add('hidden');
+                closeMemoryBank();
+                showToast("Memory Bank cached safely. CribMan context updated!", "success");
+            } catch(e) {
+                validationMsg.classList.remove('hidden');
+            }
+        }
+
+        // Friends list UI controls
+        function openFriendsList() {
+            renderFriends();
+            document.getElementById('friends-modal').classList.remove('hidden');
+        }
+        function closeFriendsList() {
+            document.getElementById('friends-modal').classList.add('hidden');
+        }
+        function renderFriends() {
+            const container = document.getElementById('friends-list-container');
+            container.innerHTML = '';
+            appState.friends.forEach(f => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition-colors";
+                item.innerHTML = `
+                    <div>
+                        <div class="text-xs font-bold text-white">${f.name}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${f.email}</div>
+                    </div>
+                    <button onclick="removeFriend('${f.id}')" class="text-slate-500 hover:text-red-400 p-1.5 transition-colors" title="Remove Friend">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+        }
+        function addFriend(e) {
+            e.preventDefault();
+            const nameEl = document.getElementById('new-friend-name');
+            const emailEl = document.getElementById('new-friend-email');
+            
+            const newFriend = {
+                id: "f_" + Date.now(),
+                name: nameEl.value.trim(),
+                email: emailEl.value.trim()
+            };
+            
+            appState.friends.push(newFriend);
+            localStorage.setItem('cribman_friends', JSON.stringify(appState.friends));
+            nameEl.value = '';
+            emailEl.value = '';
+            renderFriends();
+            showToast(`${newFriend.name} registered on Game Dungeon network!`, "success");
+        }
+        function removeFriend(id) {
+            appState.friends = appState.friends.filter(f => f.id !== id);
+            localStorage.setItem('cribman_friends', JSON.stringify(appState.friends));
+            renderFriends();
+            showToast("Friend profile wiped from local catalog.", "info");
+        }
+
+        // UI Confirm Modal Flow
+        function openConfirmModal(text, onAccept) {
+            document.getElementById('confirm-modal-text').textContent = text;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            pendingScrollAction = onAccept;
+        }
+        function closeConfirmModal(accepted) {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            if (accepted && pendingScrollAction) {
+                pendingScrollAction();
+            }
+            pendingScrollAction = null;
+        }
+
+        // Formulate safe slug titles for URI parameters
+        function generateUrlSlug(titleText) {
+            return encodeURIComponent(titleText.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'));
+        }
+
+        // Render Sidebar chats
+        function renderChatList() {
+            const listContainer = document.getElementById('chat-list-container');
+            const placeholders = document.getElementById('no-chats-placeholder');
+            
+            // Wipe everything but header template
+            const header = listContainer.querySelector('.text-xs');
+            listContainer.innerHTML = '';
+            if (header) listContainer.appendChild(header);
+
+            if (appState.chats.length === 0) {
+                listContainer.appendChild(placeholders);
+                placeholders.classList.remove('hidden');
+                return;
+            } else {
+                placeholders.classList.add('hidden');
+            }
+
+            // Loop and render reverse chronological order
+            [...appState.chats].reverse().forEach(chat => {
+                const item = document.createElement('div');
+                const isActive = appState.activeChatId === chat.id;
+                
+                item.className = `flex items-center justify-between group p-2.5 rounded-lg cursor-pointer transition-all ${
+                    isActive 
+                    ? 'bg-brand-violet/15 text-white border-l-2 border-brand-violet pl-2 font-medium' 
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40'
+                }`;
+                
+                item.onclick = (e) => {
+                    // Prevent navigation click trigger if deleting
+                    if (e.target.closest('.delete-chat-btn')) return;
+                    selectChat(chat.id);
+                };
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden w-[85%]">
+                        <i class="fa-regular fa-message ${isActive ? 'text-brand-violet' : 'text-slate-500'} text-xs shrink-0"></i>
+                        <span class="truncate text-xs tracking-tight">${chat.title}</span>
+                    </div>
+                    <button class="delete-chat-btn opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 text-[10px] transition-all" title="Wipe session" onclick="deleteChat('${chat.id}')">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                
+                listContainer.appendChild(item);
+            });
+        }
+
+        // Start Fresh Session resets layouts
+        function startNewChatSession() {
+            appState.activeChatId = null;
+            
+            // Clean URL query state smoothly
+            const url = new URL(window.location);
+            url.searchParams.delete('chat');
+            window.history.pushState({}, '', url);
+
+            // Toggle screens back to Empty Prompt
+            document.getElementById('active-chat-viewport').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+            document.getElementById('chat-input').value = '';
+            initializeWelcomeScreen();
+            renderChatList();
+            toggleSidebar(false);
+        }
+
+        // Choose explicit chat in sidebar
+        function selectChat(chatId) {
+            const chat = appState.chats.find(c => c.id === chatId);
+            if (!chat) return;
+
+            appState.activeChatId = chatId;
+            
+            // Set URL param safely matching slug
+            const url = new URL(window.location);
+            url.searchParams.set('chat', generateUrlSlug(chat.title));
+            window.history.pushState({}, '', url);
+
+            // Display components
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('active-chat-viewport').classList.remove('hidden');
+            document.getElementById('active-chat-title').textContent = chat.title;
+            
+            renderMessages();
+            renderChatList();
+            toggleSidebar(false); // Close responsive drawers automatically
+        }
+
+        // Delete explicit chat
+        function deleteChat(chatId) {
+            appState.chats = appState.chats.filter(c => c.id !== chatId);
+            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+            
+            if (appState.activeChatId === chatId) {
+                startNewChatSession();
+            } else {
+                renderChatList();
+            }
+            showToast("Wiped chat log from records.", "info");
+        }
+
+        // Delete active open chat
+        function deleteCurrentChat() {
+            if (appState.activeChatId) {
+                deleteChat(appState.activeChatId);
+            }
+        }
+
+        // Renders active history to active message grid
+        function renderMessages() {
+            const chat = appState.chats.find(c => c.id === appState.activeChatId);
+            const container = document.getElementById('messages-window');
+            container.innerHTML = '';
+
+            if (!chat || chat.messages.length === 0) return;
+
+            chat.messages.forEach(msg => {
+                const wrapper = document.createElement('div');
+                const isUser = msg.role === 'user';
+                
+                wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`;
+                
+                // Content format parser
+                const rawText = msg.parts[0].text;
+                const formattedHtml = parseMarkdownToHtml(rawText);
+
+                if (isUser) {
+                    wrapper.innerHTML = `
+                        <div class="max-w-[85%] md:max-w-[70%] bg-brand-violet/20 border border-brand-violet/30 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm shadow-md">
+                            ${formattedHtml}
+                        </div>
+                    `;
+                } else {
+                    wrapper.innerHTML = `
+                        <div class="flex gap-3 max-w-[85%] md:max-w-[70%]">
+                            <div class="w-8 h-8 rounded-lg bg-brand-card border border-slate-700/80 flex items-center justify-center text-xs shrink-0 self-start shadow">
+                                <span>😎</span>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="text-[10px] text-slate-500 font-bold tracking-wide uppercase">CribMan</div>
+                                <div class="bg-brand-card border border-slate-800 text-slate-100 rounded-2xl rounded-tl-sm px-4 py-3.5 text-sm leading-relaxed prose shadow-sm">
+                                    ${formattedHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.appendChild(wrapper);
+            });
+
+            // Smooth scroll downwards on messages arrive
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 10);
+        }
+
+        // Lightweight markdown parsing formatting helper
+        function parseMarkdownToHtml(text) {
+            let html = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            
+            // Format bold markdown (**text** or __text__)
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+            
+            // Format bullet points lists
+            html = html.replace(/^\s*\*\s+(.*?)$/gm, '<li class="list-disc ml-5 mb-1">$1</li>');
+            
+            // Parse line breaks cleanly
+            html = html.replace(/\n/g, '<br>');
+
+            // If lists were compiled wrap in complete tags
+            if (html.includes('<li class="list-disc')) {
+                // Quick wrap fallback format wrapper
+                html = `<div class="space-y-1">${html}</div>`;
+            }
+            
+            return html;
+        }
+
+        // Form submission for sending queries
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('chat-input');
+            const text = inputEl.value.trim();
+            if (!text || appState.isAiGenerating) return;
+
+            // Clear input box and reset heights
+            inputEl.value = '';
+            inputEl.style.height = 'auto';
+
+            await sendUserQuery(text);
+        }
+
+        // core user intent check and AI agent execution
+        async function sendUserQuery(userText) {
+            // Check scroll intent and routing *before* adding user prompt
+            const searchIntent = checkForScrollIntent(userText);
+            
+            let chat;
+            let isNewChat = false;
+
+            if (!appState.activeChatId) {
+                // Create clean model layout in local state
+                const newId = "chat_" + Date.now();
+                chat = {
+                    id: newId,
+                    title: "Connecting...",
+                    messages: [],
+                    createdAt: Date.now()
+                };
+                appState.chats.push(chat);
+                appState.activeChatId = newId;
+                isNewChat = true;
+            } else {
+                chat = appState.chats.find(c => c.id === appState.activeChatId);
+            }
+
+            // Append user text and update window
+            chat.messages.push({
+                role: 'user',
+                parts: [{ text: userText }]
+            });
+            
+            selectChat(chat.id); // Switches state view focus
+            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+
+            // Trigger AI loading skeleton placeholder
+            renderSkeletonLoading(true);
+
+            try {
+                // If the user's intent is to send a scroll, handle that specially
+                if (searchIntent && searchIntent.isScrollIntent) {
+                    await handleScrollIntent(searchIntent, chat);
+                } else {
+                    // Regular generic AI conversation log
+                    await queryGeminiAPI(chat, isNewChat, userText);
+                }
+            } catch (error) {
+                console.error("Critical AI Studio Connection Failure", error);
+                // Append failure message cleanly
+                chat.messages.push({
+                    role: 'model',
+                    parts: [{ text: "Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked and try sending that again!" }]
+                });
+                localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+                renderMessages();
+            } finally {
+                renderSkeletonLoading(false);
+            }
+        }
+
+        // Check if user is asking to send a message / scroll to another kid
+        function checkForScrollIntent(text) {
+            const keywords = ['scroll', 'send scroll', 'tell', 'message', 'surpassed', 'scores'];
+            const lowerText = text.toLowerCase();
+            
+            const hasKeyword = keywords.some(k => lowerText.includes(k));
+            if (!hasKeyword) return null;
+
+            // Simple entity matcher on our local mock friends catalog
+            let detectedFriend = null;
+            appState.friends.forEach(f => {
+                if (lowerText.includes(f.name.toLowerCase())) {
+                    detectedFriend = f;
+                }
+            });
+
+            return {
+                isScrollIntent: true,
+                friend: detectedFriend,
+                rawText: text
+            };
+        }
+
+        // Special UI prompt flow for Scroll sending approvals
+        async function handleScrollIntent(intentData, chat) {
+            let targetEmail = "";
+            let targetName = "";
+
+            if (intentData.friend) {
+                targetName = intentData.friend.name;
+                targetEmail = intentData.friend.email;
+            } else {
+                // Ask user to provide input manually if entity resolution fails
+                const promptName = prompt("Bro, I see you want to send a scroll but I don't know who. What is their name/alias?", "Daimyan");
+                if (!promptName) {
+                    chat.messages.push({
+                        role: 'model',
+                        parts: [{ text: "Operation cancelled, bro. I need a valid name to look up in the game dungeon logs." }]
+                    });
+                    localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+                    renderMessages();
+                    return;
+                }
+                targetName = promptName;
+                targetEmail = `${promptName.toLowerCase().replace(/\s+/g, '')}@school.edu`;
+            }
+
+            // Mock call execution logic
+            const simulatedAIPrompt = `Create an ultra-high energy, epic gaming-bro message to ${targetName} (${targetEmail}) describing: "${intentData.rawText}". Ensure to speak like CribMan, the ultimate Game Dungeon helper.`;
+            
+            // Query API to draft the scroll content!
+            const rawDraft = await executeGeminiCall([{ role: 'user', parts: [{ text: simulatedAIPrompt }] }]);
+
+            // Render draft and request secure authorization approval
+            const scrollActionDescription = `CribMan drafted this scroll for ${targetName} (${targetEmail}):\n\n"${rawDraft}"\n\nWould you like to send this scroll over the Game Dungeon communications pipe?`;
+            
+            // Wait for user to approve/deny the draft
+            openConfirmModal(scrollActionDescription, () => {
+                // Success trigger execution callback
+                chat.messages.push({
+                    role: 'model',
+                    parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
+                });
+                localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+                renderMessages();
+                showToast(`Scroll transmitted to ${targetName}!`, "success");
+            });
+
+            // Put temporary draft loading state
+            chat.messages.push({
+                role: 'model',
+                parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
+            });
+            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+            renderMessages();
+        }
+
+        // Main integration loop connecting to gemini-3-flash-preview
+        async function queryGeminiAPI(chat, isNewChat, userText) {
+            // 1. If it's a brand new chat, we must generate a short 2-4 word title using AI first!
+            if (isNewChat) {
+                try {
+                    const titlePrompt = `Given the user's starting message, generate a 2-4 word punchy title for this conversation log. Do not use markdown or quotes. Return only the title. User text: "${userText}"`;
+                    const generatedTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: titlePrompt }] }]);
+                    
+                    // Clean and apply title
+                    chat.title = generatedTitle.trim().replace(/^["']|["']$/g, '');
+                    document.getElementById('active-chat-title').textContent = chat.title;
+                    
+                    // Update URL slug safely without losing state
+                    const url = new URL(window.location);
+                    url.searchParams.set('chat', generateUrlSlug(chat.title));
+                    window.history.pushState({}, '', url);
+                } catch(e) {
+                    console.warn("Title generator fell back", e);
+                    chat.title = userText.split(' ').slice(0, 3).join(' ') + "...";
+                }
+            }
+
+            // 2. Prepare payload including system instruction injects and memory bank parameters
+            const fullHistory = [...chat.messages];
+            
+            // Format memory parameters to append to system context
+            const systemPrompt = `
+                You are "CribMan", the ultimate all-bro AI companion for The Game Dungeon (also known as The Crib).
+                You speak in absolute school-bro language (words like 'bro', 'goated', 'absolute W', 'devious', 'let him cook', 'oink oink' for bot-brained security vulnerabilities).
+                You are helpful, witty, and highly intelligent. 
+                
+                CURRENT USER PROFILE:
+                - Name: ${appState.currentUser.name}
+                - Email: ${appState.currentUser.email}
+                
+                YOUR MEMORY BANK KNOWLEDGE:
+                ${JSON.stringify(appState.memoryBank, null, 2)}
+                
+                REGISTERED GAME DUNGEON USERS/FRIENDS:
+                ${JSON.stringify(appState.friends, null, 2)}
+                
+                INSTRUCTIONS:
+                - Always prioritize addressing the user like a legendary gaming buddy.
+                - If the user talks about 'Five Nights at Sod's', get super hyped, mention Zero (the Scratch dev), and mention how Sod is an iPad kid.
+                - Keep answers clear, readable, and well-structured using basic markdown where appropriate.
+                - If talking about security or boring tasks, refer to it as "oink oink" behavior.
+            `;
+
+            // Query complete payload contents
+            const responseText = await executeGeminiCall(fullHistory, systemPrompt);
+
+            // Append response back into state and save persistent storage
+            chat.messages.push({
+                role: 'model',
+                parts: [{ text: responseText }]
+            });
+            
+            localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
+            renderMessages();
+        }
+
+        // Generic abstraction query to Google Generative Language endpoints
+        async function executeGeminiCall(contentsArray, systemInstructionText = "") {
+            const apiKey = ""; // Leave blank for Canvas automatic runtime injections
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            // Clean structure of payload conforming strictly to standard schemas
+            const payload = {
+                contents: contentsArray.map(item => ({
+                    role: item.role,
+                    parts: item.parts.map(p => ({ text: p.text }))
+                }))
+            };
+
+            if (systemInstructionText) {
+                payload.systemInstruction = {
+                    parts: [{ text: systemInstructionText }]
+                };
+            }
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API returned bad response state: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+            const textResult = candidate?.content?.parts?.[0]?.text;
+
+            if (textResult) {
+                return textResult;
+            } else {
+                throw new Error("Empty candidate parameters returned");
+            }
+        }
+
+        // Renders visual skeleton indicators during active AI queries
+        function renderSkeletonLoading(isLoading) {
+            appState.isAiGenerating = isLoading;
+            const container = document.getElementById('messages-window');
+            const sendBtn = document.getElementById('send-button');
+            const textInput = document.getElementById('chat-input');
+
+            if (isLoading) {
+                sendBtn.disabled = true;
+                textInput.disabled = true;
+                sendBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-sm"></i>';
+
+                // Append loading skeleton to viewport
+                const skeleton = document.createElement('div');
+                skeleton.id = "ai-loading-skeleton";
+                skeleton.className = "flex gap-3 max-w-[85%] md:max-w-[70%] animate-pulse";
+                skeleton.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs shrink-0 self-start">
+                        <span>😎</span>
+                    </div>
+                    <div class="space-y-2 flex-1">
+                        <div class="h-2 w-16 bg-slate-800 rounded"></div>
+                        <div class="bg-brand-card/60 border border-slate-800/80 rounded-2xl rounded-tl-sm p-4 space-y-2">
+                            <div class="h-3 bg-slate-800 rounded w-full"></div>
+                            <div class="h-3 bg-slate-800 rounded w-[80%]"></div>
+                            <div class="h-3 bg-slate-800 rounded w-[45%]"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(skeleton);
+                container.scrollTop = container.scrollHeight;
+            } else {
+                sendBtn.disabled = false;
+                textInput.disabled = false;
+                sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-sm"></i>';
+
+                const skeleton = document.getElementById('ai-loading-skeleton');
+                if (skeleton) {
+                    skeleton.remove();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
