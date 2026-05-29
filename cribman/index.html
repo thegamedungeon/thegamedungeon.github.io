@@ -68,27 +68,27 @@
 </head>
 <body class="bg-brand-black text-slate-100 font-sans h-full flex flex-col overflow-hidden selection:bg-brand-violet/30 selection:text-brand-cyan">
 
-    <!-- OVERLAY (For Mobile Drawer) -->
+    <!-- OVERLAY (For Mobile Drawer Layout) -->
     <div id="drawer-overlay" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0" onclick="toggleSidebar(false)"></div>
 
-    <!-- SIDEBAR DRAWSER (All Chats and Config) -->
-    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-80 bg-brand-dark border-r border-slate-800/80 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full">
+    <!-- SIDEBAR DRAWER (All Chats and Config) -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-80 bg-brand-dark border-r border-slate-800/80 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col h-full">
         <!-- Sidebar Header -->
-        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-violet to-brand-cyan flex items-center justify-center shadow-lg shadow-brand-violet/20">
                     <i class="fa-solid fa-gamepad text-brand-black text-sm font-bold"></i>
                 </div>
                 <span class="font-display font-bold text-lg tracking-wider bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">THE CRIB</span>
             </div>
-            <!-- Close Button for Mobile -->
-            <button onclick="toggleSidebar(false)" class="md:hidden text-slate-400 hover:text-white p-2">
+            <!-- Close Button for Mobile (Explicit close trigger) -->
+            <button onclick="toggleSidebar(false)" class="text-slate-400 hover:text-white p-2 focus:outline-none" title="Collapse Sidebar">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
 
         <!-- Create New Chat Button -->
-        <div class="p-4">
+        <div class="p-4 shrink-0">
             <button onclick="startNewChatSession()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-violet/20 to-brand-cyan/20 hover:from-brand-violet/35 hover:to-brand-cyan/35 border border-brand-violet/30 hover:border-brand-violet/60 text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg shadow-brand-violet/5 hover:shadow-brand-violet/10 group">
                 <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform duration-200 text-brand-cyan"></i>
                 <span>Start Fresh Chat</span>
@@ -106,7 +106,7 @@
         </div>
 
         <!-- Sidebar Footer Actions -->
-        <div class="p-4 border-t border-slate-800/80 bg-slate-900/30 space-y-2">
+        <div class="p-4 border-t border-slate-800/80 bg-slate-900/30 space-y-2 shrink-0">
             <button onclick="openMemoryBank()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
                 <i class="fa-solid fa-brain text-brand-violet text-base"></i>
                 <span class="font-medium">Memory Bank (JS)</span>
@@ -119,12 +119,12 @@
     </aside>
 
     <!-- MAIN WORKSPACE -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative transition-all duration-300 md:pl-80">
         <!-- TOP BAR -->
-        <header class="h-16 border-b border-slate-800/80 flex items-center justify-between px-4 md:px-6 bg-brand-dark/50 backdrop-blur-md z-30">
+        <header class="h-16 border-b border-slate-800/80 flex items-center justify-between px-4 md:px-6 bg-brand-dark/50 backdrop-blur-md z-30 shrink-0">
             <!-- Left Corner: Hamburger & Logo -->
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar(true)" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors" title="Toggle Sidebar">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors focus:outline-none" title="Toggle Navigation Panel">
                     <i class="fa-solid fa-bars text-lg"></i>
                 </button>
                 <div class="flex items-center gap-2">
@@ -156,7 +156,7 @@
             <!-- EMPTY WELCOME SCREEN -->
             <div id="welcome-screen" class="flex-1 overflow-y-auto flex flex-col items-center justify-center p-6 text-center max-w-2xl mx-auto w-full">
                 <!-- Mascot Container -->
-                <div class="relative mb-8 group">
+                <div class="relative mb-8 group shrink-0">
                     <div class="absolute inset-0 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
                     <div class="w-24 h-24 rounded-full bg-brand-card border border-slate-700 flex items-center justify-center shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105">
                         <span class="text-5xl">😎</span>
@@ -168,11 +168,11 @@
                 </div>
 
                 <!-- Dynamic Greeting Heading -->
-                <h1 id="welcome-greeting" class="font-display font-bold text-4xl md:text-5xl mb-4 text-white tracking-tight leading-none">
+                <h1 id="welcome-greeting" class="font-display font-bold text-4xl md:text-5xl mb-4 text-white tracking-tight leading-none shrink-0">
                     <!-- Injected dynamically -->
                 </h1>
                 
-                <p class="text-slate-400 text-base md:text-lg mb-8 max-w-lg mx-auto">
+                <p class="text-slate-400 text-base md:text-lg mb-8 max-w-lg mx-auto shrink-0">
                     I'm your all-bro agent. Built right into <span class="text-brand-cyan font-semibold">The Game Dungeon</span> to check scores, schedule scrolls, and keep it absolute peak. What's the move today?
                 </p>
 
@@ -200,7 +200,7 @@
             <!-- ACTIVE CHAT INTERFACE -->
             <div id="active-chat-viewport" class="flex-1 flex flex-col overflow-hidden hidden">
                 <!-- Chat Log Title Bar -->
-                <div class="px-6 py-3 border-b border-slate-800/50 bg-slate-900/10 flex items-center justify-between">
+                <div class="px-6 py-3 border-b border-slate-800/50 bg-slate-900/10 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-2">
                         <div class="w-2.5 h-2.5 rounded-full bg-brand-violet animate-ping"></div>
                         <span id="active-chat-title" class="font-display font-semibold text-white">Chat Session</span>
@@ -218,7 +218,7 @@
             </div>
 
             <!-- CHAT INTERFACE BOTTOM AREA (INPUT) -->
-            <div class="p-4 border-t border-slate-800/80 bg-brand-dark/40 backdrop-blur-sm">
+            <div class="p-4 border-t border-slate-800/80 bg-brand-dark/40 backdrop-blur-sm shrink-0">
                 <form id="chat-input-form" onsubmit="handleFormSubmit(event)" class="max-w-3xl mx-auto relative flex flex-col gap-2">
                     <div class="relative flex items-center">
                         <textarea id="chat-input" rows="1" placeholder="Ask CribMan..." oninput="autoExpandTextarea(this)" class="w-full bg-brand-card border border-slate-700 focus:border-brand-violet/70 focus:ring-1 focus:ring-brand-violet/50 rounded-xl py-3.5 pl-4 pr-14 text-white placeholder-slate-500 focus:outline-none resize-none max-h-32 text-sm leading-relaxed transition-all shadow-inner" style="min-height: 50px;"></textarea>
@@ -232,7 +232,7 @@
                     </div>
                     
                     <!-- Context helpers and status bar -->
-                    <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 px-1">
+                    <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 px-1 gap-2">
                         <div class="flex items-center gap-3">
                             <span class="flex items-center gap-1">
                                 <i class="fa-solid fa-bolt text-amber-500"></i>
@@ -256,7 +256,7 @@
     <!-- MEMORY BANK MODAL -->
     <div id="memory-bank-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
         <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-brain text-brand-violet text-xl"></i>
                     <div>
@@ -280,7 +280,7 @@
                     <span>Invalid JSON. Make sure your context is written correctly, bro!</span>
                 </div>
             </div>
-            <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3">
+            <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3 shrink-0">
                 <button onclick="closeMemoryBank()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
                 <button onclick="saveMemoryBank()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Context</button>
             </div>
@@ -290,7 +290,7 @@
     <!-- GAME DUNGEON FRIENDS MODAL -->
     <div id="friends-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
         <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
-            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-users text-brand-cyan text-xl"></i>
                     <div>
@@ -349,11 +349,9 @@
     </div>
 
     <script>
-        // Default Core Application Settings & State
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-cribman-app';
-        
+        // Core Application State Setup
         let appState = {
-            isLoggedIn: true, // Defaults to simulated login
+            isLoggedIn: true, 
             currentUser: {
                 name: "Alex",
                 email: "alex@thecrib.org",
@@ -379,6 +377,9 @@
             isAiGenerating: false
         };
 
+        // Variable representing current open/closed sidebar state
+        let sidebarOpen = window.innerWidth >= 768; 
+
         // Welcome Greeting Options
         const greetings = [
             "What’s up, bro?",
@@ -386,9 +387,9 @@
             "Let’s get cooking!"
         ];
 
-        // Pending Actions Registry (e.g. for user approval flows)
         let pendingScrollAction = null;
 
+        // Initialization Routine
         window.addEventListener('load', () => {
             initLocalStorage();
             loadStateFromLocalStorage();
@@ -397,6 +398,9 @@
             renderFriends();
             initializeWelcomeScreen();
             
+            // Set initial state of collapsible drawer
+            updateSidebarUI();
+
             // Check URL for preloaded chat
             const urlParams = new URLSearchParams(window.location.search);
             const chatUrlName = urlParams.get('chat');
@@ -407,6 +411,58 @@
                 }
             }
         });
+
+        // Handle viewport adjustments dynamically
+        window.addEventListener('resize', () => {
+            const isMobile = window.innerWidth < 768;
+            updateSidebarUI();
+        });
+
+        // Responsive Collapsible Sidebar Mechanics
+        function toggleSidebar(forcedState = null) {
+            if (forcedState !== null) {
+                sidebarOpen = forcedState;
+            } else {
+                sidebarOpen = !sidebarOpen;
+            }
+            updateSidebarUI();
+        }
+
+        function updateSidebarUI() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('drawer-overlay');
+            const mainContent = document.querySelector('main');
+            const isMobile = window.innerWidth < 768;
+
+            if (sidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                
+                if (isMobile) {
+                    overlay.classList.remove('hidden');
+                    // Simple micro-tick layout update for CSS transitions
+                    setTimeout(() => overlay.classList.add('opacity-100'), 10);
+                } else {
+                    mainContent.classList.add('md:pl-80');
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('opacity-100');
+                }
+            } else {
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('-translate-x-full');
+                
+                if (isMobile) {
+                    overlay.classList.remove('opacity-100');
+                    setTimeout(() => {
+                        if (!sidebarOpen) overlay.classList.add('hidden');
+                    }, 300);
+                } else {
+                    mainContent.classList.remove('md:pl-80');
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('opacity-100');
+                }
+            }
+        }
 
         // Initialize Local Storage Default Templates
         function initLocalStorage() {
@@ -476,7 +532,6 @@
             }
         }
 
-        // Mock login / logout changes
         function toggleAuthSimulation(loggedInState) {
             appState.isLoggedIn = loggedInState;
             localStorage.setItem('cribman_auth', JSON.stringify({ isLoggedIn: loggedInState }));
@@ -484,19 +539,16 @@
             showToast(loggedInState ? "Signed in! Chat sync activated." : "Offline Mode active. Offline chat logs ready.", loggedInState ? "success" : "info");
         }
 
-        // Select randomly from greetings to show on fresh screen
         function initializeWelcomeScreen() {
             const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
             document.getElementById('welcome-greeting').textContent = randomGreeting;
         }
 
-        // Auto-grow Textarea heights for better UX typing multi-lines
         function autoExpandTextarea(element) {
             element.style.height = "auto";
             element.style.height = (element.scrollHeight) + "px";
         }
 
-        // Handle suggestion quick clicks
         function useSuggestion(text) {
             const chatInput = document.getElementById('chat-input');
             chatInput.value = text;
@@ -504,22 +556,6 @@
             autoExpandTextarea(chatInput);
         }
 
-        // Side drawer controls (responsive mobile drawers)
-        function toggleSidebar(isOpen) {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('drawer-overlay');
-            if (isOpen) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-                setTimeout(() => overlay.classList.add('opacity-100'), 10);
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.remove('opacity-100');
-                setTimeout(() => overlay.classList.add('hidden'), 300);
-            }
-        }
-
-        // Floating notification toast system
         function showToast(message, type = "success") {
             const toast = document.getElementById('notification-toast');
             const icon = document.getElementById('toast-icon');
@@ -548,7 +584,7 @@
             }, 3000);
         }
 
-        // Memory bank panel controls
+        // Memory Bank Dialog Controls
         function openMemoryBank() {
             document.getElementById('memory-bank-modal').classList.remove('hidden');
         }
@@ -570,7 +606,7 @@
             }
         }
 
-        // Friends list UI controls
+        // Friends Panel Controls
         function openFriendsList() {
             renderFriends();
             document.getElementById('friends-modal').classList.remove('hidden');
@@ -621,7 +657,6 @@
             showToast("Friend profile wiped from local catalog.", "info");
         }
 
-        // UI Confirm Modal Flow
         function openConfirmModal(text, onAccept) {
             document.getElementById('confirm-modal-text').textContent = text;
             document.getElementById('confirm-modal').classList.remove('hidden');
@@ -635,17 +670,14 @@
             pendingScrollAction = null;
         }
 
-        // Formulate safe slug titles for URI parameters
         function generateUrlSlug(titleText) {
             return encodeURIComponent(titleText.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'));
         }
 
-        // Render Sidebar chats
         function renderChatList() {
             const listContainer = document.getElementById('chat-list-container');
             const placeholders = document.getElementById('no-chats-placeholder');
             
-            // Wipe everything but header template
             const header = listContainer.querySelector('.text-xs');
             listContainer.innerHTML = '';
             if (header) listContainer.appendChild(header);
@@ -658,7 +690,6 @@
                 placeholders.classList.add('hidden');
             }
 
-            // Loop and render reverse chronological order
             [...appState.chats].reverse().forEach(chat => {
                 const item = document.createElement('div');
                 const isActive = appState.activeChatId === chat.id;
@@ -670,7 +701,6 @@
                 }`;
                 
                 item.onclick = (e) => {
-                    // Prevent navigation click trigger if deleting
                     if (e.target.closest('.delete-chat-btn')) return;
                     selectChat(chat.id);
                 };
@@ -689,47 +719,48 @@
             });
         }
 
-        // Start Fresh Session resets layouts
         function startNewChatSession() {
             appState.activeChatId = null;
             
-            // Clean URL query state smoothly
             const url = new URL(window.location);
             url.searchParams.delete('chat');
             window.history.pushState({}, '', url);
 
-            // Toggle screens back to Empty Prompt
             document.getElementById('active-chat-viewport').classList.add('hidden');
             document.getElementById('welcome-screen').classList.remove('hidden');
             document.getElementById('chat-input').value = '';
             initializeWelcomeScreen();
             renderChatList();
-            toggleSidebar(false);
+            
+            // Only auto-close on mobile screens when resetting
+            if (window.innerWidth < 768) {
+                toggleSidebar(false);
+            }
         }
 
-        // Choose explicit chat in sidebar
         function selectChat(chatId) {
             const chat = appState.chats.find(c => c.id === chatId);
             if (!chat) return;
 
             appState.activeChatId = chatId;
             
-            // Set URL param safely matching slug
             const url = new URL(window.location);
             url.searchParams.set('chat', generateUrlSlug(chat.title));
             window.history.pushState({}, '', url);
 
-            // Display components
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('active-chat-viewport').classList.remove('hidden');
             document.getElementById('active-chat-title').textContent = chat.title;
             
             renderMessages();
             renderChatList();
-            toggleSidebar(false); // Close responsive drawers automatically
+
+            // Auto collapse mobile layouts to let the chat expand nicely
+            if (window.innerWidth < 768) {
+                toggleSidebar(false);
+            }
         }
 
-        // Delete explicit chat
         function deleteChat(chatId) {
             appState.chats = appState.chats.filter(c => c.id !== chatId);
             localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
@@ -742,14 +773,12 @@
             showToast("Wiped chat log from records.", "info");
         }
 
-        // Delete active open chat
         function deleteCurrentChat() {
             if (appState.activeChatId) {
                 deleteChat(appState.activeChatId);
             }
         }
 
-        // Renders active history to active message grid
         function renderMessages() {
             const chat = appState.chats.find(c => c.id === appState.activeChatId);
             const container = document.getElementById('messages-window');
@@ -763,7 +792,6 @@
                 
                 wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`;
                 
-                // Content format parser
                 const rawText = msg.parts[0].text;
                 const formattedHtml = parseMarkdownToHtml(rawText);
 
@@ -779,7 +807,7 @@
                             <div class="w-8 h-8 rounded-lg bg-brand-card border border-slate-700/80 flex items-center justify-center text-xs shrink-0 self-start shadow">
                                 <span>😎</span>
                             </div>
-                            <div class="space-y-1.5">
+                            <div class="space-y-1.5 flex-1">
                                 <div class="text-[10px] text-slate-500 font-bold tracking-wide uppercase">CribMan</div>
                                 <div class="bg-brand-card border border-slate-800 text-slate-100 rounded-2xl rounded-tl-sm px-4 py-3.5 text-sm leading-relaxed prose shadow-sm">
                                     ${formattedHtml}
@@ -791,61 +819,47 @@
                 container.appendChild(wrapper);
             });
 
-            // Smooth scroll downwards on messages arrive
             setTimeout(() => {
                 container.scrollTop = container.scrollHeight;
             }, 10);
         }
 
-        // Lightweight markdown parsing formatting helper
         function parseMarkdownToHtml(text) {
             let html = text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;");
             
-            // Format bold markdown (**text** or __text__)
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-            
-            // Format bullet points lists
             html = html.replace(/^\s*\*\s+(.*?)$/gm, '<li class="list-disc ml-5 mb-1">$1</li>');
-            
-            // Parse line breaks cleanly
             html = html.replace(/\n/g, '<br>');
 
-            // If lists were compiled wrap in complete tags
             if (html.includes('<li class="list-disc')) {
-                // Quick wrap fallback format wrapper
                 html = `<div class="space-y-1">${html}</div>`;
             }
             
             return html;
         }
 
-        // Form submission for sending queries
         async function handleFormSubmit(e) {
             e.preventDefault();
             const inputEl = document.getElementById('chat-input');
             const text = inputEl.value.trim();
             if (!text || appState.isAiGenerating) return;
 
-            // Clear input box and reset heights
             inputEl.value = '';
             inputEl.style.height = 'auto';
 
             await sendUserQuery(text);
         }
 
-        // core user intent check and AI agent execution
         async function sendUserQuery(userText) {
-            // Check scroll intent and routing *before* adding user prompt
             const searchIntent = checkForScrollIntent(userText);
             
             let chat;
             let isNewChat = false;
 
             if (!appState.activeChatId) {
-                // Create clean model layout in local state
                 const newId = "chat_" + Date.now();
                 chat = {
                     id: newId,
@@ -860,29 +874,24 @@
                 chat = appState.chats.find(c => c.id === appState.activeChatId);
             }
 
-            // Append user text and update window
             chat.messages.push({
                 role: 'user',
                 parts: [{ text: userText }]
             });
             
-            selectChat(chat.id); // Switches state view focus
+            selectChat(chat.id); 
             localStorage.setItem('cribman_chats', JSON.stringify(appState.chats));
 
-            // Trigger AI loading skeleton placeholder
             renderSkeletonLoading(true);
 
             try {
-                // If the user's intent is to send a scroll, handle that specially
                 if (searchIntent && searchIntent.isScrollIntent) {
                     await handleScrollIntent(searchIntent, chat);
                 } else {
-                    // Regular generic AI conversation log
                     await queryGeminiAPI(chat, isNewChat, userText);
                 }
             } catch (error) {
                 console.error("Critical AI Studio Connection Failure", error);
-                // Append failure message cleanly
                 chat.messages.push({
                     role: 'model',
                     parts: [{ text: "Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked and try sending that again!" }]
@@ -894,7 +903,6 @@
             }
         }
 
-        // Check if user is asking to send a message / scroll to another kid
         function checkForScrollIntent(text) {
             const keywords = ['scroll', 'send scroll', 'tell', 'message', 'surpassed', 'scores'];
             const lowerText = text.toLowerCase();
@@ -902,7 +910,6 @@
             const hasKeyword = keywords.some(k => lowerText.includes(k));
             if (!hasKeyword) return null;
 
-            // Simple entity matcher on our local mock friends catalog
             let detectedFriend = null;
             appState.friends.forEach(f => {
                 if (lowerText.includes(f.name.toLowerCase())) {
@@ -917,7 +924,6 @@
             };
         }
 
-        // Special UI prompt flow for Scroll sending approvals
         async function handleScrollIntent(intentData, chat) {
             let targetEmail = "";
             let targetName = "";
@@ -926,7 +932,6 @@
                 targetName = intentData.friend.name;
                 targetEmail = intentData.friend.email;
             } else {
-                // Ask user to provide input manually if entity resolution fails
                 const promptName = prompt("Bro, I see you want to send a scroll but I don't know who. What is their name/alias?", "Daimyan");
                 if (!promptName) {
                     chat.messages.push({
@@ -941,18 +946,12 @@
                 targetEmail = `${promptName.toLowerCase().replace(/\s+/g, '')}@school.edu`;
             }
 
-            // Mock call execution logic
             const simulatedAIPrompt = `Create an ultra-high energy, epic gaming-bro message to ${targetName} (${targetEmail}) describing: "${intentData.rawText}". Ensure to speak like CribMan, the ultimate Game Dungeon helper.`;
-            
-            // Query API to draft the scroll content!
             const rawDraft = await executeGeminiCall([{ role: 'user', parts: [{ text: simulatedAIPrompt }] }]);
 
-            // Render draft and request secure authorization approval
             const scrollActionDescription = `CribMan drafted this scroll for ${targetName} (${targetEmail}):\n\n"${rawDraft}"\n\nWould you like to send this scroll over the Game Dungeon communications pipe?`;
             
-            // Wait for user to approve/deny the draft
             openConfirmModal(scrollActionDescription, () => {
-                // Success trigger execution callback
                 chat.messages.push({
                     role: 'model',
                     parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
@@ -962,7 +961,6 @@
                 showToast(`Scroll transmitted to ${targetName}!`, "success");
             });
 
-            // Put temporary draft loading state
             chat.messages.push({
                 role: 'model',
                 parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
@@ -971,19 +969,15 @@
             renderMessages();
         }
 
-        // Main integration loop connecting to gemini-3-flash-preview
         async function queryGeminiAPI(chat, isNewChat, userText) {
-            // 1. If it's a brand new chat, we must generate a short 2-4 word title using AI first!
             if (isNewChat) {
                 try {
                     const titlePrompt = `Given the user's starting message, generate a 2-4 word punchy title for this conversation log. Do not use markdown or quotes. Return only the title. User text: "${userText}"`;
                     const generatedTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: titlePrompt }] }]);
                     
-                    // Clean and apply title
                     chat.title = generatedTitle.trim().replace(/^["']|["']$/g, '');
                     document.getElementById('active-chat-title').textContent = chat.title;
                     
-                    // Update URL slug safely without losing state
                     const url = new URL(window.location);
                     url.searchParams.set('chat', generateUrlSlug(chat.title));
                     window.history.pushState({}, '', url);
@@ -993,10 +987,8 @@
                 }
             }
 
-            // 2. Prepare payload including system instruction injects and memory bank parameters
             const fullHistory = [...chat.messages];
             
-            // Format memory parameters to append to system context
             const systemPrompt = `
                 You are "CribMan", the ultimate all-bro AI companion for The Game Dungeon (also known as The Crib).
                 You speak in absolute school-bro language (words like 'bro', 'goated', 'absolute W', 'devious', 'let him cook', 'oink oink' for bot-brained security vulnerabilities).
@@ -1019,10 +1011,8 @@
                 - If talking about security or boring tasks, refer to it as "oink oink" behavior.
             `;
 
-            // Query complete payload contents
             const responseText = await executeGeminiCall(fullHistory, systemPrompt);
 
-            // Append response back into state and save persistent storage
             chat.messages.push({
                 role: 'model',
                 parts: [{ text: responseText }]
@@ -1032,12 +1022,10 @@
             renderMessages();
         }
 
-        // Generic abstraction query to Google Generative Language endpoints
         async function executeGeminiCall(contentsArray, systemInstructionText = "") {
-            const apiKey = ""; // Leave blank for Canvas automatic runtime injections
+            const apiKey = ""; // Left blank for Canvas automatic runtime injections
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-            // Clean structure of payload conforming strictly to standard schemas
             const payload = {
                 contents: contentsArray.map(item => ({
                     role: item.role,
@@ -1072,7 +1060,6 @@
             }
         }
 
-        // Renders visual skeleton indicators during active AI queries
         function renderSkeletonLoading(isLoading) {
             appState.isAiGenerating = isLoading;
             const container = document.getElementById('messages-window');
@@ -1084,7 +1071,6 @@
                 textInput.disabled = true;
                 sendBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-sm"></i>';
 
-                // Append loading skeleton to viewport
                 const skeleton = document.createElement('div');
                 skeleton.id = "ai-loading-skeleton";
                 skeleton.className = "flex gap-3 max-w-[85%] md:max-w-[70%] animate-pulse";
