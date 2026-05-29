@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CribMan AI - The Game Dungeon</title>
-    <!-- Google Fonts: Inter & Space Grotesk -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Tailwind CSS -->
+    <title>CribMan AI Chat - The Game Dungeon</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Space Grotesk & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Gaming Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -21,13 +21,13 @@
                         display: ['Space Grotesk', 'sans-serif'],
                     },
                     colors: {
-                        brand: {
-                            black: '#070a13',
-                            dark: '#0f1322',
-                            card: '#181e36',
-                            violet: '#8b5cf6',
-                            cyan: '#06b6d4',
-                            magenta: '#ec4899'
+                        dungeon: {
+                            900: '#0b0f19',
+                            800: '#111827',
+                            700: '#1f2937',
+                            600: '#374151',
+                            accent: '#8b5cf6', // Violet
+                            cyan: '#06b6d4',   // Cyan
                         }
                     }
                 }
@@ -35,430 +35,338 @@
         }
     </script>
     <style>
+        /* Custom scrollbar styling to match the dark gaming ecosystem */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #0f1322;
+            background: #0b0f19;
         }
         ::-webkit-scrollbar-thumb {
-            background: #1f293d;
-            border-radius: 4px;
+            background: #1f2937;
+            border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #8b5cf6;
         }
-        .prose p {
-            margin-bottom: 0.75rem;
+        /* Pulse animations for loading states */
+        .glow-pulse {
+            animation: pulse-glow 2s infinite alternate;
         }
-        .prose p:last-child {
-            margin-bottom: 0;
-        }
-        .prose code {
-            background: #070a13;
-            padding: 0.1rem 0.3rem;
-            border-radius: 0.25rem;
-            font-size: 0.9em;
-            color: #ec4899;
-        }
-        @keyframes slide-down {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-down {
-            animation: slide-down 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.8); }
         }
     </style>
 </head>
-<body class="bg-brand-black text-slate-100 font-sans h-full flex flex-col overflow-hidden selection:bg-brand-violet/30 selection:text-brand-cyan">
+<body class="bg-dungeon-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col overflow-hidden">
 
-    <!-- OVERLAY (For Mobile Drawer Layout) -->
-    <div id="drawer-overlay" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0" onclick="toggleSidebar(false)"></div>
-
-    <!-- LIVE INCOMING SCROLL PARCHMENT CARD -->
-    <div id="incoming-scroll-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 hidden">
-        <div class="bg-gradient-to-b from-amber-50 to-orange-100 text-amber-950 border-2 border-amber-800 rounded-2xl shadow-2xl p-6 relative overflow-hidden animate-slide-down">
-            <div class="absolute -right-6 -bottom-6 text-9xl text-amber-800/10 rotate-12">
-                <i class="fa-solid fa-scroll"></i>
-            </div>
-            <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl bg-amber-800/20 text-amber-950 flex items-center justify-center text-2xl shrink-0">
-                    <i class="fa-solid fa-bell animate-bounce"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-display font-bold text-lg tracking-wide uppercase text-amber-900 flex items-center gap-2">
-                        <span>New Scroll Arrived!</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-amber-800/10 border border-amber-800/25 text-amber-800">Live</span>
-                    </h3>
-                    <p class="text-[11px] text-amber-800 font-semibold mb-2">Sender: <span id="scroll-sender-display" class="underline">Daimyan</span></p>
-                    <div id="scroll-message-display" class="text-xs leading-relaxed italic bg-amber-200/50 p-3 rounded-lg border border-amber-300 font-serif whitespace-pre-wrap select-all">
-                        <!-- Content loaded dynamically -->
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-2 justify-end pt-4 mt-2">
-                <button onclick="dismissIncomingScroll()" class="px-4 py-1.5 rounded-lg bg-amber-900/10 hover:bg-amber-900/20 text-amber-900 text-xs font-bold transition-all">
-                    Dismiss
-                </button>
-                <button onclick="copyScrollToClipboard()" class="px-4 py-1.5 rounded-lg bg-amber-900 hover:bg-amber-950 text-white text-xs font-bold transition-all shadow-md">
-                    Copy Message
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- SIDEBAR DRAWER (All Chats and Config) -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 w-80 bg-brand-dark border-r border-slate-800/80 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col h-full">
-        <!-- Sidebar Header -->
-        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-violet to-brand-cyan flex items-center justify-center shadow-lg shadow-brand-violet/20">
-                    <i class="fa-solid fa-gamepad text-brand-black text-sm font-bold"></i>
-                </div>
-                <span class="font-display font-bold text-lg tracking-wider bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">THE CRIB</span>
-            </div>
-            <button onclick="toggleSidebar(false)" class="text-slate-400 hover:text-white p-2 focus:outline-none" title="Collapse Sidebar">
-                <i class="fa-solid fa-xmark text-xl"></i>
+    
+    <!-- Top Bar Navigation Panel -->
+    <header class="bg-dungeon-800 border-b border-dungeon-700 h-16 flex items-center justify-between px-4 z-40 relative shrink-0">
+        <div class="flex items-center space-x-3">
+            <button id="sidebar-toggle-btn" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-dungeon-700 transition" title="Toggle Chats Menu">
+                <i class="fa-solid fa-bars text-xl"></i>
             </button>
-        </div>
-
-        <!-- Create New Chat Button -->
-        <div class="p-4 shrink-0">
-            <button onclick="startNewChatSession()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-violet/20 to-brand-cyan/20 hover:from-brand-violet/35 hover:to-brand-cyan/35 border border-brand-violet/30 hover:border-brand-violet/60 text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg shadow-brand-violet/5 hover:shadow-brand-violet/10 group">
-                <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform duration-200 text-brand-cyan"></i>
-                <span>Start Fresh Chat</span>
-            </button>
-        </div>
-
-        <!-- Chat List Section -->
-        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1.5" id="chat-list-container">
-            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 py-2">My Chat Logs</div>
-            <div id="no-chats-placeholder" class="text-center py-8 text-slate-500 text-sm">
-                <i class="fa-regular fa-comments text-3xl mb-2 opacity-40 block"></i>
-                <span>No local chats yet, bro!</span>
-            </div>
-        </div>
-
-        <!-- Sidebar Footer Actions -->
-        <div class="p-4 border-t border-slate-800/80 bg-slate-900/30 space-y-2 shrink-0">
-            <button onclick="openMemoryBank()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
-                <i class="fa-solid fa-brain text-brand-violet text-base"></i>
-                <span class="font-medium">Memory Bank (JS Context)</span>
-            </button>
-            <button onclick="openFriendsList()" class="w-full py-2.5 px-3 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white text-sm flex items-center gap-3 transition-colors">
-                <i class="fa-solid fa-users text-brand-cyan text-base"></i>
-                <span class="font-medium">Game Dungeon Friends</span>
-            </button>
-        </div>
-    </aside>
-
-    <!-- MAIN WORKSPACE -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative transition-all duration-300 md:pl-80">
-        <!-- TOP BAR -->
-        <header class="h-16 border-b border-slate-800/80 flex items-center justify-between px-4 md:px-6 bg-brand-dark/50 backdrop-blur-md z-30 shrink-0">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors focus:outline-none" title="Toggle Navigation Panel">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-                <div class="flex items-center gap-2">
-                    <span class="font-display font-bold text-lg md:text-xl tracking-tight text-white flex items-center gap-2">
-                        <span>CribMan</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-brand-violet/20 border border-brand-violet/40 text-brand-violet font-semibold tracking-wider uppercase font-sans">Cloud Sync</span>
-                    </span>
-                </div>
-            </div>
-
-            <!-- Right Corner: Profile Status & Simulator Info -->
-            <div class="flex items-center gap-3">
-                <div id="cloud-status-indicator" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Firestore Connected</span>
-                </div>
-
-                <!-- Custom Gear Settings Icon to prevent GitHub Pages pipeline errors -->
-                <button onclick="openSettingsModal()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors focus:outline-none" title="AI Studio Configuration">
-                    <i class="fa-solid fa-gear text-slate-400 hover:text-white text-base"></i>
-                </button>
-
-                <div id="auth-container" class="relative">
-                    <!-- Loaded dynamically in module scope -->
-                </div>
-            </div>
-        </header>
-
-        <!-- CHAT VIEWPORT -->
-        <div class="flex-1 flex flex-col overflow-hidden bg-brand-black" id="workspace-viewport">
-            
-            <!-- EMPTY WELCOME SCREEN -->
-            <div id="welcome-screen" class="flex-1 overflow-y-auto flex flex-col items-center justify-center p-6 text-center max-w-2xl mx-auto w-full">
-                <div class="relative mb-8 group shrink-0">
-                    <div class="absolute inset-0 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-                    <div class="w-24 h-24 rounded-full bg-brand-card border border-slate-700 flex items-center justify-center shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105">
-                        <span class="text-5xl">😎</span>
-                    </div>
-                    <div class="absolute -bottom-2 -right-2 bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black font-bold text-[10px] px-2 py-1 rounded-md shadow-lg font-display">
-                        CRIBMAN CLOUD
-                    </div>
-                </div>
-
-                <h1 id="welcome-greeting" class="font-display font-bold text-4xl md:text-5xl mb-4 text-white tracking-tight leading-none shrink-0">
-                    <!-- Injected dynamically -->
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🤖</span>
+                <h1 class="font-display font-bold text-xl bg-gradient-to-r from-dungeon-cyan to-dungeon-accent bg-clip-text text-transparent">
+                    CribMan <span class="text-xs font-mono px-2 py-0.5 rounded bg-dungeon-700 text-dungeon-cyan border border-dungeon-600">v2.0</span>
                 </h1>
-                
-                <p class="text-slate-400 text-base md:text-lg mb-8 max-w-lg mx-auto shrink-0">
-                    Your goated cloud-synced bro agent. Ready to message friends, remember class lore, and sync your chats across any machine!
-                </p>
-
-                <!-- Prompt Suggestions -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full max-w-xl text-left mb-6">
-                    <button onclick="useSuggestion('How is Five Nights at Sod\'s coming along on Scratch?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
-                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Five Nights at Sod's Hype</span>
-                        <span class="text-xs text-slate-400">Ask CribMan what the latest school lore is on the game.</span>
-                    </button>
-                    <button onclick="useSuggestion('Tell Daimyan that he\'s a thief for beating my score, and send a scroll to him.')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
-                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Send a Devious Scroll</span>
-                        <span class="text-xs text-slate-400">Verify friends integration and send a live cloud message.</span>
-                    </button>
-                    <button onclick="useSuggestion('Who is the zestiest in foundations class?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
-                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Lore Check</span>
-                        <span class="text-xs text-slate-400">Ask about blank wall noodle hair behaviors.</span>
-                    </button>
-                    <button onclick="useSuggestion('How do I play Ride to Die?')" class="p-4 rounded-xl bg-brand-card hover:bg-slate-800/80 border border-slate-800 hover:border-brand-violet/50 transition-all duration-200 flex flex-col gap-1 group">
-                        <span class="text-sm font-semibold text-white group-hover:text-brand-cyan transition-colors">Game Dungeon Secrets</span>
-                        <span class="text-xs text-slate-400">Check strategies for mastering game records.</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- ACTIVE CHAT INTERFACE -->
-            <div id="active-chat-viewport" class="flex-1 flex flex-col overflow-hidden hidden">
-                <div class="px-6 py-3 border-b border-slate-800/50 bg-slate-900/10 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2.5 h-2.5 rounded-full bg-brand-violet animate-ping"></div>
-                        <span id="active-chat-title" class="font-display font-semibold text-white">Chat Session</span>
-                    </div>
-                    <button onclick="deleteCurrentChat()" class="text-slate-500 hover:text-red-400 px-2 py-1 rounded transition-colors text-xs flex items-center gap-1.5" title="Delete current chat log">
-                        <i class="fa-solid fa-trash"></i>
-                        <span>Delete Logs</span>
-                    </button>
-                </div>
-
-                <!-- Messages Window -->
-                <div id="messages-window" class="flex-1 overflow-y-auto px-4 py-6 md:px-6 space-y-6">
-                    <!-- Messages get injected here -->
-                </div>
-            </div>
-
-            <!-- CHAT INTERFACE BOTTOM AREA (INPUT) -->
-            <div class="p-4 border-t border-slate-800/80 bg-brand-dark/40 backdrop-blur-sm shrink-0">
-                <form id="chat-input-form" onsubmit="handleFormSubmit(event)" class="max-w-3xl mx-auto relative flex flex-col gap-2">
-                    <div class="relative flex items-center">
-                        <textarea id="chat-input" rows="1" placeholder="Ask CribMan..." oninput="autoExpandTextarea(this)" class="w-full bg-brand-card border border-slate-700 focus:border-brand-violet/70 focus:ring-1 focus:ring-brand-violet/50 rounded-xl py-3.5 pl-4 pr-14 text-white placeholder-slate-500 focus:outline-none resize-none max-h-32 text-sm leading-relaxed transition-all shadow-inner" style="min-height: 50px;"></textarea>
-                        
-                        <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                            <button type="submit" id="send-button" class="w-10 h-10 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan hover:brightness-110 text-brand-black flex items-center justify-center font-bold transition-all disabled:opacity-40 disabled:pointer-events-none" title="Send message to CribMan">
-                                <i class="fa-solid fa-paper-plane text-sm"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 px-1 gap-2">
-                        <div class="flex items-center gap-3">
-                            <span class="flex items-center gap-1">
-                                <i class="fa-solid fa-bolt text-amber-500"></i>
-                                <span>Powered by Google AI Studio</span>
-                            </span>
-                            <span class="text-slate-700">|</span>
-                            <span class="flex items-center gap-1">
-                                <i class="fa-solid fa-cloud text-brand-cyan"></i>
-                                <span id="cloud-storage-tag">Cloud Sync Active</span>
-                            </span>
-                        </div>
-                        <div class="text-slate-400 hover:text-brand-cyan transition-colors cursor-pointer" onclick="openMemoryBank()">
-                            Memory Bank: <span id="memory-bank-indicator" class="font-semibold text-brand-violet">Ready</span>
-                        </div>
-                    </div>
-                </form>
             </div>
         </div>
-    </main>
 
-    <!-- MEMORY BANK MODAL -->
-    <div id="memory-bank-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
-        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-brain text-brand-violet text-xl"></i>
-                    <div>
-                        <h3 class="font-display font-bold text-lg text-white">CribMan Memory Bank</h3>
-                        <p class="text-xs text-slate-400">Synced to the cloud so CribMan always knows your custom class lore.</p>
-                    </div>
+        <!-- Right Side Controls & Profiles -->
+        <div class="flex items-center space-x-3">
+            <!-- Settings Gear Button -->
+            <button id="settings-btn" class="p-2 text-slate-400 hover:text-white hover:bg-dungeon-700 rounded-lg transition" title="API Credentials & Engine Config">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+            
+            <!-- Account Integration Avatar Trigger -->
+            <div id="account-container" class="flex items-center space-x-2 bg-dungeon-700 p-1.5 pr-3 rounded-full border border-dungeon-600 transition hover:bg-dungeon-600 cursor-pointer">
+                <div id="avatar-element" class="w-7 h-7 rounded-full bg-dungeon-accent flex items-center justify-center text-white font-bold text-xs overflow-hidden">
+                    👤
                 </div>
-                <button onclick="closeMemoryBank()" class="text-slate-400 hover:text-white p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto space-y-4">
-                <div class="space-y-1">
-                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Memory context (JSON Object)</label>
-                    <p class="text-[11px] text-slate-500 leading-normal">Tell CribMan about your friends, class inside jokes, high scores, and games. He will immediately adjust his replies using this knowledge.</p>
-                </div>
-                <textarea id="memory-bank-editor" rows="12" class="w-full bg-brand-black border border-slate-800 rounded-lg p-3 font-mono text-xs text-cyan-400 focus:border-brand-violet/50 focus:outline-none focus:ring-1 focus:ring-brand-violet/40"></textarea>
-                <div id="memory-validation-msg" class="text-xs text-red-400 hidden flex items-center gap-1.5">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Invalid JSON. Make sure your context is written correctly, bro!</span>
-                </div>
-            </div>
-            <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3 shrink-0">
-                <button onclick="closeMemoryBank()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
-                <button onclick="saveMemoryBank()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Cloud Context</button>
+                <span id="account-username" class="text-xs font-medium max-w-[100px] truncate">Guest Bro</span>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- GAME DUNGEON FRIENDS MODAL -->
-    <div id="friends-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
-        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
-            <div class="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-users text-brand-cyan text-xl"></i>
-                    <div>
-                        <h3 class="font-display font-bold text-lg text-white">Your Friends List</h3>
-                        <p class="text-xs text-slate-400">Game Dungeon users. CribMan checks this to route scrolls securely.</p>
-                    </div>
-                </div>
-                <button onclick="closeFriendsList()" class="text-slate-400 hover:text-white p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- Main Outer Wrapper -->
+    <div class="flex flex-1 relative overflow-hidden">
+        
+        
+        <!-- Collapsible Sidebar (Slide Drawer) -->
+        <aside id="chat-sidebar" class="fixed inset-y-16 left-0 w-80 bg-dungeon-800 border-r border-dungeon-700 z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col justify-between overflow-hidden">
+            <!-- Active Chat List Header -->
+            <div class="p-4 border-b border-dungeon-700 flex justify-between items-center bg-dungeon-800/80">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest font-display">Active Chats</span>
+                <button id="new-chat-btn" class="flex items-center space-x-1 text-xs bg-dungeon-cyan/20 hover:bg-dungeon-cyan/35 text-dungeon-cyan px-2.5 py-1.5 rounded-lg font-medium border border-dungeon-cyan/30 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Fresh Chat</span>
                 </button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-4">
-                <div id="friends-list-container" class="space-y-2.5">
-                    <!-- Dynamic rendering of friends -->
+
+            <!-- Scrollable Chats List -->
+            <div id="chats-scroller" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <!-- Rendered dynamically by JS -->
+                <div class="text-center py-8 text-slate-500 text-xs">Loading logs...</div>
+            </div>
+
+            <!-- Sidebar Footer Controls -->
+            <div class="p-3 bg-dungeon-900 border-t border-dungeon-700 flex flex-col space-y-2">
+                <!-- Memory Bank Trigger -->
+                <button id="memory-bank-btn" class="w-full flex items-center justify-center space-x-2 text-xs bg-dungeon-700 hover:bg-dungeon-600 text-slate-200 py-2.5 px-3 rounded-lg border border-dungeon-600 transition font-medium">
+                    <i class="fa-solid fa-brain text-dungeon-accent"></i>
+                    <span>Open Memory Bank</span>
+                </button>
+                <!-- Friends Directory Status Tag -->
+                <div id="friends-indicator" class="flex items-center justify-between text-[10px] bg-dungeon-800 p-2 rounded border border-dungeon-700 text-slate-400">
+                    <span class="flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Friends Directory
+                    </span>
+                    <span id="friends-indicator-count" class="font-mono text-dungeon-cyan">0 Synced</span>
                 </div>
-                <div class="border-t border-slate-800 pt-4 mt-2">
-                    <div class="p-3.5 rounded-xl bg-brand-violet/10 border border-brand-violet/20 text-xs text-slate-300 space-y-1.5">
-                        <div class="font-semibold text-brand-cyan flex items-center gap-1.5">
-                            <i class="fa-solid fa-cloud-arrow-down animate-pulse"></i>
-                            <span>Dungeon Sync Active</span>
-                        </div>
-                        <p class="text-slate-400 leading-normal">
-                            Your roster is loaded directly from your Game Dungeon profile document <code class="bg-slate-950 px-1.5 py-0.5 rounded text-brand-magenta font-mono text-[10px]" id="sync-doc-path">users/...</code>. Adjustments are managed from your core account setup.
+            </div>
+        </aside>
+
+        <!-- Sidebar Mobile Backdrop Shadow Layer -->
+        <div id="sidebar-backdrop" class="fixed inset-0 bg-black/65 z-20 hidden md:hidden"></div>
+
+
+        <!-- Primary Chat Canvas/Workspace -->
+        <main id="chat-workspace" class="flex-1 flex flex-col bg-dungeon-900 md:pl-80 transition-all duration-300 h-full relative overflow-hidden">
+            
+            <!-- Scrolling Messages Container -->
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Welcome Banner Screen -->
+                <div id="welcome-screen" class="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto p-6 space-y-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-dungeon-cyan to-dungeon-accent rounded-2xl flex items-center justify-center text-4xl glow-pulse transform rotate-3">
+                        🤖
+                    </div>
+                    <div class="space-y-2">
+                        <h2 id="random-greeting" class="font-display font-bold text-3xl text-white">Let's get cooking!</h2>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            I'm <strong class="text-dungeon-cyan">CribMan</strong>, the ultimate Game Dungeon helper. I'm loaded with context on inside jokes (Connor, Sod-erdine), synced with your roster, and optimized for dispatching scrolls.
                         </p>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SETTINGS MODAL FOR GITHUB PAGES KEY CONFIG -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
-        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-sliders text-brand-violet text-xl"></i>
-                    <div>
-                        <h3 class="font-display font-bold text-lg text-white">AI Engine Configuration</h3>
-                        <p class="text-xs text-slate-400">Manage developer keys and custom API connections.</p>
+                    <div class="grid grid-cols-2 gap-2.5 w-full text-left text-xs">
+                        <div class="p-3 bg-dungeon-800 rounded-xl border border-dungeon-700 hover:border-dungeon-cyan/40 cursor-pointer transition" onclick="presetPrompt('Who has noodle hair?')">
+                            <span class="font-bold text-slate-300 block mb-1">Check Noodle Hair 🍜</span>
+                            Ask about Connor's zesty traits.
+                        </div>
+                        <div class="p-3 bg-dungeon-800 rounded-xl border border-dungeon-700 hover:border-dungeon-cyan/40 cursor-pointer transition" onclick="presetPrompt('Tell Daimyan that he is a certified legend')">
+                            <span class="font-bold text-slate-300 block mb-1">Send a Scroll 📜</span>
+                            Draft an automatic scroll request!
+                        </div>
                     </div>
                 </div>
-                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto space-y-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Google AI Studio API Key</label>
-                    <div class="relative flex items-center">
-                        <input id="settings-api-key" type="password" placeholder="Paste your API key here..." class="w-full bg-brand-black border border-slate-800 rounded-lg p-3 text-xs text-cyan-400 focus:border-brand-violet/50 focus:outline-none focus:ring-1 focus:ring-brand-violet/40 pr-10">
-                        <button onclick="toggleApiKeyVisibility()" type="button" class="absolute right-3 text-slate-500 hover:text-slate-300 focus:outline-none" title="Toggle visibility">
-                            <i id="api-key-visibility-icon" class="fa-solid fa-eye text-xs"></i>
+
+                <!-- Active Chat Viewport Wrapper -->
+                <div id="active-chat-viewport" class="hidden space-y-4 max-w-4xl mx-auto pb-10">
+                    <div class="flex items-center justify-between border-b border-dungeon-700/60 pb-3 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs bg-dungeon-accent/20 text-dungeon-accent border border-dungeon-accent/35 px-2 py-0.5 rounded-full font-semibold uppercase font-display">Active Session</span>
+                            <h3 id="active-chat-title" class="text-sm font-bold text-white truncate max-w-[200px] md:max-w-[400px]">Connecting...</h3>
+                        </div>
+                        <button id="clear-active-chat-btn" class="text-xs text-red-400/80 hover:text-red-400 flex items-center gap-1 transition" title="Clear this chat">
+                            <i class="fa-regular fa-trash-can"></i>
+                            <span class="hidden md:inline">Delete Logs</span>
                         </button>
                     </div>
-                    <div class="text-[11px] text-slate-500 leading-normal space-y-1.5 mt-2">
-                        <p>
-                            <i class="fa-solid fa-circle-info text-brand-cyan mr-1"></i>
-                            <strong>Leaving this blank</strong> relies on the local environment's custom auto-injection while editing.
-                        </p>
-                        <p>
-                            <i class="fa-solid fa-cloud-arrow-up text-brand-violet mr-1"></i>
-                            <strong>For Standalone / GitHub Pages:</strong> You must paste your free API key from <a href="https://aistudio.google.com/" target="_blank" class="text-brand-violet underline hover:text-brand-cyan font-bold">Google AI Studio</a> to power CribMan in production.
-                        </p>
+                    
+                    <!-- Appended dialog elements will reside here -->
+                    <div id="messages-list-wrapper" class="space-y-4"></div>
+                    
+                    <!-- Dynamic Loading Skeletal Template -->
+                    <div id="ai-skeleton-loader" class="hidden flex items-start space-x-3 bg-dungeon-800/40 p-4 rounded-xl border border-dungeon-700/50 animate-pulse">
+                        <div class="w-8 h-8 rounded-full bg-dungeon-cyan/30 flex items-center justify-center text-xs">🤖</div>
+                        <div class="flex-1 space-y-2">
+                            <div class="h-2 bg-slate-700 rounded w-1/4"></div>
+                            <div class="h-2.5 bg-slate-700 rounded w-5/6"></div>
+                            <div class="h-2 bg-slate-700 rounded w-1/2"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="p-4 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-3 shrink-0">
-                <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
-                <button onclick="saveSettings()" class="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-sm font-bold shadow-lg shadow-brand-violet/10 hover:brightness-110 transition-all">Save Config</button>
+
+            <!-- Input Controls Base -->
+            <footer class="bg-dungeon-800 border-t border-dungeon-700 p-4 shrink-0">
+                <form id="chat-query-form" class="max-w-4xl mx-auto flex items-center space-x-2 relative">
+                    <input type="text" id="chat-input-field" placeholder="Draft a prompt, or dispatch a scroll to a bro..." class="flex-1 bg-dungeon-900 border border-dungeon-700 focus:border-dungeon-cyan focus:ring-1 focus:ring-dungeon-cyan rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none transition placeholder-slate-500" autocomplete="off" disabled>
+                    <button type="submit" id="submit-prompt-btn" class="bg-gradient-to-r from-dungeon-cyan to-dungeon-accent hover:opacity-90 text-white rounded-xl px-5 py-3 text-sm font-bold transition flex items-center justify-center space-x-1" disabled>
+                        <i class="fa-regular fa-paper-plane"></i>
+                    </button>
+                </form>
+                <div class="max-w-4xl mx-auto mt-2 flex items-center justify-between text-[10px] text-slate-500 px-1">
+                    <span>CribMan always secures your account credentials before checking data.</span>
+                    <span id="connection-status-lbl" class="font-mono text-amber-500">Connecting to Firebase...</span>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+
+    <!-- Modal 1: Memory Bank Configuration Manager -->
+    <div id="memory-bank-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-dungeon-800 border border-dungeon-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-4 bg-dungeon-900 border-b border-dungeon-700 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-brain text-dungeon-accent text-lg"></i>
+                    <h4 class="font-display font-bold text-white text-base">CribMan Memory Bank Context</h4>
+                </div>
+                <button class="modal-close-trigger text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-4 flex-1 overflow-y-auto">
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    This JSON configuration contains your user profile, inside jokes, and custom classroom parameters. CribMan parses this prior to answering your queries!
+                </p>
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">JSON Editor</label>
+                    <textarea id="memory-bank-json-textarea" rows="10" class="w-full bg-dungeon-900 border border-dungeon-700 focus:border-dungeon-accent rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-dungeon-accent"></textarea>
+                </div>
+                <div id="json-format-error-log" class="hidden text-xs text-red-400 bg-red-950/40 p-2.5 rounded-lg border border-red-900/40 font-mono">
+                    ⚠️ Invalid JSON formatting detected. Check bracket closures.
+                </div>
+            </div>
+            <div class="p-4 bg-dungeon-900 border-t border-dungeon-700 flex justify-end space-x-2">
+                <button class="modal-close-trigger text-xs text-slate-400 hover:text-white px-4 py-2 transition">Discard</button>
+                <button id="save-memory-bank-btn" class="bg-dungeon-accent text-white text-xs font-bold px-4 py-2 rounded-lg hover:opacity-90 transition">Save Context</button>
             </div>
         </div>
     </div>
 
-    <!-- NOTIFICATION TOAST -->
-    <div id="notification-toast" class="fixed bottom-6 right-6 bg-brand-card border border-brand-cyan/40 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
-        <div class="w-7 h-7 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan" id="toast-icon">
-            <i class="fa-solid fa-check"></i>
-        </div>
-        <div>
-            <h4 class="text-xs font-bold text-white uppercase tracking-wider" id="toast-title">Success</h4>
-            <p class="text-xs text-slate-400 font-medium" id="toast-message">Task updated, bro!</p>
+    <!-- Modal 2: API Keys & Account Config Settings Manager -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-dungeon-800 border border-dungeon-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-4 bg-dungeon-900 border-b border-dungeon-700 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-gears text-dungeon-cyan text-lg"></i>
+                    <h4 class="font-display font-bold text-white text-base">CribMan Settings</h4>
+                </div>
+                <button class="modal-close-trigger text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-300 block">Google AI Studio API Key</label>
+                    <input type="password" id="custom-api-key-input" placeholder="Paste your AI Studio key (AIzaSy...)" class="w-full bg-dungeon-900 border border-dungeon-700 focus:border-dungeon-cyan rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-dungeon-cyan">
+                    <p class="text-[10px] text-slate-400 leading-normal">
+                        Your API key will remain stored entirely inside your private sandbox cache and synced profile. If empty, offline/instructions mode triggers.
+                    </p>
+                </div>
+                
+                <div class="border-t border-dungeon-700 pt-4 space-y-2">
+                    <label class="text-xs font-bold text-slate-300 block">Mock Testing Control Desk</label>
+                    <div class="flex space-x-2">
+                        <button id="trigger-mock-login-btn" class="flex-1 bg-dungeon-700 hover:bg-dungeon-600 border border-dungeon-600 text-xs py-2 px-3 rounded-lg text-slate-200 transition">
+                            Log In Mock Account
+                        </button>
+                        <button id="trigger-mock-logout-btn" class="flex-1 bg-red-950/40 hover:bg-red-950/65 border border-red-900/40 text-xs py-2 px-3 rounded-lg text-red-400 transition">
+                            Log Out Mock
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-slate-500">Use mock login actions to preview account/friends database flows if the browser sandbox blocks popups.</p>
+                </div>
+            </div>
+            <div class="p-4 bg-dungeon-900 border-t border-dungeon-700 flex justify-end space-x-2">
+                <button class="modal-close-trigger text-xs text-slate-400 hover:text-white px-4 py-2 transition">Cancel</button>
+                <button id="save-settings-btn" class="bg-dungeon-cyan text-white text-xs font-bold px-4 py-2 rounded-lg hover:opacity-90 transition">Save Settings</button>
+            </div>
         </div>
     </div>
 
-    <!-- CONFIRM DIALOG FOR MOCK ACTION (SCROLL TRIGGER) -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
-        <div class="bg-brand-card border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center space-y-4">
-            <div class="w-14 h-14 rounded-full bg-brand-violet/20 text-brand-violet mx-auto flex items-center justify-center text-2xl">
-                <i class="fa-solid fa-scroll"></i>
+    <!-- Scroll Confirmation Intercept Overlay Modal -->
+    <div id="scroll-confirm-modal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-amber-950 to-amber-900 border border-amber-600/40 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-slate-200 transform scale-95 transition-transform duration-200">
+            <div class="p-4 bg-amber-950/80 border-b border-amber-800/40 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">📜</span>
+                    <h4 class="font-display font-bold text-amber-200 text-base">Scroll Dispatch Authorization</h4>
+                </div>
+                <button id="close-scroll-confirm-btn" class="text-amber-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div>
-                <h3 class="font-display font-bold text-lg text-white">Send Scroll Request?</h3>
-                <p class="text-xs text-slate-400 mt-1" id="confirm-modal-text">CribMan wants to send a secure Scroll with your message details.</p>
+            <div class="p-5 space-y-4">
+                <div class="flex items-center space-x-3 bg-amber-900/40 p-3 rounded-xl border border-amber-700/30">
+                    <div class="text-3xl">📬</div>
+                    <div>
+                        <span class="text-xs block text-amber-400 font-bold uppercase tracking-wide">Recipient Resolution</span>
+                        <p id="resolved-recipient-email" class="text-sm font-mono text-white">Searching friends directory...</p>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Scroll Content Message</label>
+                    <div id="compiled-scroll-text-preview" class="w-full bg-amber-950/60 border border-amber-800/40 rounded-xl p-3 text-xs italic text-slate-100 min-h-[60px] max-h-[120px] overflow-y-auto leading-relaxed"></div>
+                </div>
+                <p class="text-[10px] text-amber-400/80 italic leading-snug">
+                    *Privacy Shield Triggered: CribMan requested permission before writing this scroll to the public game dungeon channel!
+                </p>
             </div>
-            <div class="flex gap-3 pt-2">
-                <button onclick="closeConfirmModal(false)" class="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors">Cancel</button>
-                <button onclick="closeConfirmModal(true)" class="flex-1 py-2 rounded-lg bg-gradient-to-r from-brand-violet to-brand-cyan text-brand-black text-xs font-bold shadow-lg transition-all">Send Scroll</button>
+            <div class="p-4 bg-amber-950/80 border-t border-amber-800/40 flex justify-end space-x-2">
+                <button id="cancel-scroll-confirm-btn" class="text-xs text-amber-400 hover:text-white px-4 py-2 transition">Destroy Scroll</button>
+                <button id="execute-scroll-confirm-btn" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-md shadow-amber-950">Approve & Send</button>
             </div>
         </div>
     </div>
 
-    <!-- FIREBASE AND CORE IMPLEMENTATION MODULE -->
+    <!-- Live Incoming Scroll parchment Alert Drawer -->
+    <div id="incoming-scroll-parchment-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 transform transition-all duration-350 translate-y-[-150%] hidden">
+        <div class="bg-gradient-to-r from-amber-900 to-amber-950 border-2 border-amber-500 rounded-2xl p-4 shadow-2xl relative text-amber-100 flex items-start space-x-3 overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 select-none">📜</div>
+            <div class="text-2xl mt-1 shrink-0">📜</div>
+            <div class="flex-1 space-y-1">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">Incoming Scroll!</span>
+                    <button id="dismiss-scroll-overlay-btn" class="text-amber-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xs"></i></button>
+                </div>
+                <div class="space-y-1">
+                    <span id="incoming-scroll-sender-lbl" class="text-[10px] font-mono block text-amber-300">From: some_bro</span>
+                    <p id="incoming-scroll-message-lbl" class="text-xs italic leading-relaxed text-white"></p>
+                </div>
+                <div class="pt-2 flex justify-end">
+                    <button id="copy-incoming-scroll-btn" class="bg-amber-700/60 hover:bg-amber-700 text-amber-200 text-[10px] font-bold px-2 py-1 rounded transition">Copy Content</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase Connection Pipeline Scripts -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Global Application State configuration
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'the-game-dungeon-4d75d';
-        const firebaseConfig = typeof __firebase_config !== 'undefined'
-            ? JSON.parse(__firebase_config)
-            : {
-                apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
-                authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
-                projectId: "the-game-dungeon-4d75d",
-                storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
-                messagingSenderId: "533459716906",
-                appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
-                measurementId: "G-CER9SE96MC"
-              };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
 
-        // Initialize Firebase
+        // Initialize Firebase SDK references
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // State machine matching UI actions
-        let appState = {
-            isLoggedIn: false,
-            currentUser: {
-                uid: "",
-                name: "Guest Bro",
-                email: "offline@thecrib.org",
-                photoUrl: "https://placehold.co/150/8b5cf6/ffffff?text=😎"
-            },
-            chats: [],
+        const appId = "the-game-dungeon-4d75d"; // Force-matched Project ID bypass
+
+        // Global Local Application Cache State
+        const appState = {
             activeChatId: null,
+            chats: [],
             friends: [],
+            currentUser: {
+                uid: null,
+                name: "Guest Bro",
+                email: "",
+                photo: null
+            },
             memoryBank: {
                 user: "null",
                 context: "Connor is zesty and has noodle hair. Sod-erdine acts tuff but isn’t.",
@@ -470,615 +378,328 @@
             settings: {
                 apiKey: ""
             },
-            isAiGenerating: false
+            interceptedScroll: null
         };
 
-        // Navigation state tracks
-        let sidebarOpen = window.innerWidth >= 768;
-        const greetings = [
-            "What’s up, bro?",
-            "How’s it hangin’?",
-            "Let’s get cooking!"
-        ];
-        let pendingScrollAction = null;
-        let processedScrolls = new Set();
-        let activeIncomingScroll = null;
 
-        // Listeners & Real-Time Sync Controllers matching strict RULE 1 & RULE 2 rules
-        let activeChatListener = null;
-        let activeFriendsListener = null;
-        let activeMemoryListener = null;
-        let activeScrollsListener = null;
-        let activeSettingsListener = null;
-
-        async function setupFirestoreSync(userId) {
-            // Unsubscribe existing listeners to prevent leaks
-            if (activeChatListener) activeChatListener();
-            if (activeFriendsListener) activeFriendsListener();
-            if (activeMemoryListener) activeMemoryListener();
-            if (activeScrollsListener) activeScrollsListener();
-            if (activeSettingsListener) activeSettingsListener();
-
-            // Synced collection paths following strict RULE 1 parameters
-            const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
-            const memoryDoc = doc(db, 'artifacts', appId, 'users', userId, 'memoryBank', 'current');
-            const scrollsCol = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
-            const settingsDoc = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'current');
-
-            // Resolve the current user's profile document name (email without domain)
-            const userEmail = appState.currentUser.email || "";
-            const username = userEmail.split('@')[0] || "guest";
-            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', username);
-
-            // Update UI status path
-            const pathTag = document.getElementById('sync-doc-path');
-            if (pathTag) {
-                pathTag.textContent = `users/${username}`;
-            }
-
-            // Sync Settings Document (Rule 1 Compliant)
-            activeSettingsListener = onSnapshot(settingsDoc, (docSnap) => {
-                if (docSnap.exists()) {
-                    appState.settings = docSnap.data();
-                    const keyInput = document.getElementById('settings-api-key');
-                    if (keyInput) {
-                        keyInput.value = appState.settings.apiKey || "";
-                    }
-                } else {
-                    // Pull fallback from local storage cache first
-                    const cachedKey = localStorage.getItem('cribman_custom_api_key') || "";
-                    appState.settings = { apiKey: cachedKey };
-                    setDoc(settingsDoc, appState.settings);
-                }
-            }, (error) => console.error("Firestore Settings sync failed", error));
-
-            // Listen for user chat arrays with state safeguards to prevent overwrite conflicts
-            activeChatListener = onSnapshot(chatsCol, (snapshot) => {
-                const list = [];
-                snapshot.forEach(d => {
-                    list.push({ id: d.id, ...d.data() });
-                });
-                // Sort chats in memory (Rule 2 requirement)
-                list.sort((a, b) => b.createdAt - a.createdAt);
-                
-                if (!appState.isAiGenerating) {
-                    appState.chats = list;
-                    renderChatList();
-                    if (appState.activeChatId) {
-                        renderMessages();
-                    }
-                } else {
-                    // Update metadata and external list elements but protect the active chat messages during generation
-                    appState.chats = list.map(c => {
-                        if (c.id === appState.activeChatId) {
-                            const localActive = appState.chats.find(la => la.id === appState.activeChatId);
-                            return localActive ? { ...c, messages: localActive.messages } : c;
-                        }
-                        return c;
-                    });
-                    renderChatList();
-                }
-            }, (error) => console.error("Firestore Chats load failed", error));
-
-            // Listen for customized context
-            activeMemoryListener = onSnapshot(memoryDoc, (docSnap) => {
-                if (docSnap.exists()) {
-                    appState.memoryBank = docSnap.data();
-                    document.getElementById('memory-bank-editor').value = JSON.stringify(appState.memoryBank, null, 2);
-                } else {
-                    // Populate empty context with the default payload
-                    setDoc(memoryDoc, appState.memoryBank);
-                }
-            }, (error) => console.error("Firestore Memory Context load failed", error));
-
-            // Listen for central public friends roster (Rule 1 & Rule 2 compliant lookup)
-            activeFriendsListener = onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const friendsArray = data.friends || [];
-                    
-                    appState.friends = friendsArray.map((f, index) => {
-                        if (typeof f === 'string') {
-                            return {
-                                id: `friend-${index}`,
-                                name: f,
-                                email: f.includes('@') ? f : `${f}@school.edu` // Default scroll target email resolver
-                            };
-                        } else if (f && typeof f === 'object') {
-                            return {
-                                id: f.id || `friend-${index}`,
-                                name: f.name || "Unknown Bro",
-                                email: f.email || (f.name ? `${f.name.toLowerCase()}@school.edu` : "")
-                            };
-                        }
-                        return null;
-                    }).filter(Boolean);
-                } else {
-                    appState.friends = [];
-                }
-                renderFriends();
-            }, (error) => console.error("Firestore Friends lookup failed", error));
-
-            // Listen for multiplayer interactive Scrolls
-            // RULE 2: Get all documents, filter recipient target in-memory
-            const sessionStartTime = Date.now();
-            activeScrollsListener = onSnapshot(scrollsCol, (snapshot) => {
-                const userEmailLower = appState.currentUser.email.toLowerCase().trim();
-                snapshot.forEach(docSnap => {
-                    const scroll = docSnap.data();
-                    if (scroll.recipientEmail.toLowerCase().trim() === userEmailLower) {
-                        // Exclude historically resolved scrolls before current connection
-                        if (!processedScrolls.has(docSnap.id)) {
-                            processedScrolls.add(docSnap.id);
-                            if (scroll.timestamp > sessionStartTime - 10000) {
-                                triggerScrollAlert(scroll);
-                            }
-                        }
-                    }
-                });
-            }, (error) => console.error("Firestore Scrolls feed failed", error));
-        }
-
-        // Interface and dynamic template compilers
-        window.addEventListener('load', () => {
-            initializeWelcomeScreen();
-            updateSidebarUI();
-            initAuth();
-        });
-
-        window.addEventListener('resize', () => {
-            updateSidebarUI();
-        });
-
-        // RULE 3 Authentication protocol
-        async function initAuth() {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                try {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } catch (err) {
-                    await signInAnonymously(auth);
-                }
-            } else {
-                await signInAnonymously(auth);
-            }
-        }
-
+        // Listen to User Authentication Status Transitions
         onAuthStateChanged(auth, async (user) => {
+            const statusLabel = document.getElementById('connection-status-lbl');
             if (user) {
-                appState.isLoggedIn = !user.isAnonymous;
                 appState.currentUser.uid = user.uid;
-                appState.currentUser.email = user.email || `${user.uid}@gamedungeon.org`;
-                appState.currentUser.name = user.displayName || (user.isAnonymous ? "Guest Bro" : user.email.split('@')[0]);
-                appState.currentUser.photoUrl = user.photoURL || `https://placehold.co/150/8b5cf6/ffffff?text=${encodeURIComponent(appState.currentUser.name[0])}`;
+                appState.currentUser.name = user.displayName || user.email.split('@')[0];
+                appState.currentUser.email = user.email;
+                appState.currentUser.photo = user.photoURL;
 
-                document.getElementById('cloud-status-indicator').classList.remove('hidden');
-                document.getElementById('cloud-storage-tag').textContent = "Cloud Sync Active";
+                // Bind account state elements to headers
+                document.getElementById('account-username').textContent = appState.currentUser.name;
+                const avatar = document.getElementById('avatar-element');
+                if (user.photoURL) {
+                    avatar.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
+                } else {
+                    avatar.textContent = appState.currentUser.name.charAt(0).toUpperCase();
+                }
 
-                // Bind Firestore feeds now that Auth is validated (Rule 3 compliant)
-                setupFirestoreSync(user.uid);
+                statusLabel.textContent = "Dungeon Sync Online";
+                statusLabel.className = "font-mono text-emerald-400";
+
+                // Pull or create secure profile sync blocks
+                await syncUserData();
+                initializeRealtimeListeners(user.uid);
             } else {
-                await initAuth();
+                // If offline or blocked by browser iframe sandboxing rules, trigger default anonymous sandbox session
+                console.warn("Iframe blocked Google Popups, falling back to local sandbox session...");
+                statusLabel.textContent = "Database Standalone Mode (Secure)";
+                statusLabel.className = "font-mono text-slate-400";
+                
+                // Fallback config variables
+                appState.currentUser.uid = "sandbox_anon_id";
+                appState.currentUser.name = "Guest Bro";
+                appState.currentUser.email = "guest_bro@game-dungeon.com";
+                
+                document.getElementById('account-username').textContent = appState.currentUser.name;
+                document.getElementById('avatar-element').textContent = "👤";
+
+                // Pull local mock profiles
+                loadMockLocalStorageData();
             }
-            renderAuthHeader();
+            
+            // Activate query actions once system environment state is fully initialized
+            document.getElementById('chat-input-field').disabled = false;
+            document.getElementById('submit-prompt-btn').disabled = false;
         });
 
-        // Renders visual states
-        function renderAuthHeader() {
-            const authContainer = document.getElementById('auth-container');
-            if (appState.isLoggedIn) {
-                authContainer.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <button onclick="window.triggerSignOut()" class="text-[10px] text-slate-500 hover:text-slate-400 bg-slate-950/40 px-2 py-1 rounded border border-slate-800" title="Log Out Mock">
-                            Disconnect
-                        </button>
-                        <div class="relative group block">
-                            <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-violet to-brand-cyan rounded-full blur opacity-30"></div>
-                            <img class="w-9 h-9 rounded-full relative z-10 border border-slate-700 hover:scale-105 transition-transform" 
-                                 src="${appState.currentUser.photoUrl}" 
-                                 alt="Profile avatar" 
-                                 onerror="this.src='https://placehold.co/150/8b5cf6/ffffff?text=😎'">
-                        </div>
-                    </div>
-                `;
-            } else {
-                authContainer.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <button onclick="window.triggerSignIn()" class="text-[10px] text-brand-cyan hover:text-white bg-slate-950/40 px-2 py-1 rounded border border-brand-cyan/20" title="Connect Cloud Profile">
-                            Force Cloud Demo
-                        </button>
-                    </div>
-                `;
-            }
-        }
+        // Pull & Sync Client Settings / Memory Configurations
+        async function syncUserData() {
+            const userId = appState.currentUser.uid;
+            if (userId === "sandbox_anon_id") return;
 
-        // Collapsible Drawer Transitions
-        function toggleSidebar(forcedState = null) {
-            if (forcedState !== null) {
-                sidebarOpen = forcedState;
-            } else {
-                sidebarOpen = !sidebarOpen;
-            }
-            updateSidebarUI();
-        }
-
-        function updateSidebarUI() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('drawer-overlay');
-            const mainContent = document.querySelector('main');
-            const isMobile = window.innerWidth < 768;
-
-            if (sidebarOpen) {
-                sidebar.classList.remove('-translate-x-full');
-                sidebar.classList.add('translate-x-0');
-                if (isMobile) {
-                    overlay.classList.remove('hidden');
-                    setTimeout(() => overlay.classList.add('opacity-100'), 10);
-                } else {
-                    mainContent.classList.add('md:pl-80');
-                    overlay.classList.add('hidden');
-                }
-            } else {
-                sidebar.classList.remove('translate-x-0');
-                sidebar.classList.add('-translate-x-full');
-                if (isMobile) {
-                    overlay.classList.remove('opacity-100');
-                    setTimeout(() => { if (!sidebarOpen) overlay.classList.add('hidden'); }, 300);
-                } else {
-                    mainContent.classList.remove('md:pl-80');
-                }
-            }
-        }
-
-        function initializeWelcomeScreen() {
-            document.getElementById('welcome-greeting').textContent = greetings[Math.floor(Math.random() * greetings.length)];
-        }
-
-        function autoExpandTextarea(element) {
-            element.style.height = "auto";
-            element.style.height = (element.scrollHeight) + "px";
-        }
-
-        function useSuggestion(text) {
-            const chatInput = document.getElementById('chat-input');
-            chatInput.value = text;
-            chatInput.focus();
-            autoExpandTextarea(chatInput);
-        }
-
-        function showToast(message, type = "success") {
-            const toast = document.getElementById('notification-toast');
-            const icon = document.getElementById('toast-icon');
-            const title = document.getElementById('toast-title');
-            const desc = document.getElementById('toast-message');
-
-            if (type === "success") {
-                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-                icon.className = "w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400";
-                title.textContent = "DEAL SECURED";
-            } else if (type === "info") {
-                icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
-                icon.className = "w-7 h-7 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan";
-                title.textContent = "CRIB LOG";
-            } else {
-                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
-                icon.className = "w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400";
-                title.textContent = "SYSTEM WARNING";
-            }
-
-            desc.textContent = message;
-            toast.className = "fixed bottom-6 right-6 bg-brand-card border border-slate-700/80 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-0 opacity-100";
-            setTimeout(() => {
-                toast.className = "fixed bottom-6 right-6 bg-brand-card border border-slate-700/80 px-5 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none";
-            }, 3000);
-        }
-
-        // Cloud Sync Memory Bank Configs
-        function openMemoryBank() {
-            document.getElementById('memory-bank-modal').classList.remove('hidden');
-        }
-        function closeMemoryBank() {
-            document.getElementById('memory-bank-modal').classList.add('hidden');
-        }
-        async function saveMemoryBank() {
-            const editorText = document.getElementById('memory-bank-editor').value;
-            const validationMsg = document.getElementById('memory-validation-msg');
             try {
-                const parsed = JSON.parse(editorText);
-                const userId = auth.currentUser?.uid;
-                if (!userId) return;
+                // Fetch user data context
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                const userSnap = await getDoc(userDocRef);
 
-                const memoryDoc = doc(db, 'artifacts', appId, 'users', userId, 'memoryBank', 'current');
-                await setDoc(memoryDoc, parsed);
-                validationMsg.classList.add('hidden');
-                closeMemoryBank();
-                showToast("Memory Bank saved to cloud. Context updated!", "success");
-            } catch(e) {
-                validationMsg.classList.remove('hidden');
+                if (!userSnap.exists()) {
+                    // Populate default Firestore context fields if starting a first-time setup
+                    await setDoc(userDocRef, {
+                        createdAt: Date.now(),
+                        memoryBank: appState.memoryBank,
+                        settings: {
+                            apiKey: localStorage.getItem('cribman_custom_api_key') || ""
+                        }
+                    });
+                } else {
+                    const data = userSnap.data();
+                    if (data.memoryBank) appState.memoryBank = data.memoryBank;
+                    if (data.settings) appState.settings = data.settings;
+                }
+
+                // Hydrate local cache and sync settings inputs
+                document.getElementById('custom-api-key-input').value = appState.settings.apiKey || "";
+                document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
+
+                // Fetch dynamic, central Game Dungeon friends directory
+                await syncCentralFriendsDirectory();
+
+            } catch (err) {
+                console.error("Firestore initialization error, fallback to local variables", err);
             }
         }
 
-        // Cloud Sync Friends Configs
-        function openFriendsList() {
-            document.getElementById('friends-modal').classList.remove('hidden');
-        }
-        function closeFriendsList() {
-            document.getElementById('friends-modal').classList.add('hidden');
-        }
-        function renderFriends() {
-            const container = document.getElementById('friends-list-container');
-            container.innerHTML = '';
-            
-            if (appState.friends.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-6 text-slate-500 text-xs space-y-2">
-                        <i class="fa-solid fa-users-slash text-2xl opacity-40 block"></i>
-                        <p>No synced crew found. Verify your user document exists in your Game Dungeon database setup!</p>
-                    </div>
-                `;
-                return;
-            }
 
-            appState.friends.forEach(f => {
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 transition-colors animate-fade-in";
-                item.innerHTML = `
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-6.5 h-6.5 rounded-md bg-brand-cyan/15 border border-brand-cyan/25 flex items-center justify-center text-[10px] text-brand-cyan">
-                            <i class="fa-solid fa-user-tag"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs font-bold text-white">${f.name}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">${f.email}</div>
-                        </div>
-                    </div>
-                    <span class="text-[9px] text-brand-cyan/80 font-bold uppercase tracking-wider bg-brand-cyan/10 px-2 py-0.5 rounded-md border border-brand-cyan/15">Profile</span>
-                `;
-                container.appendChild(item);
+        // Pull friends dynamically from Game Dungeon lookup tables
+        async function syncCentralFriendsDirectory() {
+            const email = appState.currentUser.email;
+            if (!email) return;
+
+            // Extract username (the email before the '@')
+            const username = email.split('@')[0];
+            const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', username);
+
+            try {
+                const profileSnap = await getDoc(profileRef);
+                if (profileSnap.exists()) {
+                    const data = profileSnap.data();
+                    // Process friends array
+                    if (data && Array.isArray(data.friends)) {
+                        appState.friends = [];
+                        
+                        // Parse array items whether they are objects or flat strings
+                        data.friends.forEach(friend => {
+                            if (typeof friend === 'string') {
+                                // Extract name from string email
+                                const namePart = friend.split('@')[0];
+                                const capitalized = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+                                appState.friends.push({
+                                    name: capitalized,
+                                    email: friend
+                                });
+                            } else if (friend && typeof friend === 'object' && friend.email) {
+                                appState.friends.push({
+                                    name: friend.name || friend.email.split('@')[0],
+                                    email: friend.email
+                                });
+                            }
+                        });
+                        
+                        document.getElementById('friends-indicator-count').textContent = `${appState.friends.length} Synced`;
+                    } else {
+                        document.getElementById('friends-indicator-count').textContent = "0 Friends";
+                    }
+                } else {
+                    // Create default placeholder block for development convenience
+                    document.getElementById('friends-indicator-count').textContent = "No Profile Document";
+                    console.info("To populate friends, create a document in your Firestore panel at path: artifacts/the-game-dungeon-4d75d/public/data/users/" + username);
+                }
+            } catch (error) {
+                console.error("Error retrieving central Game Dungeon friends profile catalog:", error);
+            }
+        }
+
+        // Setup real-time listeners for active messages/logs sync
+        let chatLogsUnsubscribe = null;
+        let incomingScrollsUnsubscribe = null;
+
+        function initializeRealtimeListeners(userId) {
+            if (chatLogsUnsubscribe) chatLogsUnsubscribe();
+            if (incomingScrollsUnsubscribe) incomingScrollsUnsubscribe();
+
+            // 1. Listen for Chats
+            const chatsColRef = collection(db, 'artifacts', appId, 'users', userId, 'chats');
+            const q = query(chatsColRef, orderBy('createdAt', 'desc'), limit(25));
+
+            chatLogsUnsubscribe = onSnapshot(q, (snapshot) => {
+                const fetchedChats = [];
+                snapshot.forEach((doc) => {
+                    fetchedChats.push({ id: doc.id, ...doc.data() });
+                });
+                
+                appState.chats = fetchedChats;
+                renderChatList();
+
+                // If URL contains an active chat title query parameter, try loading it
+                const urlParams = new URLSearchParams(window.location.search);
+                const chatSlug = urlParams.get('chat');
+                
+                if (chatSlug && !appState.activeChatId) {
+                    const matchedChat = appState.chats.find(c => {
+                        const formattedTitle = encodeURIComponent(c.title.toLowerCase().replace(/\s+/g, '-'));
+                        return formattedTitle === chatSlug;
+                    });
+                    if (matchedChat) {
+                        selectChat(matchedChat.id);
+                    }
+                }
+            }, (error) => {
+                console.error("Chats pipeline snapshot retrieval failed:", error);
+            });
+
+            // 2. Listen for Live Incoming Scrolls sent directly to current user's email
+            const scrollsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
+            const scrollsQuery = query(scrollsColRef, where('recipient', '==', appState.currentUser.email), orderBy('timestamp', 'desc'), limit(1));
+
+            incomingScrollsUnsubscribe = onSnapshot(scrollsQuery, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const scrollData = change.doc.data();
+                        // Verify that we do not show stale historical logs (must be newer than 15 seconds)
+                        if (scrollData.timestamp > Date.now() - 15000) {
+                            showLiveScrollOverlay(scrollData);
+                        }
+                    }
+                });
+            }, (error) => {
+                console.error("Incoming scrolls real-time listener failed:", error);
             });
         }
 
-        async function addFriend(e) {
-            if (e) e.preventDefault();
-            showToast("Friends list is synced automatically from your profile!", "info");
-        }
 
-        async function removeFriend(id) {
-            showToast("Roster is managed from your main Game Dungeon profile.", "info");
-        }
+        // Offline Standalone configuration backups
+        function loadMockLocalStorageData() {
+            // Local fallback configuration setup
+            const localSavedKey = localStorage.getItem('cribman_custom_api_key') || "";
+            appState.settings.apiKey = localSavedKey;
+            document.getElementById('custom-api-key-input').value = localSavedKey;
 
-        // Cloud Sync Interactive Scroll alerts
-        function triggerScrollAlert(scrollData) {
-            activeIncomingScroll = scrollData;
-            document.getElementById('scroll-sender-display').textContent = scrollData.senderName;
-            document.getElementById('scroll-message-display').textContent = scrollData.text;
-            document.getElementById('incoming-scroll-container').classList.remove('hidden');
-        }
-
-        function dismissIncomingScroll() {
-            document.getElementById('incoming-scroll-container').classList.add('hidden');
-            activeIncomingScroll = null;
-        }
-
-        function copyScrollToClipboard() {
-            if (!activeIncomingScroll) return;
-            const el = document.createElement('textarea');
-            el.value = activeIncomingScroll.text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            showToast("Scroll copied to clipboard, bro!", "success");
-        }
-
-        function openConfirmModal(text, onAccept) {
-            document.getElementById('confirm-modal-text').textContent = text;
-            document.getElementById('confirm-modal').classList.remove('hidden');
-            pendingScrollAction = onAccept;
-        }
-
-        function closeConfirmModal(accepted) {
-            document.getElementById('confirm-modal').classList.add('hidden');
-            if (accepted && pendingScrollAction) {
-                pendingScrollAction();
+            const storedMemory = localStorage.getItem('cribman_local_memory_bank');
+            if (storedMemory) {
+                try {
+                    appState.memoryBank = JSON.parse(storedMemory);
+                } catch (e) {}
             }
-            pendingScrollAction = null;
+            document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
+
+            // Populate some mock playground buddies to make offline tests awesome
+            appState.friends = [
+                { name: "Daimyan", email: "daimyan@game-dungeon.com" },
+                { name: "Connor", email: "connor@game-dungeon.com" },
+                { name: "Sod", email: "sod@game-dungeon.com" },
+                { name: "Abas", email: "abas@game-dungeon.com" }
+            ];
+            document.getElementById('friends-indicator-count').textContent = `${appState.friends.length} Synced (Mock)`;
+
+            // Read mock chats list
+            const storedChats = localStorage.getItem('cribman_mock_chats');
+            if (storedChats) {
+                try {
+                    appState.chats = JSON.parse(storedChats);
+                } catch (e) {
+                    appState.chats = [];
+                }
+            }
+            renderChatList();
         }
 
-        function generateUrlSlug(titleText) {
-            return encodeURIComponent(titleText.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'));
-        }
 
-        // Render Sidebar Chat Directory
+        // Render Sidebar chats
         function renderChatList() {
-            const listContainer = document.getElementById('chat-list-container');
-            const placeholders = document.getElementById('no-chats-placeholder');
-            const header = listContainer.querySelector('.text-xs');
-            
-            listContainer.innerHTML = '';
-            if (header) listContainer.appendChild(header);
+            const scroller = document.getElementById('chats-scroller');
+            scroller.innerHTML = "";
 
             if (appState.chats.length === 0) {
-                listContainer.appendChild(placeholders);
-                placeholders.classList.remove('hidden');
+                scroller.innerHTML = `
+                    <div class="text-center py-8 px-4 text-slate-500 text-xs">
+                        <i class="fa-regular fa-comments text-xl block mb-2 opacity-55"></i>
+                        No chats started. Type below to cook!
+                    </div>
+                `;
                 return;
-            } else {
-                placeholders.classList.add('hidden');
             }
 
             appState.chats.forEach(chat => {
-                const item = document.createElement('div');
-                const isActive = appState.activeChatId === chat.id;
-                
-                item.className = `flex items-center justify-between group p-2.5 rounded-lg cursor-pointer transition-all ${
-                    isActive 
-                    ? 'bg-brand-violet/15 text-white border-l-2 border-brand-violet pl-2 font-medium' 
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40'
-                }`;
-                
-                item.onclick = (e) => {
-                    if (e.target.closest('.delete-chat-btn')) return;
-                    selectChat(chat.id);
-                };
+                const isSelected = chat.id === appState.activeChatId;
+                const activeClasses = isSelected 
+                    ? "bg-gradient-to-r from-dungeon-cyan/20 to-dungeon-accent/10 border-l-4 border-dungeon-cyan text-white" 
+                    : "text-slate-400 hover:text-slate-200 hover:bg-dungeon-700/50";
 
-                item.innerHTML = `
-                    <div class="flex items-center gap-2.5 overflow-hidden w-[85%]">
-                        <i class="fa-regular fa-message ${isActive ? 'text-brand-violet' : 'text-slate-500'} text-xs shrink-0"></i>
-                        <span class="truncate text-xs tracking-tight">${chat.title}</span>
+                const element = document.createElement('div');
+                element.className = `group mx-2 my-1 px-3 py-3 rounded-lg flex items-center justify-between cursor-pointer transition text-sm ${activeClasses}`;
+                element.innerHTML = `
+                    <div class="flex items-center space-x-2.5 truncate flex-1 select-none">
+                        <span class="text-xs">💬</span>
+                        <span class="truncate font-medium">${escapeHTML(chat.title)}</span>
                     </div>
-                    <button class="delete-chat-btn opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 text-[10px] transition-all" title="Wipe session" onclick="window.deleteChat('${chat.id}')">
-                        <i class="fa-solid fa-trash-can"></i>
+                    <button class="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 rounded transition absolute right-2 bg-dungeon-800/90" title="Delete conversation log">
+                        <i class="fa-regular fa-trash-can text-xs"></i>
                     </button>
                 `;
-                
-                listContainer.appendChild(item);
+
+                // Main navigation handler
+                element.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) {
+                        deleteChatSession(chat.id);
+                    } else {
+                        selectChat(chat.id);
+                        closeMobileDrawer();
+                    }
+                });
+
+                scroller.appendChild(element);
             });
         }
 
-        function startNewChatSession() {
-            appState.activeChatId = null;
-            try {
-                const url = new URL(window.location);
-                url.searchParams.delete('chat');
-                window.history.pushState({}, '', url);
-            } catch (historyError) {
-                console.warn("History state modification blocked by sandbox container", historyError);
-            }
-
-            document.getElementById('active-chat-viewport').classList.add('hidden');
-            document.getElementById('welcome-screen').classList.remove('hidden');
-            document.getElementById('chat-input').value = '';
-            initializeWelcomeScreen();
-            renderChatList();
-            
-            if (window.innerWidth < 768) {
-                toggleSidebar(false);
-            }
-        }
-
-        function selectChat(chatId) {
-            const chat = appState.chats.find(c => c.id === chatId);
-            if (!chat) return;
-
-            appState.activeChatId = chatId;
-            
-            try {
-                const url = new URL(window.location);
-                url.searchParams.set('chat', generateUrlSlug(chat.title));
-                window.history.pushState({}, '', url);
-            } catch (historyError) {
-                console.warn("History state modification blocked by sandbox container", historyError);
-            }
-
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('active-chat-viewport').classList.remove('hidden');
-            document.getElementById('active-chat-title').textContent = chat.title;
-            
-            renderMessages();
-            renderChatList();
-
-            if (window.innerWidth < 768) {
-                toggleSidebar(false);
-            }
-        }
-
-        async function deleteChat(chatId) {
-            const userId = auth.currentUser?.uid;
-            if (!userId) return;
-
-            const chatDoc = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-            await deleteDoc(chatDoc);
-            
-            if (appState.activeChatId === chatId) {
-                startNewChatSession();
-            } else {
-                renderChatList();
-            }
-            showToast("Wiped chat log from cloud directory.", "info");
-        }
-
-        function deleteCurrentChat() {
-            if (appState.activeChatId) {
-                deleteChat(appState.activeChatId);
-            }
-        }
-
+        // Populate and scroll into messages list
         function renderMessages() {
-            const chat = appState.chats.find(c => c.id === appState.activeChatId);
-            const container = document.getElementById('messages-window');
-            container.innerHTML = '';
+            const container = document.getElementById('messages-list-wrapper');
+            container.innerHTML = "";
 
-            if (!chat || !chat.messages || chat.messages.length === 0) return;
+            const activeChat = appState.chats.find(c => c.id === appState.activeChatId);
+            if (!activeChat) return;
 
-            chat.messages.forEach(msg => {
-                const wrapper = document.createElement('div');
-                const isUser = msg.role === 'user';
-                wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            activeChat.messages.forEach(msg => {
+                const isAI = msg.role === 'model';
+                const containerClasses = isAI ? 'justify-start' : 'justify-end';
+                const bubbleClasses = isAI 
+                    ? 'bg-dungeon-800 border border-dungeon-700 text-slate-100 rounded-bl-none' 
+                    : 'bg-gradient-to-r from-dungeon-cyan to-dungeon-accent text-white rounded-br-none font-medium';
                 
-                const rawText = msg.parts[0].text;
-                const formattedHtml = parseMarkdownToHtml(rawText);
+                const avatar = isAI 
+                    ? '<div class="w-8 h-8 rounded-full bg-dungeon-cyan/20 flex items-center justify-center text-xs border border-dungeon-cyan/30">🤖</div>'
+                    : `<div class="w-8 h-8 rounded-full bg-dungeon-accent flex items-center justify-center text-white font-bold text-xs">${appState.currentUser.name.charAt(0).toUpperCase()}</div>`;
 
-                if (isUser) {
-                    wrapper.innerHTML = `
-                        <div class="max-w-[85%] md:max-w-[70%] bg-brand-violet/20 border border-brand-violet/30 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm shadow-md">
-                            ${formattedHtml}
+                const renderedElement = document.createElement('div');
+                renderedElement.className = `flex items-start space-x-2.5 max-w-full ${containerClasses}`;
+                renderedElement.innerHTML = `
+                    ${isAI ? avatar : ''}
+                    <div class="max-w-[85%] md:max-w-[70%] space-y-1">
+                        <div class="px-4 py-3 rounded-2xl text-xs md:text-sm leading-relaxed shadow-sm ${bubbleClasses}">
+                            ${isAI ? parseMarkdown(msg.parts[0].text) : escapeHTML(msg.parts[0].text)}
                         </div>
-                    `;
-                } else {
-                    wrapper.innerHTML = `
-                        <div class="flex gap-3 max-w-[85%] md:max-w-[70%]">
-                            <div class="w-8 h-8 rounded-lg bg-brand-card border border-slate-700/80 flex items-center justify-center text-xs shrink-0 self-start shadow">
-                                <span>😎</span>
-                            </div>
-                            <div class="space-y-1.5 flex-1">
-                                <div class="text-[10px] text-slate-500 font-bold tracking-wide uppercase">CribMan</div>
-                                <div class="bg-brand-card border border-slate-800 text-slate-100 rounded-2xl rounded-tl-sm px-4 py-3.5 text-sm leading-relaxed prose shadow-sm">
-                                    ${formattedHtml}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-                container.appendChild(wrapper);
+                    </div>
+                    ${!isAI ? avatar : ''}
+                `;
+                container.appendChild(renderedElement);
             });
 
-            setTimeout(() => {
-                container.scrollTop = container.scrollHeight;
-            }, 10);
+            // Smooth scroll anchor focus
+            const scroller = document.getElementById('chat-messages-container');
+            scroller.scrollTop = scroller.scrollHeight;
         }
 
-        function parseMarkdownToHtml(text) {
-            let html = text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-            
-            html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-            html = html.replace(/^\s*\*\s+(.*?)$/gm, '<li class="list-disc ml-5 mb-1">$1</li>');
-            html = html.replace(/\n/g, '<br>');
 
-            if (html.includes('<li class="list-disc')) {
-                html = `<div class="space-y-1">${html}</div>`;
-            }
-            return html;
-        }
-
-        // Submit handler checks text parsing triggers
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            const inputEl = document.getElementById('chat-input');
-            const text = inputEl.value.trim();
-            if (!text || appState.isAiGenerating) return;
-
-            inputEl.value = '';
-            inputEl.style.height = 'auto';
-
-            await sendUserQuery(text);
-        }
-
+        // Send a message or detect if we need a custom Scroll confirmation prompt
         async function sendUserQuery(userText) {
-            const userId = auth.currentUser?.uid;
-            if (!userId) return;
-
+            const userId = auth.currentUser?.uid || "sandbox_anon_id";
             const apiKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
             const searchIntent = checkForScrollIntent(userText);
             let chatId = appState.activeChatId;
@@ -1098,26 +719,45 @@
                 if (!chatId || !currentChat) {
                     isNewChat = true;
                     messagesToSend = [{ role: 'user', parts: [{ text: userText }] }];
-                    const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
-                    const initialChat = {
-                        title: "Connecting...",
-                        messages: messagesToSend,
-                        createdAt: Date.now()
-                    };
-                    const docRef = await addDoc(chatsCol, initialChat);
-                    chatId = docRef.id;
-                    appState.activeChatId = chatId;
+                    
+                    if (userId !== "sandbox_anon_id") {
+                        const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
+                        const initialChat = {
+                            title: "Connecting...",
+                            messages: messagesToSend,
+                            createdAt: Date.now()
+                        };
+                        const docRef = await addDoc(chatsCol, initialChat);
+                        chatId = docRef.id;
+                        appState.activeChatId = chatId;
 
-                    // Optimistically add to local memory cache to keep rendering smooth
-                    currentChat = { id: chatId, ...initialChat };
-                    appState.chats.unshift(currentChat);
+                        // Optimistically add to local memory cache to keep rendering smooth
+                        currentChat = { id: chatId, ...initialChat };
+                        appState.chats.unshift(currentChat);
+                    } else {
+                        // Sandbox offline flow
+                        chatId = "sandbox_" + Date.now();
+                        appState.activeChatId = chatId;
+                        currentChat = {
+                            id: chatId,
+                            title: "Connecting...",
+                            messages: messagesToSend,
+                            createdAt: Date.now()
+                        };
+                        appState.chats.unshift(currentChat);
+                        localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+                    }
                 } else {
                     // Update and compile message history lists directly
                     messagesToSend = [...currentChat.messages, { role: 'user', parts: [{ text: userText }] }];
                     currentChat.messages = messagesToSend;
 
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    await updateDoc(chatRef, { messages: messagesToSend });
+                    if (userId !== "sandbox_anon_id") {
+                        const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                        await updateDoc(chatRef, { messages: messagesToSend });
+                    } else {
+                        localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+                    }
                 }
 
                 // Push dynamic updates to viewports optimistically
@@ -1138,12 +778,17 @@
                     const finalMessages = [...messagesToSend, { role: 'model', parts: [{ text: instructions }] }];
                     currentChat.messages = finalMessages;
                     
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    if (isNewChat) {
-                        await updateDoc(chatRef, { title: "Setup Required", messages: finalMessages });
-                        document.getElementById('active-chat-title').textContent = "Setup Required";
+                    if (userId !== "sandbox_anon_id") {
+                        const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                        if (isNewChat) {
+                            await updateDoc(chatRef, { title: "Setup Required", messages: finalMessages });
+                            document.getElementById('active-chat-title').textContent = "Setup Required";
+                        } else {
+                            await updateDoc(chatRef, { messages: finalMessages });
+                        }
                     } else {
-                        await updateDoc(chatRef, { messages: finalMessages });
+                        if (isNewChat) currentChat.title = "Setup Required";
+                        localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
                     }
                     
                     renderMessages();
@@ -1159,18 +804,24 @@
             } catch (error) {
                 console.error("AI Generation Error", error);
                 if (chatId) {
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    const errorNotice = `Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!\n\n` +
+                        `🔍 **Error Log Details:** \`${error.message}\`\n\n` +
+                        `💡 **Deployment Fix:** If you are running this standalone (on GitHub Pages/outside the preview), you need to add your custom Google AI Studio API Key in the Settings panel (gear icon at the top right) to connect CribMan directly to the cloud!`;
+                    
                     const currentChat = appState.chats.find(c => c.id === chatId);
                     if (currentChat) {
-                        const errorNotice = `Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!\n\n` +
-                            `💡 **Deployment Fix:** If you are running this standalone (on GitHub Pages/outside the preview), you need to add your custom Google AI Studio API Key in the Settings panel (gear icon at the top right) to connect CribMan directly to the cloud!`;
-                        
                         const errorLogs = [...currentChat.messages, {
                             role: 'model',
                             parts: [{ text: errorNotice }]
                         }];
                         currentChat.messages = errorLogs;
-                        await updateDoc(chatRef, { messages: errorLogs });
+                        
+                        if (userId !== "sandbox_anon_id") {
+                            const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                            await updateDoc(chatRef, { messages: errorLogs });
+                        } else {
+                            localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+                        }
                         renderMessages();
                     }
                 }
@@ -1179,120 +830,12 @@
             }
         }
 
-        function checkForScrollIntent(text) {
-            const keywords = ['scroll', 'send scroll', 'tell', 'message', 'surpassed', 'scores'];
-            const lowerText = text.toLowerCase();
-            const hasKeyword = keywords.some(k => lowerText.includes(k));
-            if (!hasKeyword) return null;
 
-            let detectedFriend = null;
-            appState.friends.forEach(f => {
-                if (lowerText.includes(f.name.toLowerCase())) {
-                    detectedFriend = f;
-                }
-            });
-
-            return {
-                isScrollIntent: true,
-                friend: detectedFriend,
-                rawText: text
-            };
-        }
-
-        async function handleScrollIntent(intentData, chatId, currentMessages) {
-            const userId = auth.currentUser?.uid;
-            if (!userId) return;
-
-            let targetEmail = "";
-            let targetName = "";
-
-            if (intentData.friend) {
-                targetName = intentData.friend.name;
-                targetEmail = intentData.friend.email;
-            } else {
-                // Friendly system notice block instead of browser prompt checks which get blocked in sub-iframes
-                const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                const currentChat = appState.chats.find(c => c.id === chatId);
-                const missingContactMessages = [...currentMessages, {
-                    role: 'model',
-                    parts: [{ text: "Bro, I see you want to transmit a scroll, but I don't know who you're talking to! Make sure they're listed in your **Game Dungeon Friends** sync file first so I can fetch their secure routing address. Let me know their name when you've synced them up!" }]
-                }];
-                if (currentChat) currentChat.messages = missingContactMessages;
-                await updateDoc(chatRef, { messages: missingContactMessages });
-                renderMessages();
-                return;
-            }
-
-            const simulatedAIPrompt = `Create an ultra-high energy, epic gaming-bro message to ${targetName} (${targetEmail}) describing: "${intentData.rawText}". Ensure to speak like CribMan, the ultimate Game Dungeon helper.`;
-            const rawDraft = await executeGeminiCall([{ role: 'user', parts: [{ text: simulatedAIPrompt }] }]);
-
-            const scrollActionDescription = `CribMan drafted this scroll for ${targetName} (${targetEmail}):\n\n"${rawDraft}"\n\nWould you like to send this scroll over the Game Dungeon communications pipe?`;
-            
-            openConfirmModal(scrollActionDescription, async () => {
-                // Post live scroll inside the public data collection (RULE 1 strictly applied)
-                const publicScrollsCol = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
-                await addDoc(publicScrollsCol, {
-                    senderId: userId,
-                    senderName: appState.currentUser.name,
-                    recipientEmail: targetEmail.toLowerCase().trim(),
-                    recipientName: targetName,
-                    text: rawDraft,
-                    timestamp: Date.now()
-                });
-
-                const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                const currentChat = appState.chats.find(c => c.id === chatId);
-                const finalMessages = [...currentMessages, {
-                    role: 'model',
-                    parts: [{ text: `🚀 **SCROLL TRANSMITTED!**\n\nDelivered safely to the cloud path for **${targetName}** (${targetEmail}).\n\nDraft content:\n*"${rawDraft}"*` }]
-                }];
-                if (currentChat) currentChat.messages = finalMessages;
-                await updateDoc(chatRef, { messages: finalMessages });
-                renderMessages();
-                showToast(`Scroll transmitted to ${targetName}!`, "success");
-            });
-
-            const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-            const currentChat = appState.chats.find(c => c.id === chatId);
-            const draftingMessages = [...currentMessages, {
-                role: 'model',
-                parts: [{ text: `Drafting scroll for **${targetName}** based on your context. Waiting for authorization...` }]
-            }];
-            if (currentChat) currentChat.messages = draftingMessages;
-            await updateDoc(chatRef, { messages: draftingMessages });
-            renderMessages();
-        }
-
+        // Query Gemini API directly with contextual instructions
         async function queryGeminiAPI(chatId, isNewChat, currentMessages) {
-            const userId = auth.currentUser?.uid;
-            if (!userId) return;
-
-            const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-            let chatTitle = "";
-
-            if (isNewChat) {
-                try {
-                    const firstQueryText = currentMessages[0]?.parts[0]?.text || "New Log";
-                    const titlePrompt = `Given the user's starting message, generate a 2-4 word punchy title for this conversation log. Do not use markdown or quotes. Return only the title. User text: "${firstQueryText}"`;
-                    const generatedTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: titlePrompt }] }]);
-                    chatTitle = generatedTitle.trim().replace(/^["']|["']$/g, '');
-                } catch(e) {
-                    chatTitle = "New Conversation";
-                }
-                
-                const currentChat = appState.chats.find(c => c.id === chatId);
-                if (currentChat) currentChat.title = chatTitle;
-                await updateDoc(chatRef, { title: chatTitle });
-                
-                document.getElementById('active-chat-title').textContent = chatTitle;
-                try {
-                    const url = new URL(window.location);
-                    url.searchParams.set('chat', generateUrlSlug(chatTitle));
-                    window.history.pushState({}, '', url);
-                } catch (historyError) {
-                    console.warn("History state modification blocked by sandbox container", historyError);
-                }
-            }
+            const userId = auth.currentUser?.uid || "sandbox_anon_id";
+            const currentChat = appState.chats.find(c => c.id === chatId);
+            if (!currentChat) return;
 
             const systemPrompt = `
                 You are "CribMan", the ultimate all-bro AI companion for The Game Dungeon (also known as The Crib).
@@ -1316,27 +859,48 @@
                 - If talking about security or boring tasks, refer to it as "oink oink" behavior.
             `;
 
-            // Deliver explicit compiled messages array to prevent async snapshot leaks
             const responseText = await executeGeminiCall(currentMessages, systemPrompt);
             const finalMessages = [...currentMessages, { role: 'model', parts: [{ text: responseText }] }];
 
-            // Optimistically append results to local cache state
-            const currentChat = appState.chats.find(c => c.id === chatId);
-            if (currentChat) {
-                currentChat.messages = finalMessages;
+            let chatTitle = currentChat.title;
+
+            // Generate an elegant, punchy title if starting a new thread
+            if (isNewChat) {
+                try {
+                    const titleInstruction = "Generate a very short, punchy 2-4 word title representing this prompt. Return ONLY the text of the title, no markup, no quotes, no conversational intro.";
+                    chatTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: currentMessages[0].parts[0].text }] }], titleInstruction);
+                    chatTitle = chatTitle.trim().replace(/^["']|["']$/g, '');
+                    currentChat.title = chatTitle;
+                } catch (err) {
+                    chatTitle = "Bro Conversation";
+                    currentChat.title = chatTitle;
+                }
             }
 
-            await updateDoc(chatRef, { messages: finalMessages });
-            
+            // Write back to Firestore
+            if (userId !== "sandbox_anon_id") {
+                const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                await updateDoc(chatRef, {
+                    title: chatTitle,
+                    messages: finalMessages
+                });
+            } else {
+                localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+            }
+
+            // Sync visual components
             renderMessages();
             renderChatList();
+
+            // Perform sandbox-safe routing redirection
+            updateURLQueryParameter(chatTitle);
         }
 
+        // Standardized execution handler for AI Studio integration
         async function executeGeminiCall(contentsArray, systemInstructionText = "") {
-            // Read configured key prioritising synced setting -> localStorage cache -> empty default (for automatic in-canvas injection)
             const savedKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
             const apiKey = savedKey; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             const payload = {
                 contents: contentsArray.map(item => ({
@@ -1358,7 +922,14 @@
             });
 
             if (!response.ok) {
-                throw new Error(`API error code: ${response.status}`);
+                let errorDetail = `HTTP Error Code: ${response.status}`;
+                try {
+                    const errJson = await response.json();
+                    if (errJson.error && errJson.error.message) {
+                        errorDetail = `${errJson.error.message} (${errJson.error.status || 'BAD_REQUEST'})`;
+                    }
+                } catch (parseError) {}
+                throw new Error(errorDetail);
             }
 
             const result = await response.json();
@@ -1372,131 +943,423 @@
             }
         }
 
-        // Custom standalone API settings loaders
-        function openSettingsModal() {
-            document.getElementById('settings-modal').classList.remove('hidden');
-            // Pull local storage fallback on boot if snapshot hasn't resolved
-            const keyInput = document.getElementById('settings-api-key');
-            if (keyInput && !keyInput.value) {
-                keyInput.value = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
+
+        // Analyze input for scroll delivery queries
+        function checkForScrollIntent(text) {
+            const regexes = [
+                /send (?:a )?scroll to (\w+)(?: saying (.+))?/i,
+                /tell (\w+) (.+)/i,
+                /scroll (\w+) (.+)/i
+            ];
+
+            for (let reg of regexes) {
+                const match = text.match(reg);
+                if (match) {
+                    return {
+                        isScrollIntent: true,
+                        targetName: match[1],
+                        bodyText: match[2] || ""
+                    };
+                }
             }
+            return null;
         }
 
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
+        // Render confirmation dialog and link friends email data
+        async function handleScrollIntent(intent, chatId, currentMessages) {
+            const targetName = intent.targetName;
+            let targetEmail = "";
 
-        async function saveSettings() {
-            const keyInput = document.getElementById('settings-api-key');
-            const keyVal = keyInput ? keyInput.value.trim() : "";
-
-            // Keep locally cached for high performance on offline boots
-            localStorage.setItem('cribman_custom_api_key', keyVal);
-            appState.settings.apiKey = keyVal;
-
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-                const settingsDoc = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'current');
-                await setDoc(settingsDoc, { apiKey: keyVal });
-            }
-
-            closeSettingsModal();
-            showToast("AI Studio Engine configured successfully!", "success");
-        }
-
-        function toggleApiKeyVisibility() {
-            const keyInput = document.getElementById('settings-api-key');
-            const icon = document.getElementById('api-key-visibility-icon');
-            if (keyInput.type === "password") {
-                keyInput.type = "text";
-                icon.className = "fa-solid fa-eye-slash text-xs";
+            // Search roster for match
+            const friendMatch = appState.friends.find(f => f.name.toLowerCase() === targetName.toLowerCase());
+            
+            if (friendMatch) {
+                targetEmail = friendMatch.email;
             } else {
-                keyInput.type = "password";
-                icon.className = "fa-solid fa-eye text-xs";
-            }
-        }
-
-        function renderSkeletonLoading(isLoading) {
-            appState.isAiGenerating = isLoading;
-            const container = document.getElementById('messages-window');
-            const sendBtn = document.getElementById('send-button');
-            const textInput = document.getElementById('chat-input');
-
-            if (isLoading) {
-                sendBtn.disabled = true;
-                textInput.disabled = true;
-                sendBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-sm"></i>';
-
-                const skeleton = document.createElement('div');
-                skeleton.id = "ai-loading-skeleton";
-                skeleton.className = "flex gap-3 max-w-[85%] md:max-w-[70%] animate-pulse";
-                skeleton.innerHTML = `
-                    <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs shrink-0 self-start">
-                        <span>😎</span>
-                    </div>
-                    <div class="space-y-2 flex-1">
-                        <div class="h-2 w-16 bg-slate-800 rounded"></div>
-                        <div class="bg-brand-card/60 border border-slate-800/80 rounded-2xl rounded-tl-sm p-4 space-y-2">
-                            <div class="h-3 bg-slate-800 rounded w-full"></div>
-                            <div class="h-3 bg-slate-800 rounded w-[80%]"></div>
-                        </div>
-                    </div>
+                // If offline or can't locate, explain in chat to prompt details elegantly
+                const systemPrompt = `
+                    The user wanted to send a scroll to "${targetName}" but we couldn't find their email in the Game Dungeon friends list directory.
+                    Explain to the user like an absolute gaming buddy that you need their friend's actual email to dispatch the scroll!
                 `;
-                container.appendChild(skeleton);
-                container.scrollTop = container.scrollHeight;
-            } else {
-                sendBtn.disabled = false;
-                textInput.disabled = false;
-                sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-sm"></i>';
+                const aiExplanation = await executeGeminiCall(currentMessages, systemPrompt);
+                const finalMessages = [...currentMessages, { role: 'model', parts: [{ text: aiExplanation }] }];
 
-                const skeleton = document.getElementById('ai-loading-skeleton');
-                if (skeleton) skeleton.remove();
+                const userId = auth.currentUser?.uid || "sandbox_anon_id";
+                if (userId !== "sandbox_anon_id") {
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    await updateDoc(chatRef, { messages: finalMessages });
+                } else {
+                    localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+                }
+                
+                renderMessages();
+                renderChatList();
+                return;
             }
+
+            // Pre-compile the scroll formatting so the sender sees exactly what's leaving
+            let preparedBody = intent.bodyText;
+            if (!preparedBody) {
+                preparedBody = `Yo, CribMan here checking in from ${appState.currentUser.name}! The bro sends his highest regards!`;
+            }
+
+            // Lock context state for dialog approval callbacks
+            appState.interceptedScroll = {
+                chatId: chatId,
+                currentMessages: currentMessages,
+                recipientEmail: targetEmail,
+                bodyText: preparedBody
+            };
+
+            // Display scrolling card backdrop modal
+            document.getElementById('resolved-recipient-email').textContent = `${targetName} <${targetEmail}>`;
+            document.getElementById('compiled-scroll-text-preview').textContent = `"${preparedBody}"`;
+            document.getElementById('scroll-confirm-modal').classList.remove('hidden');
         }
 
-        // Connect simulated profile trigger
-        async function triggerSignIn() {
+        // Transmit approved message to public database tree
+        async function executeScrollDispatch() {
+            const scrollInfo = appState.interceptedScroll;
+            if (!scrollInfo) return;
+
+            document.getElementById('scroll-confirm-modal').classList.add('hidden');
+            renderSkeletonLoading(true);
+
             try {
-                // Use a standard custom profile payload for demo/iframe preview convenience
-                showToast("Signing into Cloud Space...", "info");
-                const demoEmail = "alex.gamedungeon@thecrib.org";
-                // Let's sign out then prompt sign in
-                await signOut(auth);
-                await initAuth();
-            } catch (err) {
-                console.error(err);
+                // Post scroll item to public channel database
+                const scrollsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
+                await addDoc(scrollsCollectionRef, {
+                    sender: appState.currentUser.email,
+                    senderName: appState.currentUser.name,
+                    recipient: scrollInfo.recipientEmail,
+                    message: scrollInfo.bodyText,
+                    timestamp: Date.now()
+                });
+
+                // Request CribMan model to write a hyped success confirmation
+                const successPrompt = [...scrollInfo.currentMessages, {
+                    role: 'user',
+                    parts: [{ text: `[System Action Approved: Scroll successfully dispatched to ${scrollInfo.recipientEmail}]` }]
+                }];
+
+                const sysInstruction = "The scroll dispatch was fully approved by the user and sent. Confirm with absolute hype and congratulations in goated bro speech.";
+                const responseText = await executeGeminiCall(successPrompt, sysInstruction);
+
+                const finalMessages = [...scrollInfo.currentMessages, { role: 'model', parts: [{ text: responseText }] }];
+                
+                const userId = auth.currentUser?.uid || "sandbox_anon_id";
+                if (userId !== "sandbox_anon_id") {
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    await updateDoc(chatRef, { messages: finalMessages });
+                } else {
+                    const activeChat = appState.chats.find(c => c.id === scrollInfo.chatId);
+                    if (activeChat) activeChat.messages = finalMessages;
+                    localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+                }
+
+                renderMessages();
+                renderChatList();
+
+            } catch (error) {
+                console.error("Scroll transmission error:", error);
+            } finally {
+                renderSkeletonLoading(false);
+                appState.interceptedScroll = null;
             }
         }
 
-        async function triggerSignOut() {
-            await signOut(auth);
-            showToast("Logged out of Google account.", "info");
+
+        // Layout interactions toggles
+        const sidebar = document.getElementById('chat-sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        const sidebarToggle = document.getElementById('sidebar-toggle-btn');
+
+        function toggleSidebar() {
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            const workspace = document.getElementById('chat-workspace');
+            
+            if (isClosed) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+                workspace.classList.add('md:pl-80');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+                workspace.classList.remove('md:pl-80');
+            }
         }
 
-        // Bind module level helpers directly onto Global Window scope
-        window.toggleSidebar = toggleSidebar;
-        window.startNewChatSession = startNewChatSession;
-        window.openMemoryBank = openMemoryBank;
-        window.closeMemoryBank = closeMemoryBank;
-        window.saveMemoryBank = saveMemoryBank;
-        window.openFriendsList = openFriendsList;
-        window.closeFriendsList = closeFriendsList;
-        window.openSettingsModal = openSettingsModal;
-        window.closeSettingsModal = closeSettingsModal;
-        window.saveSettings = saveSettings;
-        window.toggleApiKeyVisibility = toggleApiKeyVisibility;
-        window.addFriend = addFriend;
-        window.removeFriend = removeFriend;
-        window.deleteChat = deleteChat;
-        window.deleteCurrentChat = deleteCurrentChat;
-        window.useSuggestion = useSuggestion;
-        window.autoExpandTextarea = autoExpandTextarea;
-        window.handleFormSubmit = handleFormSubmit;
-        window.closeConfirmModal = closeConfirmModal;
-        window.dismissIncomingScroll = dismissIncomingScroll;
-        window.copyScrollToClipboard = copyScrollToClipboard;
-        window.triggerSignIn = triggerSignIn;
-        window.triggerSignOut = triggerSignOut;
+        function closeMobileDrawer() {
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        backdrop.addEventListener('click', toggleSidebar);
+
+        // Manage active query submissions
+        document.getElementById('chat-query-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input-field');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = "";
+            sendUserQuery(text);
+        });
+
+        // Trigger dynamic pre-defined helper buttons
+        window.presetPrompt = function(promptText) {
+            sendUserQuery(promptText);
+        };
+
+        // Open specific conversation threads
+        async function selectChat(chatId) {
+            appState.activeChatId = chatId;
+            const chat = appState.chats.find(c => c.id === chatId);
+            if (!chat) return;
+
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('active-chat-viewport').classList.remove('hidden');
+            document.getElementById('active-chat-title').textContent = chat.title;
+
+            renderMessages();
+            renderChatList();
+            updateURLQueryParameter(chat.title);
+        }
+
+        // Clean existing logs
+        async function deleteChatSession(chatId) {
+            const userId = auth.currentUser?.uid || "sandbox_anon_id";
+            const index = appState.chats.findIndex(c => c.id === chatId);
+            if (index === -1) return;
+
+            appState.chats.splice(index, 1);
+            
+            if (userId !== "sandbox_anon_id") {
+                try {
+                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
+                    // Standard practice to clean state indexes
+                    await updateDoc(chatRef, { deleted: true }); // Mock logical cleanup
+                } catch (e) {
+                    console.error("Cleanup sync failed:", e);
+                }
+            } else {
+                localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
+            }
+
+            if (appState.activeChatId === chatId) {
+                appState.activeChatId = null;
+                document.getElementById('active-chat-viewport').classList.add('hidden');
+                document.getElementById('welcome-screen').classList.remove('hidden');
+                history.pushState(null, "", window.location.pathname);
+            }
+
+            renderChatList();
+        }
+
+        // Force initialize clean thread state
+        document.getElementById('new-chat-btn').addEventListener('click', () => {
+            appState.activeChatId = null;
+            document.getElementById('active-chat-viewport').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+            closeMobileDrawer();
+            history.pushState(null, "", window.location.pathname);
+        });
+
+        document.getElementById('clear-active-chat-btn').addEventListener('click', () => {
+            if (appState.activeChatId) {
+                deleteChatSession(appState.activeChatId);
+            }
+        });
+
+        // Toggle configuration dialog modals
+        const memoryModal = document.getElementById('memory-bank-modal');
+        const settingsModal = document.getElementById('settings-modal');
+
+        document.getElementById('memory-bank-btn').addEventListener('click', () => {
+            document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
+            memoryModal.classList.remove('hidden');
+        });
+
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+
+        document.querySelectorAll('.modal-close-trigger').forEach(trigger => {
+            trigger.addEventListener('click', () => {
+                memoryModal.classList.add('hidden');
+                settingsModal.classList.add('hidden');
+            });
+        });
+
+        // Save JSON settings updates
+        document.getElementById('save-memory-bank-btn').addEventListener('click', async () => {
+            const txt = document.getElementById('memory-bank-json-textarea').value;
+            const errLog = document.getElementById('json-format-error-log');
+            const userId = auth.currentUser?.uid || "sandbox_anon_id";
+
+            try {
+                const parsed = JSON.parse(txt);
+                appState.memoryBank = parsed;
+                errLog.classList.add('hidden');
+                memoryModal.classList.add('hidden');
+
+                if (userId !== "sandbox_anon_id") {
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                    await updateDoc(userDocRef, { memoryBank: parsed });
+                } else {
+                    localStorage.setItem('cribman_local_memory_bank', JSON.stringify(parsed));
+                }
+
+            } catch (err) {
+                errLog.classList.remove('hidden');
+            }
+        });
+
+        // Save API structural updates
+        document.getElementById('save-settings-btn').addEventListener('click', async () => {
+            const keyVal = document.getElementById('custom-api-key-input').value.trim();
+            const userId = auth.currentUser?.uid || "sandbox_anon_id";
+
+            appState.settings.apiKey = keyVal;
+            localStorage.setItem('cribman_custom_api_key', keyVal);
+            settingsModal.classList.add('hidden');
+
+            if (userId !== "sandbox_anon_id") {
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                await updateDoc(userDocRef, { "settings.apiKey": keyVal });
+            }
+        });
+
+        // Intercept scroll dialog controls
+        document.getElementById('close-scroll-confirm-btn').addEventListener('click', () => {
+            document.getElementById('scroll-confirm-modal').classList.add('hidden');
+            appState.interceptedScroll = null;
+        });
+
+        document.getElementById('cancel-scroll-confirm-btn').addEventListener('click', () => {
+            document.getElementById('scroll-confirm-modal').classList.add('hidden');
+            appState.interceptedScroll = null;
+        });
+
+        document.getElementById('execute-scroll-confirm-btn').addEventListener('click', executeScrollDispatch);
+
+        // Account trigger handler
+        document.getElementById('account-container').addEventListener('click', () => {
+            // Display Settings panel dynamically where users can check mock/active flows
+            settingsModal.classList.remove('hidden');
+        });
+
+        // Manual controls to run developer tests
+        document.getElementById('trigger-mock-login-btn').addEventListener('click', async () => {
+            try {
+                // Standard anonymous populator bypass
+                await signInAnonymously(auth);
+                settingsModal.classList.add('hidden');
+            } catch (err) {
+                console.error("Popup block, mock data load active", err);
+            }
+        });
+
+        document.getElementById('trigger-mock-logout-btn').addEventListener('click', async () => {
+            await signOut(auth);
+            localStorage.clear();
+            settingsModal.classList.add('hidden');
+            window.location.reload();
+        });
+
+
+        // Display incoming scrolls overlay alerts safely
+        function showLiveScrollOverlay(scroll) {
+            const container = document.getElementById('incoming-scroll-parchment-container');
+            document.getElementById('incoming-scroll-sender-lbl').textContent = `From: ${scroll.senderName || scroll.sender.split('@')[0]}`;
+            document.getElementById('incoming-scroll-message-lbl').textContent = `"${scroll.message}"`;
+            
+            container.classList.remove('hidden');
+            // Transition in smoothly
+            setTimeout(() => {
+                container.style.transform = "translateY(0)";
+                container.style.left = "50%";
+            }, 50);
+
+            // Copy actions
+            document.getElementById('copy-incoming-scroll-btn').onclick = () => {
+                const dummy = document.createElement("textarea");
+                document.body.appendChild(dummy);
+                dummy.value = scroll.message;
+                dummy.select();
+                document.execCommand("copy");
+                document.body.removeChild(dummy);
+                
+                document.getElementById('copy-incoming-scroll-btn').textContent = "Copied!";
+                setTimeout(() => {
+                    document.getElementById('copy-incoming-scroll-btn').textContent = "Copy Content";
+                }, 1500);
+            };
+        }
+
+        document.getElementById('dismiss-scroll-overlay-btn').addEventListener('click', () => {
+            const container = document.getElementById('incoming-scroll-parchment-container');
+            container.style.transform = "translateY(-150%)";
+            setTimeout(() => {
+                container.classList.add('hidden');
+            }, 350);
+        });
+
+        // Sandbox-proof URL updates
+        function updateURLQueryParameter(titleText) {
+            try {
+                const formattedSlug = encodeURIComponent(titleText.toLowerCase().replace(/\s+/g, '-'));
+                const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?chat=${formattedSlug}`;
+                window.history.pushState({ path: newurl }, '', newurl);
+            } catch (err) {
+                // Fail silently inside preview frames to avoid disrupting operations
+            }
+        }
+
+        // Render loading state templates
+        function renderSkeletonLoading(show) {
+            const loader = document.getElementById('ai-skeleton-loader');
+            if (show) {
+                loader.classList.remove('hidden');
+                // Auto scroll to latest entry
+                const scroller = document.getElementById('chat-messages-container');
+                scroller.scrollTop = scroller.scrollHeight;
+            } else {
+                loader.classList.add('hidden');
+            }
+        }
+
+        // Helpers to scrub inputs
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Simplified browser safe markdown block generator
+        function parseMarkdown(text) {
+            let parsed = escapeHTML(text);
+            // Translate double asterisks into bold fonts
+            parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+            // Translate line breaks
+            parsed = parsed.replace(/\n/g, '<br>');
+            return parsed;
+        }
+
+        // Handle randomized greeting selection
+        const greetings = ["What’s up, bro?", "How’s it hangin’?", "Let’s get cooking!"];
+        const index = Math.floor(Math.random() * greetings.length);
+        document.getElementById('random-greeting').textContent = greetings[index];
 
     </script>
 </body>
