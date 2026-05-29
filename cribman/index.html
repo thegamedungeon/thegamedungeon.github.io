@@ -4,30 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CribMan AI Chat - The Game Dungeon</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Space Grotesk & Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Gaming Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif'],
-                    },
                     colors: {
                         dungeon: {
                             900: '#0b0f19',
                             800: '#111827',
                             700: '#1f2937',
                             600: '#374151',
-                            accent: '#8b5cf6', // Violet
-                            cyan: '#06b6d4',   // Cyan
+                            accent: '#8b5cf6',
+                            cyan: '#06b6d4',
                         }
                     }
                 }
@@ -35,25 +27,11 @@
         }
     </script>
     <style>
-        /* Custom scrollbar styling to match the dark gaming ecosystem */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0b0f19;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1f2937;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #8b5cf6;
-        }
-        /* Pulse animations for loading states */
-        .glow-pulse {
-            animation: pulse-glow 2s infinite alternate;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+        .glow-pulse { animation: pulse-glow 2s infinite alternate; }
         @keyframes pulse-glow {
             0% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.4); }
             100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.8); }
@@ -62,282 +40,91 @@
 </head>
 <body class="bg-dungeon-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col overflow-hidden">
 
-    
-    <!-- Top Bar Navigation Panel -->
     <header class="bg-dungeon-800 border-b border-dungeon-700 h-16 flex items-center justify-between px-4 z-40 relative shrink-0">
         <div class="flex items-center space-x-3">
-            <button id="sidebar-toggle-btn" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-dungeon-700 transition" title="Toggle Chats Menu">
+            <button id="sidebar-toggle-btn" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-dungeon-700 transition">
                 <i class="fa-solid fa-bars text-xl"></i>
             </button>
             <div class="flex items-center space-x-2">
                 <span class="text-2xl">🤖</span>
-                <h1 class="font-display font-bold text-xl bg-gradient-to-r from-dungeon-cyan to-dungeon-accent bg-clip-text text-transparent">
-                    CribMan <span class="text-xs font-mono px-2 py-0.5 rounded bg-dungeon-700 text-dungeon-cyan border border-dungeon-600">v2.0</span>
-                </h1>
+                <h1 class="font-display font-bold text-xl bg-gradient-to-r from-dungeon-cyan to-dungeon-accent bg-clip-text text-transparent">CribMan</h1>
             </div>
         </div>
-
-        <!-- Right Side Controls & Profiles -->
         <div class="flex items-center space-x-3">
-            <!-- Settings Gear Button -->
-            <button id="settings-btn" class="p-2 text-slate-400 hover:text-white hover:bg-dungeon-700 rounded-lg transition" title="API Credentials & Engine Config">
+            <button id="settings-btn" class="p-2 text-slate-400 hover:text-white hover:bg-dungeon-700 rounded-lg transition">
                 <i class="fa-solid fa-gear text-lg"></i>
             </button>
-            
-            <!-- Account Integration Avatar Trigger -->
-            <div id="account-container" class="flex items-center space-x-2 bg-dungeon-700 p-1.5 pr-3 rounded-full border border-dungeon-600 transition hover:bg-dungeon-600 cursor-pointer">
-                <div id="avatar-element" class="w-7 h-7 rounded-full bg-dungeon-accent flex items-center justify-center text-white font-bold text-xs overflow-hidden">
-                    👤
-                </div>
+            <div id="account-container" class="flex items-center space-x-2 bg-dungeon-700 p-1.5 pr-3 rounded-full border border-dungeon-600 cursor-pointer">
+                <div id="avatar-element" class="w-7 h-7 rounded-full bg-dungeon-accent flex items-center justify-center text-white font-bold text-xs">👤</div>
                 <span id="account-username" class="text-xs font-medium max-w-[100px] truncate">Guest Bro</span>
             </div>
         </div>
     </header>
 
-    <!-- Main Outer Wrapper -->
     <div class="flex flex-1 relative overflow-hidden">
-        
-        
-        <!-- Collapsible Sidebar (Slide Drawer) -->
-        <aside id="chat-sidebar" class="fixed inset-y-16 left-0 w-80 bg-dungeon-800 border-r border-dungeon-700 z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col justify-between overflow-hidden">
-            <!-- Active Chat List Header -->
+        <aside id="chat-sidebar" class="fixed inset-y-16 left-0 w-80 bg-dungeon-800 border-r border-dungeon-700 z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col overflow-hidden">
             <div class="p-4 border-b border-dungeon-700 flex justify-between items-center bg-dungeon-800/80">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest font-display">Active Chats</span>
-                <button id="new-chat-btn" class="flex items-center space-x-1 text-xs bg-dungeon-cyan/20 hover:bg-dungeon-cyan/35 text-dungeon-cyan px-2.5 py-1.5 rounded-lg font-medium border border-dungeon-cyan/30 transition">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Fresh Chat</span>
-                </button>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Chats</span>
+                <button id="new-chat-btn" class="text-xs bg-dungeon-cyan/20 text-dungeon-cyan px-2.5 py-1.5 rounded-lg border border-dungeon-cyan/30">Fresh Chat</button>
             </div>
-
-            <!-- Scrollable Chats List -->
-            <div id="chats-scroller" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <!-- Rendered dynamically by JS -->
-                <div class="text-center py-8 text-slate-500 text-xs">Loading logs...</div>
-            </div>
-
-            <!-- Sidebar Footer Controls -->
-            <div class="p-3 bg-dungeon-900 border-t border-dungeon-700 flex flex-col space-y-2">
-                <!-- Memory Bank Trigger -->
-                <button id="memory-bank-btn" class="w-full flex items-center justify-center space-x-2 text-xs bg-dungeon-700 hover:bg-dungeon-600 text-slate-200 py-2.5 px-3 rounded-lg border border-dungeon-600 transition font-medium">
-                    <i class="fa-solid fa-brain text-dungeon-accent"></i>
-                    <span>Open Memory Bank</span>
-                </button>
-                <!-- Friends Directory Status Tag -->
-                <div id="friends-indicator" class="flex items-center justify-between text-[10px] bg-dungeon-800 p-2 rounded border border-dungeon-700 text-slate-400">
-                    <span class="flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Friends Directory
-                    </span>
-                    <span id="friends-indicator-count" class="font-mono text-dungeon-cyan">0 Synced</span>
-                </div>
+            <div id="chats-scroller" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+            <div class="p-3 bg-dungeon-900 border-t border-dungeon-700">
+                <button id="memory-bank-btn" class="w-full text-xs bg-dungeon-700 hover:bg-dungeon-600 text-slate-200 py-2.5 rounded-lg border border-dungeon-600">Open Memory Bank</button>
             </div>
         </aside>
 
-        <!-- Sidebar Mobile Backdrop Shadow Layer -->
-        <div id="sidebar-backdrop" class="fixed inset-0 bg-black/65 z-20 hidden md:hidden"></div>
-
-
-        <!-- Primary Chat Canvas/Workspace -->
-        <main id="chat-workspace" class="flex-1 flex flex-col bg-dungeon-900 md:pl-80 transition-all duration-300 h-full relative overflow-hidden">
-            
-            <!-- Scrolling Messages Container -->
+        <main id="chat-workspace" class="flex-1 flex flex-col bg-dungeon-900 md:pl-80 transition-all duration-300 h-full overflow-hidden">
             <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
-                <!-- Welcome Banner Screen -->
-                <div id="welcome-screen" class="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto p-6 space-y-6">
-                    <div class="w-20 h-20 bg-gradient-to-br from-dungeon-cyan to-dungeon-accent rounded-2xl flex items-center justify-center text-4xl glow-pulse transform rotate-3">
-                        🤖
-                    </div>
-                    <div class="space-y-2">
-                        <h2 id="random-greeting" class="font-display font-bold text-3xl text-white">Let's get cooking!</h2>
-                        <p class="text-sm text-slate-400 leading-relaxed">
-                            I'm <strong class="text-dungeon-cyan">CribMan</strong>, the ultimate Game Dungeon helper. I'm loaded with context on inside jokes (Connor, Sod-erdine), synced with your roster, and optimized for dispatching scrolls.
-                        </p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2.5 w-full text-left text-xs">
-                        <div class="p-3 bg-dungeon-800 rounded-xl border border-dungeon-700 hover:border-dungeon-cyan/40 cursor-pointer transition" onclick="presetPrompt('Who has noodle hair?')">
-                            <span class="font-bold text-slate-300 block mb-1">Check Noodle Hair 🍜</span>
-                            Ask about Connor's zesty traits.
-                        </div>
-                        <div class="p-3 bg-dungeon-800 rounded-xl border border-dungeon-700 hover:border-dungeon-cyan/40 cursor-pointer transition" onclick="presetPrompt('Tell Daimyan that he is a certified legend')">
-                            <span class="font-bold text-slate-300 block mb-1">Send a Scroll 📜</span>
-                            Draft an automatic scroll request!
-                        </div>
-                    </div>
+                <div id="welcome-screen" class="h-full flex flex-col items-center justify-center text-center p-6 space-y-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-dungeon-cyan to-dungeon-accent rounded-2xl flex items-center justify-center text-4xl glow-pulse">🤖</div>
+                    <h2 class="font-bold text-3xl">Let's get cooking!</h2>
                 </div>
-
-                <!-- Active Chat Viewport Wrapper -->
                 <div id="active-chat-viewport" class="hidden space-y-4 max-w-4xl mx-auto pb-10">
-                    <div class="flex items-center justify-between border-b border-dungeon-700/60 pb-3 mb-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xs bg-dungeon-accent/20 text-dungeon-accent border border-dungeon-accent/35 px-2 py-0.5 rounded-full font-semibold uppercase font-display">Active Session</span>
-                            <h3 id="active-chat-title" class="text-sm font-bold text-white truncate max-w-[200px] md:max-w-[400px]">Connecting...</h3>
-                        </div>
-                        <button id="clear-active-chat-btn" class="text-xs text-red-400/80 hover:text-red-400 flex items-center gap-1 transition" title="Clear this chat">
-                            <i class="fa-regular fa-trash-can"></i>
-                            <span class="hidden md:inline">Delete Logs</span>
-                        </button>
-                    </div>
-                    
-                    <!-- Appended dialog elements will reside here -->
                     <div id="messages-list-wrapper" class="space-y-4"></div>
-                    
-                    <!-- Dynamic Loading Skeletal Template -->
-                    <div id="ai-skeleton-loader" class="hidden flex items-start space-x-3 bg-dungeon-800/40 p-4 rounded-xl border border-dungeon-700/50 animate-pulse">
-                        <div class="w-8 h-8 rounded-full bg-dungeon-cyan/30 flex items-center justify-center text-xs">🤖</div>
-                        <div class="flex-1 space-y-2">
-                            <div class="h-2 bg-slate-700 rounded w-1/4"></div>
-                            <div class="h-2.5 bg-slate-700 rounded w-5/6"></div>
-                            <div class="h-2 bg-slate-700 rounded w-1/2"></div>
-                        </div>
+                    <div id="ai-skeleton-loader" class="hidden flex items-start space-x-3 bg-dungeon-800/40 p-4 rounded-xl border border-dungeon-700 animate-pulse">
+                        <div class="w-8 h-8 rounded-full bg-dungeon-cyan/30"></div>
+                        <div class="h-4 bg-slate-700 rounded w-1/2"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Input Controls Base -->
             <footer class="bg-dungeon-800 border-t border-dungeon-700 p-4 shrink-0">
-                <form id="chat-query-form" class="max-w-4xl mx-auto flex items-center space-x-2 relative">
-                    <input type="text" id="chat-input-field" placeholder="Draft a prompt, or dispatch a scroll to a bro..." class="flex-1 bg-dungeon-900 border border-dungeon-700 focus:border-dungeon-cyan focus:ring-1 focus:ring-dungeon-cyan rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none transition placeholder-slate-500" autocomplete="off" disabled>
-                    <button type="submit" id="submit-prompt-btn" class="bg-gradient-to-r from-dungeon-cyan to-dungeon-accent hover:opacity-90 text-white rounded-xl px-5 py-3 text-sm font-bold transition flex items-center justify-center space-x-1" disabled>
-                        <i class="fa-regular fa-paper-plane"></i>
-                    </button>
+                <form id="chat-query-form" class="max-w-4xl mx-auto flex items-center space-x-2">
+                    <input type="text" id="chat-input-field" placeholder="Draft a prompt..." class="flex-1 bg-dungeon-900 border border-dungeon-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-dungeon-cyan" autocomplete="off" disabled>
+                    <button type="submit" id="submit-prompt-btn" class="bg-gradient-to-r from-dungeon-cyan to-dungeon-accent text-white rounded-xl px-5 py-3 font-bold" disabled>Send</button>
                 </form>
-                <div class="max-w-4xl mx-auto mt-2 flex items-center justify-between text-[10px] text-slate-500 px-1">
-                    <span>CribMan always secures your account credentials before checking data.</span>
-                    <span id="connection-status-lbl" class="font-mono text-amber-500">Connecting to Firebase...</span>
-                </div>
+                <div class="max-w-4xl mx-auto mt-2 text-[10px] text-slate-500 px-1" id="connection-status-lbl">Initializing...</div>
             </footer>
         </main>
     </div>
 
-
-    <!-- Modal 1: Memory Bank Configuration Manager -->
-    <div id="memory-bank-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-dungeon-800 border border-dungeon-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
-            <div class="p-4 bg-dungeon-900 border-b border-dungeon-700 flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-brain text-dungeon-accent text-lg"></i>
-                    <h4 class="font-display font-bold text-white text-base">CribMan Memory Bank Context</h4>
-                </div>
-                <button class="modal-close-trigger text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-5 space-y-4 flex-1 overflow-y-auto">
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    This JSON configuration contains your user profile, inside jokes, and custom classroom parameters. CribMan parses this prior to answering your queries!
-                </p>
-                <div class="space-y-1">
-                    <label class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">JSON Editor</label>
-                    <textarea id="memory-bank-json-textarea" rows="10" class="w-full bg-dungeon-900 border border-dungeon-700 focus:border-dungeon-accent rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-dungeon-accent"></textarea>
-                </div>
-                <div id="json-format-error-log" class="hidden text-xs text-red-400 bg-red-950/40 p-2.5 rounded-lg border border-red-900/40 font-mono">
-                    ⚠️ Invalid JSON formatting detected. Check bracket closures.
-                </div>
-            </div>
-            <div class="p-4 bg-dungeon-900 border-t border-dungeon-700 flex justify-end space-x-2">
-                <button class="modal-close-trigger text-xs text-slate-400 hover:text-white px-4 py-2 transition">Discard</button>
-                <button id="save-memory-bank-btn" class="bg-dungeon-accent text-white text-xs font-bold px-4 py-2 rounded-lg hover:opacity-90 transition">Save Context</button>
+    <!-- Modals -->
+    <div id="memory-bank-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center hidden">
+        <div class="bg-dungeon-800 rounded-2xl w-full max-w-lg p-6 border border-dungeon-700">
+            <h4 class="font-bold mb-4">Memory Bank Context</h4>
+            <textarea id="memory-bank-json-textarea" rows="10" class="w-full bg-dungeon-900 border border-dungeon-700 rounded-xl p-3 text-xs font-mono"></textarea>
+            <div class="flex justify-end mt-4 space-x-2">
+                <button class="modal-close-trigger px-4 py-2 text-slate-400">Discard</button>
+                <button id="save-memory-bank-btn" class="bg-dungeon-accent px-4 py-2 rounded-lg">Save</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal 2: API Keys & Account Config Settings Manager -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-dungeon-800 border border-dungeon-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
-            <div class="p-4 bg-dungeon-900 border-b border-dungeon-700 flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-gears text-dungeon-cyan text-lg"></i>
-                    <h4 class="font-display font-bold text-white text-base">CribMan Settings</h4>
-                </div>
-                <button class="modal-close-trigger text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-5 space-y-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-300 block">Google AI Studio API Key</label>
-                    <input type="password" id="custom-api-key-input" placeholder="Paste your AI Studio key (AIzaSy...)" class="w-full bg-dungeon-900 border border-dungeon-700 focus:border-dungeon-cyan rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-dungeon-cyan">
-                    <p class="text-[10px] text-slate-400 leading-normal">
-                        Your API key will remain stored entirely inside your private sandbox cache and synced profile. If empty, offline/instructions mode triggers.
-                    </p>
-                </div>
-                
-                <div class="border-t border-dungeon-700 pt-4 space-y-2">
-                    <label class="text-xs font-bold text-slate-300 block">Mock Testing Control Desk</label>
-                    <div class="flex space-x-2">
-                        <button id="trigger-mock-login-btn" class="flex-1 bg-dungeon-700 hover:bg-dungeon-600 border border-dungeon-600 text-xs py-2 px-3 rounded-lg text-slate-200 transition">
-                            Log In Mock Account
-                        </button>
-                        <button id="trigger-mock-logout-btn" class="flex-1 bg-red-950/40 hover:bg-red-950/65 border border-red-900/40 text-xs py-2 px-3 rounded-lg text-red-400 transition">
-                            Log Out Mock
-                        </button>
-                    </div>
-                    <p class="text-[9px] text-slate-500">Use mock login actions to preview account/friends database flows if the browser sandbox blocks popups.</p>
-                </div>
-            </div>
-            <div class="p-4 bg-dungeon-900 border-t border-dungeon-700 flex justify-end space-x-2">
-                <button class="modal-close-trigger text-xs text-slate-400 hover:text-white px-4 py-2 transition">Cancel</button>
-                <button id="save-settings-btn" class="bg-dungeon-cyan text-white text-xs font-bold px-4 py-2 rounded-lg hover:opacity-90 transition">Save Settings</button>
+    <div id="settings-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center hidden">
+        <div class="bg-dungeon-800 rounded-2xl w-full max-w-sm p-6 border border-dungeon-700">
+            <h4 class="font-bold mb-4">API Settings</h4>
+            <input type="password" id="custom-api-key-input" placeholder="Paste AI Studio Key..." class="w-full bg-dungeon-900 border border-dungeon-700 rounded-xl px-3 py-2 text-sm mb-4">
+            <div class="flex justify-end space-x-2">
+                <button class="modal-close-trigger text-slate-400">Cancel</button>
+                <button id="save-settings-btn" class="bg-dungeon-cyan px-4 py-2 rounded-lg">Save</button>
             </div>
         </div>
     </div>
 
-    <!-- Scroll Confirmation Intercept Overlay Modal -->
-    <div id="scroll-confirm-modal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gradient-to-b from-amber-950 to-amber-900 border border-amber-600/40 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-slate-200 transform scale-95 transition-transform duration-200">
-            <div class="p-4 bg-amber-950/80 border-b border-amber-800/40 flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xl">📜</span>
-                    <h4 class="font-display font-bold text-amber-200 text-base">Scroll Dispatch Authorization</h4>
-                </div>
-                <button id="close-scroll-confirm-btn" class="text-amber-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-5 space-y-4">
-                <div class="flex items-center space-x-3 bg-amber-900/40 p-3 rounded-xl border border-amber-700/30">
-                    <div class="text-3xl">📬</div>
-                    <div>
-                        <span class="text-xs block text-amber-400 font-bold uppercase tracking-wide">Recipient Resolution</span>
-                        <p id="resolved-recipient-email" class="text-sm font-mono text-white">Searching friends directory...</p>
-                    </div>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Scroll Content Message</label>
-                    <div id="compiled-scroll-text-preview" class="w-full bg-amber-950/60 border border-amber-800/40 rounded-xl p-3 text-xs italic text-slate-100 min-h-[60px] max-h-[120px] overflow-y-auto leading-relaxed"></div>
-                </div>
-                <p class="text-[10px] text-amber-400/80 italic leading-snug">
-                    *Privacy Shield Triggered: CribMan requested permission before writing this scroll to the public game dungeon channel!
-                </p>
-            </div>
-            <div class="p-4 bg-amber-950/80 border-t border-amber-800/40 flex justify-end space-x-2">
-                <button id="cancel-scroll-confirm-btn" class="text-xs text-amber-400 hover:text-white px-4 py-2 transition">Destroy Scroll</button>
-                <button id="execute-scroll-confirm-btn" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-md shadow-amber-950">Approve & Send</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Live Incoming Scroll parchment Alert Drawer -->
-    <div id="incoming-scroll-parchment-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 transform transition-all duration-350 translate-y-[-150%] hidden">
-        <div class="bg-gradient-to-r from-amber-900 to-amber-950 border-2 border-amber-500 rounded-2xl p-4 shadow-2xl relative text-amber-100 flex items-start space-x-3 overflow-hidden">
-            <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 select-none">📜</div>
-            <div class="text-2xl mt-1 shrink-0">📜</div>
-            <div class="flex-1 space-y-1">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">Incoming Scroll!</span>
-                    <button id="dismiss-scroll-overlay-btn" class="text-amber-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xs"></i></button>
-                </div>
-                <div class="space-y-1">
-                    <span id="incoming-scroll-sender-lbl" class="text-[10px] font-mono block text-amber-300">From: some_bro</span>
-                    <p id="incoming-scroll-message-lbl" class="text-xs italic leading-relaxed text-white"></p>
-                </div>
-                <div class="pt-2 flex justify-end">
-                    <button id="copy-incoming-scroll-btn" class="bg-amber-700/60 hover:bg-amber-700 text-amber-200 text-[10px] font-bold px-2 py-1 rounded transition">Copy Content</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Firebase Connection Pipeline Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -345,1022 +132,57 @@
             projectId: "the-game-dungeon-4d75d",
             storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
             messagingSenderId: "533459716906",
-            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
-            measurementId: "G-CER9SE96MC"
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
         };
 
-        // Initialize Firebase SDK references
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        const appId = "the-game-dungeon-4d75d"; // Force-matched Project ID bypass
-
-        // Global Local Application Cache State
+        const appId = "the-game-dungeon-4d75d";
+        
         const appState = {
             activeChatId: null,
-            chats: [],
-            friends: [],
-            currentUser: {
-                uid: null,
-                name: "Guest Bro",
-                email: "",
-                photo: null
-            },
-            memoryBank: {
-                user: "null",
-                context: "Connor is zesty and has noodle hair. Sod-erdine acts tuff but isn’t.",
-                insideJokes: {
-                    "oink oink": "Bot-brained security issue",
-                    "tuff": "Trying to act tough"
-                }
-            },
-            settings: {
-                apiKey: ""
-            },
-            interceptedScroll: null
+            currentUser: { uid: "sandbox_anon_id", name: "Guest Bro" },
+            memoryBank: { user: "null", context: "Connor is zesty.", insideJokes: { "oink oink": "Bot-brained" } }
         };
 
-
-        // Listen to User Authentication Status Transitions
-        onAuthStateChanged(auth, async (user) => {
-            const statusLabel = document.getElementById('connection-status-lbl');
-            if (user) {
-                appState.currentUser.uid = user.uid;
-                appState.currentUser.name = user.displayName || user.email.split('@')[0];
-                appState.currentUser.email = user.email;
-                appState.currentUser.photo = user.photoURL;
-
-                // Bind account state elements to headers
-                document.getElementById('account-username').textContent = appState.currentUser.name;
-                const avatar = document.getElementById('avatar-element');
-                if (user.photoURL) {
-                    avatar.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
-                } else {
-                    avatar.textContent = appState.currentUser.name.charAt(0).toUpperCase();
-                }
-
-                statusLabel.textContent = "Dungeon Sync Online";
-                statusLabel.className = "font-mono text-emerald-400";
-
-                // Pull or create secure profile sync blocks
-                await syncUserData();
-                initializeRealtimeListeners(user.uid);
-            } else {
-                // If offline or blocked by browser iframe sandboxing rules, trigger default anonymous sandbox session
-                console.warn("Iframe blocked Google Popups, falling back to local sandbox session...");
-                statusLabel.textContent = "Database Standalone Mode (Secure)";
-                statusLabel.className = "font-mono text-slate-400";
-                
-                // Fallback config variables
-                appState.currentUser.uid = "sandbox_anon_id";
-                appState.currentUser.name = "Guest Bro";
-                appState.currentUser.email = "guest_bro@game-dungeon.com";
-                
-                document.getElementById('account-username').textContent = appState.currentUser.name;
-                document.getElementById('avatar-element').textContent = "👤";
-
-                // Pull local mock profiles
-                loadMockLocalStorageData();
-            }
-            
-            // Activate query actions once system environment state is fully initialized
-            document.getElementById('chat-input-field').disabled = false;
-            document.getElementById('submit-prompt-btn').disabled = false;
-        });
-
-        // Pull & Sync Client Settings / Memory Configurations
-        async function syncUserData() {
-            const userId = appState.currentUser.uid;
-            if (userId === "sandbox_anon_id") return;
-
-            try {
-                // Fetch user data context
-                const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
-                const userSnap = await getDoc(userDocRef);
-
-                if (!userSnap.exists()) {
-                    // Populate default Firestore context fields if starting a first-time setup
-                    await setDoc(userDocRef, {
-                        createdAt: Date.now(),
-                        memoryBank: appState.memoryBank,
-                        settings: {
-                            apiKey: localStorage.getItem('cribman_custom_api_key') || ""
-                        }
-                    });
-                } else {
-                    const data = userSnap.data();
-                    if (data.memoryBank) appState.memoryBank = data.memoryBank;
-                    if (data.settings) appState.settings = data.settings;
-                }
-
-                // Hydrate local cache and sync settings inputs
-                document.getElementById('custom-api-key-input').value = appState.settings.apiKey || "";
-                document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
-
-                // Fetch dynamic, central Game Dungeon friends directory
-                await syncCentralFriendsDirectory();
-
-            } catch (err) {
-                console.error("Firestore initialization error, fallback to local variables", err);
-            }
-        }
-
-
-        // Pull friends dynamically from Game Dungeon lookup tables
-        async function syncCentralFriendsDirectory() {
-            const email = appState.currentUser.email;
-            if (!email) return;
-
-            // Extract username (the email before the '@')
-            const username = email.split('@')[0];
-            const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', username);
-
-            try {
-                const profileSnap = await getDoc(profileRef);
-                if (profileSnap.exists()) {
-                    const data = profileSnap.data();
-                    // Process friends array
-                    if (data && Array.isArray(data.friends)) {
-                        appState.friends = [];
-                        
-                        // Parse array items whether they are objects or flat strings
-                        data.friends.forEach(friend => {
-                            if (typeof friend === 'string') {
-                                // Extract name from string email
-                                const namePart = friend.split('@')[0];
-                                const capitalized = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-                                appState.friends.push({
-                                    name: capitalized,
-                                    email: friend
-                                });
-                            } else if (friend && typeof friend === 'object' && friend.email) {
-                                appState.friends.push({
-                                    name: friend.name || friend.email.split('@')[0],
-                                    email: friend.email
-                                });
-                            }
-                        });
-                        
-                        document.getElementById('friends-indicator-count').textContent = `${appState.friends.length} Synced`;
-                    } else {
-                        document.getElementById('friends-indicator-count').textContent = "0 Friends";
-                    }
-                } else {
-                    // Create default placeholder block for development convenience
-                    document.getElementById('friends-indicator-count').textContent = "No Profile Document";
-                    console.info("To populate friends, create a document in your Firestore panel at path: artifacts/the-game-dungeon-4d75d/public/data/users/" + username);
-                }
-            } catch (error) {
-                console.error("Error retrieving central Game Dungeon friends profile catalog:", error);
-            }
-        }
-
-        // Setup real-time listeners for active messages/logs sync
-        let chatLogsUnsubscribe = null;
-        let incomingScrollsUnsubscribe = null;
-
-        function initializeRealtimeListeners(userId) {
-            if (chatLogsUnsubscribe) chatLogsUnsubscribe();
-            if (incomingScrollsUnsubscribe) incomingScrollsUnsubscribe();
-
-            // 1. Listen for Chats
-            const chatsColRef = collection(db, 'artifacts', appId, 'users', userId, 'chats');
-            const q = query(chatsColRef, orderBy('createdAt', 'desc'), limit(25));
-
-            chatLogsUnsubscribe = onSnapshot(q, (snapshot) => {
-                const fetchedChats = [];
-                snapshot.forEach((doc) => {
-                    fetchedChats.push({ id: doc.id, ...doc.data() });
-                });
-                
-                appState.chats = fetchedChats;
-                renderChatList();
-
-                // If URL contains an active chat title query parameter, try loading it
-                const urlParams = new URLSearchParams(window.location.search);
-                const chatSlug = urlParams.get('chat');
-                
-                if (chatSlug && !appState.activeChatId) {
-                    const matchedChat = appState.chats.find(c => {
-                        const formattedTitle = encodeURIComponent(c.title.toLowerCase().replace(/\s+/g, '-'));
-                        return formattedTitle === chatSlug;
-                    });
-                    if (matchedChat) {
-                        selectChat(matchedChat.id);
-                    }
-                }
-            }, (error) => {
-                console.error("Chats pipeline snapshot retrieval failed:", error);
-            });
-
-            // 2. Listen for Live Incoming Scrolls sent directly to current user's email
-            const scrollsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
-            const scrollsQuery = query(scrollsColRef, where('recipient', '==', appState.currentUser.email), orderBy('timestamp', 'desc'), limit(1));
-
-            incomingScrollsUnsubscribe = onSnapshot(scrollsQuery, (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        const scrollData = change.doc.data();
-                        // Verify that we do not show stale historical logs (must be newer than 15 seconds)
-                        if (scrollData.timestamp > Date.now() - 15000) {
-                            showLiveScrollOverlay(scrollData);
-                        }
-                    }
-                });
-            }, (error) => {
-                console.error("Incoming scrolls real-time listener failed:", error);
-            });
-        }
-
-
-        // Offline Standalone configuration backups
-        function loadMockLocalStorageData() {
-            // Local fallback configuration setup
-            const localSavedKey = localStorage.getItem('cribman_custom_api_key') || "";
-            appState.settings.apiKey = localSavedKey;
-            document.getElementById('custom-api-key-input').value = localSavedKey;
-
-            const storedMemory = localStorage.getItem('cribman_local_memory_bank');
-            if (storedMemory) {
-                try {
-                    appState.memoryBank = JSON.parse(storedMemory);
-                } catch (e) {}
-            }
-            document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
-
-            // Populate some mock playground buddies to make offline tests awesome
-            appState.friends = [
-                { name: "Daimyan", email: "daimyan@game-dungeon.com" },
-                { name: "Connor", email: "connor@game-dungeon.com" },
-                { name: "Sod", email: "sod@game-dungeon.com" },
-                { name: "Abas", email: "abas@game-dungeon.com" }
-            ];
-            document.getElementById('friends-indicator-count').textContent = `${appState.friends.length} Synced (Mock)`;
-
-            // Read mock chats list
-            const storedChats = localStorage.getItem('cribman_mock_chats');
-            if (storedChats) {
-                try {
-                    appState.chats = JSON.parse(storedChats);
-                } catch (e) {
-                    appState.chats = [];
-                }
-            }
-            renderChatList();
-        }
-
-
-        // Render Sidebar chats
-        function renderChatList() {
-            const scroller = document.getElementById('chats-scroller');
-            scroller.innerHTML = "";
-
-            if (appState.chats.length === 0) {
-                scroller.innerHTML = `
-                    <div class="text-center py-8 px-4 text-slate-500 text-xs">
-                        <i class="fa-regular fa-comments text-xl block mb-2 opacity-55"></i>
-                        No chats started. Type below to cook!
-                    </div>
-                `;
-                return;
-            }
-
-            appState.chats.forEach(chat => {
-                const isSelected = chat.id === appState.activeChatId;
-                const activeClasses = isSelected 
-                    ? "bg-gradient-to-r from-dungeon-cyan/20 to-dungeon-accent/10 border-l-4 border-dungeon-cyan text-white" 
-                    : "text-slate-400 hover:text-slate-200 hover:bg-dungeon-700/50";
-
-                const element = document.createElement('div');
-                element.className = `group mx-2 my-1 px-3 py-3 rounded-lg flex items-center justify-between cursor-pointer transition text-sm ${activeClasses}`;
-                element.innerHTML = `
-                    <div class="flex items-center space-x-2.5 truncate flex-1 select-none">
-                        <span class="text-xs">💬</span>
-                        <span class="truncate font-medium">${escapeHTML(chat.title)}</span>
-                    </div>
-                    <button class="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 rounded transition absolute right-2 bg-dungeon-800/90" title="Delete conversation log">
-                        <i class="fa-regular fa-trash-can text-xs"></i>
-                    </button>
-                `;
-
-                // Main navigation handler
-                element.addEventListener('click', (e) => {
-                    if (e.target.closest('button')) {
-                        deleteChatSession(chat.id);
-                    } else {
-                        selectChat(chat.id);
-                        closeMobileDrawer();
-                    }
-                });
-
-                scroller.appendChild(element);
-            });
-        }
-
-        // Populate and scroll into messages list
-        function renderMessages() {
-            const container = document.getElementById('messages-list-wrapper');
-            container.innerHTML = "";
-
-            const activeChat = appState.chats.find(c => c.id === appState.activeChatId);
-            if (!activeChat) return;
-
-            activeChat.messages.forEach(msg => {
-                const isAI = msg.role === 'model';
-                const containerClasses = isAI ? 'justify-start' : 'justify-end';
-                const bubbleClasses = isAI 
-                    ? 'bg-dungeon-800 border border-dungeon-700 text-slate-100 rounded-bl-none' 
-                    : 'bg-gradient-to-r from-dungeon-cyan to-dungeon-accent text-white rounded-br-none font-medium';
-                
-                const avatar = isAI 
-                    ? '<div class="w-8 h-8 rounded-full bg-dungeon-cyan/20 flex items-center justify-center text-xs border border-dungeon-cyan/30">🤖</div>'
-                    : `<div class="w-8 h-8 rounded-full bg-dungeon-accent flex items-center justify-center text-white font-bold text-xs">${appState.currentUser.name.charAt(0).toUpperCase()}</div>`;
-
-                const renderedElement = document.createElement('div');
-                renderedElement.className = `flex items-start space-x-2.5 max-w-full ${containerClasses}`;
-                renderedElement.innerHTML = `
-                    ${isAI ? avatar : ''}
-                    <div class="max-w-[85%] md:max-w-[70%] space-y-1">
-                        <div class="px-4 py-3 rounded-2xl text-xs md:text-sm leading-relaxed shadow-sm ${bubbleClasses}">
-                            ${isAI ? parseMarkdown(msg.parts[0].text) : escapeHTML(msg.parts[0].text)}
-                        </div>
-                    </div>
-                    ${!isAI ? avatar : ''}
-                `;
-                container.appendChild(renderedElement);
-            });
-
-            // Smooth scroll anchor focus
-            const scroller = document.getElementById('chat-messages-container');
-            scroller.scrollTop = scroller.scrollHeight;
-        }
-
-
-        // Send a message or detect if we need a custom Scroll confirmation prompt
-        async function sendUserQuery(userText) {
-            const userId = auth.currentUser?.uid || "sandbox_anon_id";
-            const apiKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
-            const searchIntent = checkForScrollIntent(userText);
-            let chatId = appState.activeChatId;
-            let isNewChat = false;
-
-            renderSkeletonLoading(true);
-
-            try {
-                let messagesToSend = [];
-                let currentChat = null;
-
-                if (chatId) {
-                    currentChat = appState.chats.find(c => c.id === chatId);
-                }
-
-                // If starting a fresh chat session or active chat can't be resolved
-                if (!chatId || !currentChat) {
-                    isNewChat = true;
-                    messagesToSend = [{ role: 'user', parts: [{ text: userText }] }];
-                    
-                    if (userId !== "sandbox_anon_id") {
-                        const chatsCol = collection(db, 'artifacts', appId, 'users', userId, 'chats');
-                        const initialChat = {
-                            title: "Connecting...",
-                            messages: messagesToSend,
-                            createdAt: Date.now()
-                        };
-                        const docRef = await addDoc(chatsCol, initialChat);
-                        chatId = docRef.id;
-                        appState.activeChatId = chatId;
-
-                        // Optimistically add to local memory cache to keep rendering smooth
-                        currentChat = { id: chatId, ...initialChat };
-                        appState.chats.unshift(currentChat);
-                    } else {
-                        // Sandbox offline flow
-                        chatId = "sandbox_" + Date.now();
-                        appState.activeChatId = chatId;
-                        currentChat = {
-                            id: chatId,
-                            title: "Connecting...",
-                            messages: messagesToSend,
-                            createdAt: Date.now()
-                        };
-                        appState.chats.unshift(currentChat);
-                        localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-                    }
-                } else {
-                    // Update and compile message history lists directly
-                    messagesToSend = [...currentChat.messages, { role: 'user', parts: [{ text: userText }] }];
-                    currentChat.messages = messagesToSend;
-
-                    if (userId !== "sandbox_anon_id") {
-                        const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                        await updateDoc(chatRef, { messages: messagesToSend });
-                    } else {
-                        localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-                    }
-                }
-
-                // Push dynamic updates to viewports optimistically
-                document.getElementById('welcome-screen').classList.add('hidden');
-                document.getElementById('active-chat-viewport').classList.remove('hidden');
-                renderMessages();
-
-                // If the API Key is blank, intercept and write a helpful custom model response containing instructions
-                if (!apiKey) {
-                    const instructions = `Yo, bro! I see you trying to send a message, but your AI Studio API key is completely blank! 🛠️\n\n` +
-                        `Since you are running this standalone or on GitHub Pages, CribMan needs a personal API key to talk to Google's servers. Here is exactly how to lock one in for free in 10 seconds:\n\n` +
-                        `1. Go to **[Google AI Studio](https://aistudio.google.com/)** (it is 100% free, no credit card required).\n` +
-                        `2. Click on **Get API Key** or **Create API Key**.\n` +
-                        `3. Copy your unique API Key.\n` +
-                        `4. Click the **Gear Icon (⚙️)** on the top-right corner of this screen, paste your key, and save!\n\n` +
-                        `Once that is saved to your cloud context, we will be officially back to cooking, bro!`;
-                    
-                    const finalMessages = [...messagesToSend, { role: 'model', parts: [{ text: instructions }] }];
-                    currentChat.messages = finalMessages;
-                    
-                    if (userId !== "sandbox_anon_id") {
-                        const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                        if (isNewChat) {
-                            await updateDoc(chatRef, { title: "Setup Required", messages: finalMessages });
-                            document.getElementById('active-chat-title').textContent = "Setup Required";
-                        } else {
-                            await updateDoc(chatRef, { messages: finalMessages });
-                        }
-                    } else {
-                        if (isNewChat) currentChat.title = "Setup Required";
-                        localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-                    }
-                    
-                    renderMessages();
-                    renderChatList();
-                    return; // Gracefully stop here without making the fetch call
-                }
-
-                if (searchIntent && searchIntent.isScrollIntent) {
-                    await handleScrollIntent(searchIntent, chatId, messagesToSend);
-                } else {
-                    await queryGeminiAPI(chatId, isNewChat, messagesToSend);
-                }
-            } catch (error) {
-                console.error("AI Generation Error", error);
-                if (chatId) {
-                    const errorNotice = `Bro, my AI studio pipeline just tripped. Make sure your internet connection isn't absolutely blicked!\n\n` +
-                        `🔍 **Error Log Details:** \`${error.message}\`\n\n` +
-                        `💡 **Deployment Fix:** If you are running this standalone (on GitHub Pages/outside the preview), you need to add your custom Google AI Studio API Key in the Settings panel (gear icon at the top right) to connect CribMan directly to the cloud!`;
-                    
-                    const currentChat = appState.chats.find(c => c.id === chatId);
-                    if (currentChat) {
-                        const errorLogs = [...currentChat.messages, {
-                            role: 'model',
-                            parts: [{ text: errorNotice }]
-                        }];
-                        currentChat.messages = errorLogs;
-                        
-                        if (userId !== "sandbox_anon_id") {
-                            const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                            await updateDoc(chatRef, { messages: errorLogs });
-                        } else {
-                            localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-                        }
-                        renderMessages();
-                    }
-                }
-            } finally {
-                renderSkeletonLoading(false);
-            }
-        }
-
-
-        // Query Gemini API directly with contextual instructions
-        async function queryGeminiAPI(chatId, isNewChat, currentMessages) {
-            const userId = auth.currentUser?.uid || "sandbox_anon_id";
-            const currentChat = appState.chats.find(c => c.id === chatId);
-            if (!currentChat) return;
-
-            const systemPrompt = `
-                You are "CribMan", the ultimate all-bro AI companion for The Game Dungeon (also known as The Crib).
-                You speak in absolute school-bro language (words like 'bro', 'goated', 'absolute W', 'devious', 'let him cook', 'oink oink' for bot-brained security vulnerabilities).
-                You are helpful, witty, and highly intelligent. 
-                
-                CURRENT USER PROFILE:
-                - Name: ${appState.currentUser.name}
-                - Email: ${appState.currentUser.email}
-                
-                YOUR MEMORY BANK KNOWLEDGE:
-                ${JSON.stringify(appState.memoryBank, null, 2)}
-                
-                REGISTERED GAME DUNGEON USERS/FRIENDS:
-                ${JSON.stringify(appState.friends, null, 2)}
-                
-                INSTRUCTIONS:
-                - Always prioritize addressing the user like a legendary gaming buddy.
-                - If the user talks about 'Five Nights at Sod's', get super hyped, mention Zero (the Scratch dev), and mention how Sod is an iPad kid.
-                - Keep answers clear, readable, and well-structured using basic markdown where appropriate.
-                - If talking about security or boring tasks, refer to it as "oink oink" behavior.
-            `;
-
-            const responseText = await executeGeminiCall(currentMessages, systemPrompt);
-            const finalMessages = [...currentMessages, { role: 'model', parts: [{ text: responseText }] }];
-
-            let chatTitle = currentChat.title;
-
-            // Generate an elegant, punchy title if starting a new thread
-            if (isNewChat) {
-                try {
-                    const titleInstruction = "Generate a very short, punchy 2-4 word title representing this prompt. Return ONLY the text of the title, no markup, no quotes, no conversational intro.";
-                    chatTitle = await executeGeminiCall([{ role: 'user', parts: [{ text: currentMessages[0].parts[0].text }] }], titleInstruction);
-                    chatTitle = chatTitle.trim().replace(/^["']|["']$/g, '');
-                    currentChat.title = chatTitle;
-                } catch (err) {
-                    chatTitle = "Bro Conversation";
-                    currentChat.title = chatTitle;
-                }
-            }
-
-            // Write back to Firestore
-            if (userId !== "sandbox_anon_id") {
-                const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                await updateDoc(chatRef, {
-                    title: chatTitle,
-                    messages: finalMessages
-                });
-            } else {
-                localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-            }
-
-            // Sync visual components
-            renderMessages();
-            renderChatList();
-
-            // Perform sandbox-safe routing redirection
-            updateURLQueryParameter(chatTitle);
-        }
-
-        // Standardized execution handler for AI Studio integration
-        async function executeGeminiCall(contentsArray, systemInstructionText = "") {
-            const savedKey = appState.settings?.apiKey || localStorage.getItem('cribman_custom_api_key') || "";
-            const apiKey = savedKey; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: contentsArray.map(item => ({
-                    role: item.role,
-                    parts: item.parts.map(p => ({ text: p.text }))
-                }))
-            };
-
-            if (systemInstructionText) {
-                payload.systemInstruction = {
-                    parts: [{ text: systemInstructionText }]
-                };
-            }
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                let errorDetail = `HTTP Error Code: ${response.status}`;
-                try {
-                    const errJson = await response.json();
-                    if (errJson.error && errJson.error.message) {
-                        errorDetail = `${errJson.error.message} (${errJson.error.status || 'BAD_REQUEST'})`;
-                    }
-                } catch (parseError) {}
-                throw new Error(errorDetail);
-            }
-
-            const result = await response.json();
-            const candidate = result.candidates?.[0];
-            const textResult = candidate?.content?.parts?.[0]?.text;
-
-            if (textResult) {
-                return textResult;
-            } else {
-                throw new Error("Empty candidate parameters returned");
-            }
-        }
-
-
-        // Analyze input for scroll delivery queries
-        function checkForScrollIntent(text) {
-            const regexes = [
-                /send (?:a )?scroll to (\w+)(?: saying (.+))?/i,
-                /tell (\w+) (.+)/i,
-                /scroll (\w+) (.+)/i
-            ];
-
-            for (let reg of regexes) {
-                const match = text.match(reg);
-                if (match) {
-                    return {
-                        isScrollIntent: true,
-                        targetName: match[1],
-                        bodyText: match[2] || ""
-                    };
-                }
-            }
-            return null;
-        }
-
-        // Render confirmation dialog and link friends email data
-        async function handleScrollIntent(intent, chatId, currentMessages) {
-            const targetName = intent.targetName;
-            let targetEmail = "";
-
-            // Search roster for match
-            const friendMatch = appState.friends.find(f => f.name.toLowerCase() === targetName.toLowerCase());
-            
-            if (friendMatch) {
-                targetEmail = friendMatch.email;
-            } else {
-                // If offline or can't locate, explain in chat to prompt details elegantly
-                const systemPrompt = `
-                    The user wanted to send a scroll to "${targetName}" but we couldn't find their email in the Game Dungeon friends list directory.
-                    Explain to the user like an absolute gaming buddy that you need their friend's actual email to dispatch the scroll!
-                `;
-                const aiExplanation = await executeGeminiCall(currentMessages, systemPrompt);
-                const finalMessages = [...currentMessages, { role: 'model', parts: [{ text: aiExplanation }] }];
-
-                const userId = auth.currentUser?.uid || "sandbox_anon_id";
-                if (userId !== "sandbox_anon_id") {
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    await updateDoc(chatRef, { messages: finalMessages });
-                } else {
-                    localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-                }
-                
-                renderMessages();
-                renderChatList();
-                return;
-            }
-
-            // Pre-compile the scroll formatting so the sender sees exactly what's leaving
-            let preparedBody = intent.bodyText;
-            if (!preparedBody) {
-                preparedBody = `Yo, CribMan here checking in from ${appState.currentUser.name}! The bro sends his highest regards!`;
-            }
-
-            // Lock context state for dialog approval callbacks
-            appState.interceptedScroll = {
-                chatId: chatId,
-                currentMessages: currentMessages,
-                recipientEmail: targetEmail,
-                bodyText: preparedBody
-            };
-
-            // Display scrolling card backdrop modal
-            document.getElementById('resolved-recipient-email').textContent = `${targetName} <${targetEmail}>`;
-            document.getElementById('compiled-scroll-text-preview').textContent = `"${preparedBody}"`;
-            document.getElementById('scroll-confirm-modal').classList.remove('hidden');
-        }
-
-        // Transmit approved message to public database tree
-        async function executeScrollDispatch() {
-            const scrollInfo = appState.interceptedScroll;
-            if (!scrollInfo) return;
-
-            document.getElementById('scroll-confirm-modal').classList.add('hidden');
-            renderSkeletonLoading(true);
-
-            try {
-                // Post scroll item to public channel database
-                const scrollsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'scrolls');
-                await addDoc(scrollsCollectionRef, {
-                    sender: appState.currentUser.email,
-                    senderName: appState.currentUser.name,
-                    recipient: scrollInfo.recipientEmail,
-                    message: scrollInfo.bodyText,
-                    timestamp: Date.now()
-                });
-
-                // Request CribMan model to write a hyped success confirmation
-                const successPrompt = [...scrollInfo.currentMessages, {
-                    role: 'user',
-                    parts: [{ text: `[System Action Approved: Scroll successfully dispatched to ${scrollInfo.recipientEmail}]` }]
-                }];
-
-                const sysInstruction = "The scroll dispatch was fully approved by the user and sent. Confirm with absolute hype and congratulations in goated bro speech.";
-                const responseText = await executeGeminiCall(successPrompt, sysInstruction);
-
-                const finalMessages = [...scrollInfo.currentMessages, { role: 'model', parts: [{ text: responseText }] }];
-                
-                const userId = auth.currentUser?.uid || "sandbox_anon_id";
-                if (userId !== "sandbox_anon_id") {
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    await updateDoc(chatRef, { messages: finalMessages });
-                } else {
-                    const activeChat = appState.chats.find(c => c.id === scrollInfo.chatId);
-                    if (activeChat) activeChat.messages = finalMessages;
-                    localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-                }
-
-                renderMessages();
-                renderChatList();
-
-            } catch (error) {
-                console.error("Scroll transmission error:", error);
-            } finally {
-                renderSkeletonLoading(false);
-                appState.interceptedScroll = null;
-            }
-        }
-
-
-        // Layout interactions toggles
+        // Sidebar Logic
         const sidebar = document.getElementById('chat-sidebar');
-        const backdrop = document.getElementById('sidebar-backdrop');
-        const sidebarToggle = document.getElementById('sidebar-toggle-btn');
-
+        const workspace = document.getElementById('chat-workspace');
+        
         function toggleSidebar() {
-            const isClosed = sidebar.classList.contains('-translate-x-full');
-            const workspace = document.getElementById('chat-workspace');
-            
-            if (isClosed) {
-                sidebar.classList.remove('-translate-x-full');
-                backdrop.classList.remove('hidden');
-                workspace.classList.add('md:pl-80');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                backdrop.classList.add('hidden');
-                workspace.classList.remove('md:pl-80');
+            sidebar.classList.toggle('-translate-x-full');
+            if (window.innerWidth >= 768) {
+                workspace.classList.toggle('md:pl-80');
             }
         }
 
-        function closeMobileDrawer() {
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('-translate-x-full');
-                backdrop.classList.add('hidden');
-            }
-        }
-
-        sidebarToggle.addEventListener('click', toggleSidebar);
-        backdrop.addEventListener('click', toggleSidebar);
-
-        // Manage active query submissions
-        document.getElementById('chat-query-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('chat-input-field');
-            const text = input.value.trim();
-            if (!text) return;
-
-            input.value = "";
-            sendUserQuery(text);
-        });
-
-        // Trigger dynamic pre-defined helper buttons
-        window.presetPrompt = function(promptText) {
-            sendUserQuery(promptText);
-        };
-
-        // Open specific conversation threads
-        async function selectChat(chatId) {
-            appState.activeChatId = chatId;
-            const chat = appState.chats.find(c => c.id === chatId);
-            if (!chat) return;
-
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('active-chat-viewport').classList.remove('hidden');
-            document.getElementById('active-chat-title').textContent = chat.title;
-
-            renderMessages();
-            renderChatList();
-            updateURLQueryParameter(chat.title);
-        }
-
-        // Clean existing logs
-        async function deleteChatSession(chatId) {
-            const userId = auth.currentUser?.uid || "sandbox_anon_id";
-            const index = appState.chats.findIndex(c => c.id === chatId);
-            if (index === -1) return;
-
-            appState.chats.splice(index, 1);
-            
-            if (userId !== "sandbox_anon_id") {
-                try {
-                    const chatRef = doc(db, 'artifacts', appId, 'users', userId, 'chats', chatId);
-                    // Standard practice to clean state indexes
-                    await updateDoc(chatRef, { deleted: true }); // Mock logical cleanup
-                } catch (e) {
-                    console.error("Cleanup sync failed:", e);
-                }
-            } else {
-                localStorage.setItem('cribman_mock_chats', JSON.stringify(appState.chats));
-            }
-
-            if (appState.activeChatId === chatId) {
-                appState.activeChatId = null;
-                document.getElementById('active-chat-viewport').classList.add('hidden');
-                document.getElementById('welcome-screen').classList.remove('hidden');
-                history.pushState(null, "", window.location.pathname);
-            }
-
-            renderChatList();
-        }
-
-        // Force initialize clean thread state
-        document.getElementById('new-chat-btn').addEventListener('click', () => {
-            appState.activeChatId = null;
-            document.getElementById('active-chat-viewport').classList.add('hidden');
-            document.getElementById('welcome-screen').classList.remove('hidden');
-            closeMobileDrawer();
-            history.pushState(null, "", window.location.pathname);
-        });
-
-        document.getElementById('clear-active-chat-btn').addEventListener('click', () => {
-            if (appState.activeChatId) {
-                deleteChatSession(appState.activeChatId);
-            }
-        });
-
-        // Toggle configuration dialog modals
-        const memoryModal = document.getElementById('memory-bank-modal');
-        const settingsModal = document.getElementById('settings-modal');
-
-        document.getElementById('memory-bank-btn').addEventListener('click', () => {
-            document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
-            memoryModal.classList.remove('hidden');
-        });
-
-        document.getElementById('settings-btn').addEventListener('click', () => {
-            settingsModal.classList.remove('hidden');
-        });
-
-        document.querySelectorAll('.modal-close-trigger').forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                memoryModal.classList.add('hidden');
-                settingsModal.classList.add('hidden');
-            });
-        });
-
-        // Save JSON settings updates
-        document.getElementById('save-memory-bank-btn').addEventListener('click', async () => {
-            const txt = document.getElementById('memory-bank-json-textarea').value;
-            const errLog = document.getElementById('json-format-error-log');
-            const userId = auth.currentUser?.uid || "sandbox_anon_id";
-
+        document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
+        
+        // Auth flow with hard lock-unlock for inputs
+        onAuthStateChanged(auth, async (user) => {
             try {
-                const parsed = JSON.parse(txt);
-                appState.memoryBank = parsed;
-                errLog.classList.add('hidden');
-                memoryModal.classList.add('hidden');
-
-                if (userId !== "sandbox_anon_id") {
-                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
-                    await updateDoc(userDocRef, { memoryBank: parsed });
+                if (user) {
+                    appState.currentUser.uid = user.uid;
+                    document.getElementById('connection-status-lbl').textContent = "Cloud Sync Online";
                 } else {
-                    localStorage.setItem('cribman_local_memory_bank', JSON.stringify(parsed));
+                    await signInAnonymously(auth);
                 }
-
-            } catch (err) {
-                errLog.classList.remove('hidden');
+            } catch (e) {
+                console.error("Auth init failure, continuing in sandbox mode.");
+            } finally {
+                document.getElementById('chat-input-field').disabled = false;
+                document.getElementById('submit-prompt-btn').disabled = false;
             }
         });
 
-        // Save API structural updates
-        document.getElementById('save-settings-btn').addEventListener('click', async () => {
-            const keyVal = document.getElementById('custom-api-key-input').value.trim();
-            const userId = auth.currentUser?.uid || "sandbox_anon_id";
-
-            appState.settings.apiKey = keyVal;
-            localStorage.setItem('cribman_custom_api_key', keyVal);
-            settingsModal.classList.add('hidden');
-
-            if (userId !== "sandbox_anon_id") {
-                const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
-                await updateDoc(userDocRef, { "settings.apiKey": keyVal });
-            }
-        });
-
-        // Intercept scroll dialog controls
-        document.getElementById('close-scroll-confirm-btn').addEventListener('click', () => {
-            document.getElementById('scroll-confirm-modal').classList.add('hidden');
-            appState.interceptedScroll = null;
-        });
-
-        document.getElementById('cancel-scroll-confirm-btn').addEventListener('click', () => {
-            document.getElementById('scroll-confirm-modal').classList.add('hidden');
-            appState.interceptedScroll = null;
-        });
-
-        document.getElementById('execute-scroll-confirm-btn').addEventListener('click', executeScrollDispatch);
-
-        // Account trigger handler
-        document.getElementById('account-container').addEventListener('click', () => {
-            // Display Settings panel dynamically where users can check mock/active flows
-            settingsModal.classList.remove('hidden');
-        });
-
-        // Manual controls to run developer tests
-        document.getElementById('trigger-mock-login-btn').addEventListener('click', async () => {
-            try {
-                // Standard anonymous populator bypass
-                await signInAnonymously(auth);
-                settingsModal.classList.add('hidden');
-            } catch (err) {
-                console.error("Popup block, mock data load active", err);
-            }
-        });
-
-        document.getElementById('trigger-mock-logout-btn').addEventListener('click', async () => {
-            await signOut(auth);
-            localStorage.clear();
-            settingsModal.classList.add('hidden');
-            window.location.reload();
-        });
-
-
-        // Display incoming scrolls overlay alerts safely
-        function showLiveScrollOverlay(scroll) {
-            const container = document.getElementById('incoming-scroll-parchment-container');
-            document.getElementById('incoming-scroll-sender-lbl').textContent = `From: ${scroll.senderName || scroll.sender.split('@')[0]}`;
-            document.getElementById('incoming-scroll-message-lbl').textContent = `"${scroll.message}"`;
-            
-            container.classList.remove('hidden');
-            // Transition in smoothly
-            setTimeout(() => {
-                container.style.transform = "translateY(0)";
-                container.style.left = "50%";
-            }, 50);
-
-            // Copy actions
-            document.getElementById('copy-incoming-scroll-btn').onclick = () => {
-                const dummy = document.createElement("textarea");
-                document.body.appendChild(dummy);
-                dummy.value = scroll.message;
-                dummy.select();
-                document.execCommand("copy");
-                document.body.removeChild(dummy);
-                
-                document.getElementById('copy-incoming-scroll-btn').textContent = "Copied!";
-                setTimeout(() => {
-                    document.getElementById('copy-incoming-scroll-btn').textContent = "Copy Content";
-                }, 1500);
-            };
-        }
-
-        document.getElementById('dismiss-scroll-overlay-btn').addEventListener('click', () => {
-            const container = document.getElementById('incoming-scroll-parchment-container');
-            container.style.transform = "translateY(-150%)";
-            setTimeout(() => {
-                container.classList.add('hidden');
-            }, 350);
-        });
-
-        // Sandbox-proof URL updates
-        function updateURLQueryParameter(titleText) {
-            try {
-                const formattedSlug = encodeURIComponent(titleText.toLowerCase().replace(/\s+/g, '-'));
-                const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?chat=${formattedSlug}`;
-                window.history.pushState({ path: newurl }, '', newurl);
-            } catch (err) {
-                // Fail silently inside preview frames to avoid disrupting operations
-            }
-        }
-
-        // Render loading state templates
-        function renderSkeletonLoading(show) {
-            const loader = document.getElementById('ai-skeleton-loader');
-            if (show) {
-                loader.classList.remove('hidden');
-                // Auto scroll to latest entry
-                const scroller = document.getElementById('chat-messages-container');
-                scroller.scrollTop = scroller.scrollHeight;
-            } else {
-                loader.classList.add('hidden');
-            }
-        }
-
-        // Helpers to scrub inputs
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    "'": '&#39;',
-                    '"': '&quot;'
-                }[tag] || tag)
-            );
-        }
-
-        // Simplified browser safe markdown block generator
-        function parseMarkdown(text) {
-            let parsed = escapeHTML(text);
-            // Translate double asterisks into bold fonts
-            parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-            // Translate line breaks
-            parsed = parsed.replace(/\n/g, '<br>');
-            return parsed;
-        }
-
-        // Handle randomized greeting selection
-        const greetings = ["What’s up, bro?", "How’s it hangin’?", "Let’s get cooking!"];
-        const index = Math.floor(Math.random() * greetings.length);
-        document.getElementById('random-greeting').textContent = greetings[index];
-
+        // Initialize UI event handlers manually after content loads
+        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('hidden'));
+        document.getElementById('memory-bank-btn').addEventListener('click', () => document.getElementById('memory-bank-modal').classList.remove('hidden'));
+        document.querySelectorAll('.modal-close-trigger').forEach(b => b.addEventListener('click', () => {
+            document.getElementById('memory-bank-modal').classList.add('hidden');
+            document.getElementById('settings-modal').classList.add('hidden');
+        }));
     </script>
 </body>
 </html>
