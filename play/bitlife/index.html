@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitlife | The Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/storage/js/fs.js" defer></script>
+    <script type="module" src="/storage/js/status.js" data-game="Ragdoll Melon"></script>
+    <style>
+        body {
+            background-color: #0b0b0b;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Iframe spring animation */
+        #game-wrapper {
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0);
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        #game-wrapper.expanded {
+            transform: scale(1);
+            opacity: 1;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Pull Tab */
+        #pull-tab {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%) translateX(80%);
+            background: #1e1e1e;
+            border: 1px solid #3b82f6;
+            border-right: none;
+            padding: 1rem 0.5rem;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            z-index: 100;
+            display: none;
+        }
+
+        #pull-tab:hover {
+            transform: translateY(-50%) translateX(0);
+        }
+
+        .modal-bg {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col items-center justify-center">
+
+    <!-- Auth Guard Overlay -->
+    <div id="loading-screen" class="fixed inset-0 bg-black z-[200] flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Pre-Game Menu -->
+    <div id="launcher-menu" class="flex flex-col items-center space-y-6 fade-in">
+        <img src="/storage/photos/bitlife.png" alt="Bitlife" class="w-48 h-48 rounded-2xl border-4 border-blue-500 shadow-2xl shadow-blue-500/20">
+        <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter">RAGDOLL MELON</h1>
+        
+        <div class="flex space-x-4">
+            <a href="/play/" class="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 font-bold rounded-xl transition-all border border-white/10">
+                BACK
+            </a>
+            <button onclick="launchGame()" class="px-12 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30">
+                PLAY
+            </button>
+            <a href="/play/bitlife/?fs=true" class="px-8 py-3 bg-green-800 hover:bg-neutral-700 font-bold rounded-xl transition-all border border-white/10">
+                FULLSCREEN
+            </a>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-wrapper" class="fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <iframe id="game-frame" src="" class="w-full h-full border-none"></iframe>
+    </div>
+
+    <!-- Pull Tab -->
+    <div id="pull-tab" onclick="toggleQuitMenu()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </div>
+
+    <!-- Quit Confirmation Pop-up -->
+    <div id="quit-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center modal-bg">
+        <div class="bg-neutral-900 border border-white/10 p-8 rounded-2xl text-center space-y-6 shadow-2xl">
+            <h2 class="text-2xl font-bold tracking-tight">ARE YOU SURE?</h2>
+            <div class="flex space-x-4 justify-center">
+                <button onclick="closeModal()" class="px-8 py-2 bg-neutral-800 rounded-lg font-bold hover:bg-neutral-700 transition-colors">NO</button>
+                <button onclick="confirmQuit()" class="px-8 py-2 bg-red-600 rounded-lg font-bold hover:bg-red-500 transition-colors">YES</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "/account/login/";
+            } else {
+                document.getElementById('loading-screen').style.display = 'none';
+            }
+        });
+
+        window.launchGame = function() {
+            const wrapper = document.getElementById('game-wrapper');
+            const frame = document.getElementById('game-frame');
+            const tab = document.getElementById('pull-tab');
+            
+            // Set source and spring up
+            frame.src = "/storage/bitlife-master/";
+            wrapper.classList.add('expanded');
+            
+            // Show pull tab after animation
+            setTimeout(() => {
+                tab.style.display = 'block';
+            }, 600);
+        };
+
+        window.toggleQuitMenu = function() {
+            document.getElementById('quit-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('quit-modal').classList.add('hidden');
+        };
+
+        window.confirmQuit = function() {
+            const wrapper = document.getElementById('game-wrapper');
+            const tab = document.getElementById('pull-tab');
+            const frame = document.getElementById('game-frame');
+
+            // Hide pop-up and tab
+            closeModal();
+            tab.style.display = 'none';
+
+            // Shrink iframe
+            wrapper.classList.remove('expanded');
+
+            // Wipe src after shrink to save resources
+            setTimeout(() => {
+                frame.src = "";
+            }, 600);
+        };
+    </script>
+    <script type="module">
+    // Import your Daimyan Proof logic
+    import { initTracker } from "/storage/js/tracker.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Standard Dungeon Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+        projectId: "the-game-dungeon-4d75d",
+        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+        messagingSenderId: "533459716906",
+        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+    };
+
+    // Initialize Firebase for this page so the tracker has an active context
+    const app = initializeApp(firebaseConfig);
+    getAuth(app);
+    getFirestore(app);
+
+    // Initialize the tracker with the specific Hall of Records name
+    // This must match your UI cards exactly!
+    initTracker("Bitlife");
+</script>
+</body>
+</html>
