@@ -178,7 +178,7 @@ onAuthStateChanged(auth, async (user) => {
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -205,6 +205,15 @@ onAuthStateChanged(auth, async (user) => {
                 currentUser = user;
                 document.getElementById('loading-screen').style.display = 'none';
                 initScrollListener();
+                
+                // Inspect search parameters for external auto-fill triggers
+                const urlParams = new URLSearchParams(window.location.search);
+                const sendmessageParam = urlParams.get("sendmessage");
+                if (sendmessageParam) {
+                    window.openCompose();
+                    toInp.value = sendmessageParam;
+                    validate();
+                }
             }
         });
 
@@ -278,71 +287,78 @@ onAuthStateChanged(auth, async (user) => {
         };
 
         async function sendEmailNotification(targetEmail, senderEmail, message) {
-    try {
-        await emailjs.send("service_n2hsxcf", "template_rip4cmz", {
-            to_email: targetEmail,
-            to_name: targetEmail.split("@")[0],   // optional but funny
-            from_name: senderEmail.split("@")[0],
-            message: message
-        });
+            try {
+                await emailjs.send("service_n2hsxcf", "template_rip4cmz", {
+                    to_email: targetEmail,
+                    to_name: targetEmail.split("@")[0],   // optional but funny
+                    from_name: senderEmail.split("@")[0],
+                    message: message
+                });
 
-        console.log("EmailJS: Scroll notification sent.");
-    } catch (err) {
-        console.error("EmailJS Error:", err);
-    }
-}
+                console.log("EmailJS: Scroll notification sent.");
+            } catch (err) {
+                console.error("EmailJS Error:", err);
+            }
+        }
 
         window.sendScroll = async () => {
-    if (sendBtn.disabled) return;
+            if (sendBtn.disabled) return;
 
-    const target = toInp.value.trim();
-    const text = textInp.value.trim();
+            const target = toInp.value.trim();
+            const text = textInp.value.trim();
 
-    try {
-        // Save scroll to Firestore
-        await addDoc(collection(db, scrollPath), {
-            senderEmail: currentUser.email,
-            targetEmail: target,
-            text: text,
-            timestamp: serverTimestamp()
-        });
+            try {
+                // Save scroll to Firestore
+                await addDoc(collection(db, scrollPath), {
+                    senderEmail: currentUser.email,
+                    targetEmail: target,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
 
-        // Send email notification
-        if (target.toLowerCase() === "global") {
-    broadcastGlobalEmail(currentUser.email, text);
-} else {
-    sendEmailNotification(target, currentUser.email, text);
-}
+                // Send email notification
+                if (target.toLowerCase() === "global") {
+                    broadcastGlobalEmail(currentUser.email, text);
+                } else {
+                    sendEmailNotification(target, currentUser.email, text);
+                }
 
-async function broadcastGlobalEmail(senderEmail, message) {
-    const usersRef = collection(db, "users"); // your user list
-    const snap = await getDocs(usersRef);
+                // Smoothly scrub the target parameters from search registers without hard reload
+                const url = new URL(window.location.href);
+                if (url.searchParams.has("sendmessage")) {
+                    url.searchParams.delete("sendmessage");
+                    window.history.replaceState({}, document.title, url.pathname + url.search);
+                }
 
-    snap.forEach(doc => {
-        const user = doc.data();
-        const email = user.email;
+                async function broadcastGlobalEmail(senderEmail, message) {
+                    const usersRef = collection(db, "users"); // your user list
+                    const snap = await getDocs(usersRef);
 
-        if (!email) return;
-        if (email === senderEmail) return; // don't email yourself
+                    snap.forEach(doc => {
+                        const user = doc.data();
+                        const email = user.email;
 
-        emailjs.send("service_n2hsxcf", "template_rip4cmz", {
-            to_email: email,
-            to_name: email.split("@")[0],
-            from_name: senderEmail.split("@")[0],
-            message: message
-        }).then(() => {
-            console.log("Global email sent to:", email);
-        }).catch(err => {
-            console.error("Global email error:", err);
-        });
-    });
-}
+                        if (!email) return;
+                        if (email === senderEmail) return; // don't email yourself
 
-        closeCompose();
-    } catch (error) {
-        console.error(error);
-    }
-};
+                        emailjs.send("service_n2hsxcf", "template_rip4cmz", {
+                            to_email: email,
+                            to_name: email.split("@")[0],
+                            from_name: senderEmail.split("@")[0],
+                            message: message
+                        }).then(() => {
+                            console.log("Global email sent to:", email);
+                        }).catch(err => {
+                            console.error("Global email error:", err);
+                        });
+                    });
+                }
+
+                closeCompose();
+            } catch (error) {
+                console.error(error);
+            }
+        };
     </script>
 </body>
 </html>
