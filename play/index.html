@@ -497,7 +497,13 @@
             const isPending = currentUserData?.sentRequests?.includes(email);
 
             if (isFriend) {
-                actions.innerHTML = `<button onclick="unfriend('${email}')" class="w-full py-4 bg-red-600/10 text-red-500 rounded-2xl font-bold uppercase text-xs hover:bg-red-600/20">Unfriend</button>`;
+                actions.innerHTML = `
+                    <button onclick="window.location.href='/chat/?sendmessage=' + encodeURIComponent('${email}')" class="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-2xl font-black italic uppercase tracking-tighter flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        SEND SCROLL
+                    </button>
+                    <button onclick="unfriend('${email}')" class="w-full py-4 bg-red-600/10 text-red-500 rounded-2xl font-bold uppercase text-xs hover:bg-red-600/20">Unfriend</button>
+                `;
             } else if (isPending) {
                 actions.innerHTML = `<button class="w-full py-4 glass text-neutral-500 rounded-2xl font-bold uppercase text-xs" disabled>Pending...</button>`;
             } else if (email !== auth.currentUser.email) {
