@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Playroom | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Your custom status tracker -->
     <script type="module" src="/storage/js/status.js" data-game="Play"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
         body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
@@ -28,6 +28,8 @@
         }
         .online { background-color: #22c55e; }
         .offline { background-color: #ef4444; }
+        .game-card { display: block; border-radius: 1rem; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s; }
+        .game-card:hover { border-color: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
     </style>
 </head>
 <body class="min-h-screen">
@@ -56,10 +58,8 @@
         </div>
     </nav>
 
-        <!-- Main Game Grid (No Animation) -->
-    <main class="p-6">
+        <main class="p-6">
         <div id="game-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <!-- Game 1 -->
             <a href="/play/ragdoll-hit/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/rh.png" alt="Game 1" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -69,7 +69,6 @@
                     <h3 class="text-xl font-bold tracking-tight">RAGDOLL HIT</h3>
                 </div>
             </a>
-            <!-- Game 2 -->
             <a href="/play/geometry-dash/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/gd.png" alt="Game 2" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -79,7 +78,6 @@
                     <h3 class="text-xl font-bold tracking-tight">GEOMETRY DASH</h3>
                 </div>
             </a>
-            <!-- Game 3 -->
             <a href="/play/cookie-clicker/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/cc.png" alt="Game 3" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -89,7 +87,6 @@
                     <h3 class="text-xl font-bold tracking-tight">COOKIE CLICKER</h3>
                 </div>
             </a>
-            <!-- Game 4 -->
             <a href="/play/polytrack/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/polytrack.png" alt="Game 4" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -99,8 +96,7 @@
                     <h3 class="text-xl font-bold tracking-tight">POLYTRACK</h3>
                 </div>
             </a>
-          <!-- Game 5 -->
-            <a href="/play/ragdoll-melon/" class="game-card">
+          <a href="/play/ragdoll-melon/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/rm.png" alt="Game 5" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
@@ -109,7 +105,6 @@
                     <h3 class="text-xl font-bold tracking-tight">RAGDOLL MELON</h3>
                 </div>
             </a>
-            <!-- Game 6 -->
             <a href="/play/cut-the-rope/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/ctr.png" alt="Game 6" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -119,8 +114,7 @@
                     <h3 class="text-xl font-bold tracking-tight">CUT THE ROPE</h3>
                 </div>
             </a>
-           <!-- Game 7 -->
-            <a href="/play/earn-to-die-2/" class="game-card">
+           <a href="/play/earn-to-die-2/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/etd2.png" alt="Game 7" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
@@ -129,7 +123,6 @@
                     <h3 class="text-xl font-bold tracking-tight">EARN TO DIE 2</h3>
                 </div>
             </a>
-            <!-- Game 8 -->
             <a href="/play/bloons-tower-defense-2/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/btd2.png" alt="Game 8" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -139,7 +132,6 @@
                     <h3 class="text-xl font-bold tracking-tight">BLOONS TOWER DEFENSE 2</h3>
                 </div>
             </a>
-            <!-- Game 9 -->
             <a href="/play/ragdoll-archers/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/ra.png" alt="Game 9" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -149,7 +141,6 @@
                     <h3 class="text-xl font-bold tracking-tight">RAGDOLL ARCHERS</h3>
                 </div>
             </a>
-            <!-- Game 10 -->
             <a href="/play/basket-random/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/br.png" alt="Game 10" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -159,7 +150,6 @@
                     <h3 class="text-xl font-bold tracking-tight">BASKET RANDOM</h3>
                 </div>
             </a>
-            <!-- Game 11 -->
             <a href="/play/snow-rider-3d/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/sr3.png" alt="Game 11" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -169,8 +159,7 @@
                     <h3 class="text-xl font-bold tracking-tight">SNOW RIDER 3D</h3>
                 </div>
             </a>
-              <!-- Game 12 -->
-            <a href="/play/bitlife/" class="game-card">
+              <a href="/play/bitlife/" class="game-card">
                 <div class="h-48 bg-neutral-800 flex items-center justify-center">
                     <img src="/storage/photos/bitlife.png" alt="Game 12" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
@@ -179,11 +168,15 @@
                     <h3 class="text-xl font-bold tracking-tight">BITLIFE</h3>
                 </div>
             </a>
+            <div id="custom-games-container" class="contents"></div>
+            <button onclick="openCustomGameModal()" class="border-2 border-dashed border-white/10 rounded-[1rem] h-64 flex flex-col items-center justify-center hover:bg-white/5 hover:border-white/30 transition-all text-neutral-500 hover:text-white group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:scale-110 transition-transform"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span class="text-xs font-bold tracking-widest uppercase mt-3">Add Custom Game</span>
+            </button>
         </div>
     </main>
 
 
-    <!-- Modals -->
     <div id="user-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
         <div class="glass w-full max-w-sm rounded-[2rem] p-8 relative flex flex-col items-center text-center">
             <button onclick="closeModals()" class="absolute top-6 right-6 text-neutral-500 hover:text-white">
@@ -227,6 +220,57 @@
         </div>
     </div>
 
+    <div id="custom-game-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-[2rem] p-8 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-black italic uppercase mb-6">Add Custom Brain</h2>
+            
+            <label class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest block mb-2">Game Title</label>
+            <input type="text" id="cg-title" placeholder="MY UNBLOCKED GAME" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 font-bold uppercase text-sm">
+            
+            <label class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest block mb-2">Icon Image URL</label>
+            <input type="text" id="cg-icon" placeholder="https://example.com/icon.png" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 text-xs font-mono">
+            
+            <label class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest block mb-2">Select Brain Type</label>
+            <div class="grid grid-cols-3 gap-2 mb-4 bg-white/5 p-1 rounded-xl border border-white/5">
+                <button type="button" onclick="switchBrainTab('url')" id="tab-url" class="py-2 rounded-lg text-xs font-bold uppercase tracking-tight bg-blue-600 text-white transition-all">URL Link</button>
+                <button type="button" onclick="switchBrainTab('html')" id="tab-html" class="py-2 rounded-lg text-xs font-bold uppercase tracking-tight text-neutral-400 transition-all">Raw HTML</button>
+                <button type="button" onclick="switchBrainTab('zip')" id="tab-zip" class="py-2 rounded-lg text-xs font-bold uppercase tracking-tight text-neutral-400 transition-all">Zip Folder</button>
+            </div>
+
+            <div id="pane-url" class="brain-pane mb-4">
+                <label class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest block mb-2">Target Iframe Source URL</label>
+                <input type="text" id="cg-src-url" placeholder="https://game-files.github.io" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 text-xs font-mono">
+            </div>
+
+            <div id="pane-html" class="brain-pane mb-4 hidden">
+                <label class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest block mb-2">Paste Raw HTML Code</label>
+                <textarea id="cg-src-html" rows="5" placeholder="<!DOCTYPE html><html><body>...</body></html>" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:border-blue-500 text-xs font-mono"></textarea>
+            </div>
+
+            <div id="pane-zip" class="brain-pane mb-4 hidden">
+                <label class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest block mb-2">Upload Game Zip (Must contain index.html at root)</label>
+                <div class="relative w-full h-24 border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center hover:bg-white/5 cursor-pointer">
+                    <input type="file" id="cg-src-zip" accept=".zip" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-500 mb-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span id="zip-file-label" class="text-xs text-neutral-400 font-bold truncate px-4">Choose .zip archive</span>
+                </div>
+            </div>
+
+            <button onclick="saveCustomGame()" class="w-full py-4 bg-blue-600 rounded-xl font-black italic uppercase tracking-tighter">Assemble Brain</button>
+            <button onclick="closeModals()" class="w-full mt-3 py-2 text-neutral-500 text-sm">Cancel</button>
+        </div>
+    </div>
+
+    <div id="game-player-modal" class="hidden fixed inset-0 z-50 bg-[#050505] flex flex-col">
+        <div class="p-4 bg-neutral-900/50 border-b border-white/5 backdrop-blur-md flex items-center justify-between">
+            <h2 id="player-title" class="text-lg font-black italic uppercase tracking-tight text-blue-400">Loading Game Engine...</h2>
+            <button onclick="closeGamePlayer()" class="px-4 py-2 glass rounded-xl font-bold uppercase text-xs text-red-500 hover:bg-red-500/10">Exit Game</button>
+        </div>
+        <div class="flex-1 w-full h-full bg-black relative">
+            <iframe id="player-frame" class="w-full h-full border-none absolute inset-0" allow="autoplay; fullscreen; keyboard"></iframe>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -252,6 +296,10 @@
         let myPrefix = "";
         const activeListeners = {};
 
+        // IndexedDB Engine Variables
+        let dbInstance = null;
+        let selectedBrainType = "url";
+
         function getGameFileName(gameName) {
             if (!gameName || gameName === "null") return "tgdtc";
             const words = gameName.trim().split(/\s+/);
@@ -265,6 +313,7 @@
             }
             myPrefix = user.email.split('@')[0];
             await initSocial(user);
+            initIndexedDB();
         });
 
         window.addEventListener('beforeunload', () => {
@@ -450,7 +499,226 @@
 
         window.openAddFriendModal = () => document.getElementById('add-modal').classList.remove('hidden');
         window.openRequestsModal = () => document.getElementById('requests-modal').classList.remove('hidden');
-        window.closeModals = () => document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
+        
+        // -------------------------------------------------------------
+        // LOCAL INDEXEDDB CUSTOM GAME ENGINE HOOKS
+        // -------------------------------------------------------------
+        function initIndexedDB() {
+            const request = indexedDB.open("TheCribCustomStorage", 1);
+            request.onupgradeneeded = (e) => {
+                const dbInstance = e.target.result;
+                if (!dbInstance.objectStoreNames.contains("games")) {
+                    dbInstance.createObjectStore("games", { keyPath: "id" });
+                }
+            };
+            request.onsuccess = (e) => {
+                dbInstance = e.target.result;
+                loadCustomGames();
+            };
+            request.onerror = (e) => console.error("Database compilation crash:", e);
+        }
+
+        window.openCustomGameModal = () => {
+            document.getElementById('custom-game-modal').classList.remove('hidden');
+        };
+
+        window.switchBrainTab = (type) => {
+            selectedBrainType = type;
+            document.querySelectorAll('.brain-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`pane-${type}`).classList.remove('hidden');
+            
+            const tabs = ['url', 'html', 'zip'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === type) {
+                    el.className = "py-2 rounded-lg text-xs font-bold uppercase tracking-tight bg-blue-600 text-white transition-all";
+                } else {
+                    el.className = "py-2 rounded-lg text-xs font-bold uppercase tracking-tight text-neutral-400 transition-all";
+                }
+            });
+        };
+
+        document.getElementById('cg-src-zip').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) document.getElementById('zip-file-label').innerText = file.name;
+        });
+
+        window.saveCustomGame = async () => {
+            const title = document.getElementById('cg-title').value.trim();
+            const icon = document.getElementById('cg-icon').value.trim() || 'https://ui-avatars.com/api/?name=CG&background=333&color=fff';
+            if (!title) return alert("Give your game a brain title!");
+
+            const gameId = "custom-" + Date.now();
+            const gameData = { id: gameId, title: title.toUpperCase(), icon: icon, type: selectedBrainType };
+
+            if (selectedBrainType === 'url') {
+                const url = document.getElementById('cg-src-url').value.trim();
+                if(!url) return alert("Enter the iframe destination link!");
+                gameData.payload = url;
+                commitToIndexedDB(gameData);
+            } else if (selectedBrainType === 'html') {
+                const html = document.getElementById('cg-src-html').value.trim();
+                if(!html) return alert("Paste raw source HTML strings!");
+                gameData.payload = html;
+                commitToIndexedDB(gameData);
+            } else if (selectedBrainType === 'zip') {
+                const fileInput = document.getElementById('cg-src-zip');
+                if (fileInput.files.length === 0) return alert("Throw a zip file structure onto the input stack!");
+                
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const zip = await JSZip.loadAsync(e.target.result);
+                        const indexFile = zip.file("index.html");
+                        if (!indexFile) return alert("Fatal format layout: missing index.html at core package root!");
+                        
+                        // Parse zip assets to individual object blobs mapped synchronously
+                        const filesMap = {};
+                        const promises = [];
+                        
+                        zip.forEach((relativePath, zipEntry) => {
+                            if (!zipEntry.dir) {
+                                const p = zipEntry.async("blob").then(blob => {
+                                    filesMap[relativePath] = blob;
+                                });
+                                promises.push(p);
+                            }
+                        });
+                        
+                        await Promise.all(promises);
+                        gameData.payload = filesMap; // Object maps for simulated system parsing
+                        commitToIndexedDB(gameData);
+                    } catch(err) {
+                        alert("Crash reading binary archive layers.");
+                        console.error(err);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        };
+
+        function commitToIndexedDB(data) {
+            const tx = dbInstance.transaction("games", "readwrite");
+            const store = tx.objectStore("games");
+            store.put(data);
+            tx.oncomplete = () => {
+                window.closeModals();
+                // Reset fields
+                document.getElementById('cg-title').value = '';
+                document.getElementById('cg-icon').value = '';
+                document.getElementById('cg-src-url').value = '';
+                document.getElementById('cg-src-html').value = '';
+                document.getElementById('cg-src-zip').value = '';
+                document.getElementById('zip-file-label').innerText = "Choose .zip archive";
+                loadCustomGames();
+            };
+        }
+
+        function loadCustomGames() {
+            if (!dbInstance) return;
+            const container = document.getElementById('custom-games-container');
+            container.innerHTML = '';
+            
+            const store = dbInstance.transaction("games", "readonly").objectStore("games");
+            store.openCursor().onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    const game = cursor.value;
+                    const card = document.createElement('div');
+                    card.className = "game-card relative group cursor-pointer";
+                    card.innerHTML = `
+                        <button onclick="deleteCustomGame('${game.id}', event)" class="absolute top-2 right-2 p-2 glass rounded-xl bg-black/50 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-500/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                        <div onclick="bootCustomGame('${game.id}')">
+                            <div class="h-48 bg-neutral-800 flex items-center justify-center overflow-hidden">
+                                <img src="${game.icon}" alt="Game Icon" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
+                            </div>
+                            <div class="p-4 bg-neutral-900 border-t border-white/5">
+                                <h3 class="text-xl font-bold tracking-tight truncate">${game.title}</h3>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                    cursor.continue();
+                }
+            };
+        }
+
+        window.deleteCustomGame = (id, event) => {
+            event.stopPropagation();
+            if(!confirm("Purge this game brain from local engine registers?")) return;
+            const tx = dbInstance.transaction("games", "readwrite");
+            tx.objectStore("games").delete(id);
+            tx.oncomplete = () => loadCustomGames();
+        };
+
+        window.bootCustomGame = (id) => {
+            const store = dbInstance.transaction("games", "readonly").objectStore("games");
+            store.get(id).onsuccess = async (e) => {
+                const game = e.target.result;
+                if(!game) return;
+
+                const playerModal = document.getElementById('game-player-modal');
+                const frame = document.getElementById('player-frame');
+                document.getElementById('player-title').innerText = game.title;
+                
+                playerModal.classList.remove('hidden');
+
+                if (game.type === 'url') {
+                    frame.src = game.payload;
+                } else if (game.type === 'html') {
+                    const blob = new Blob([game.payload], { type: 'text/html' });
+                    frame.src = URL.createObjectURL(blob);
+                } else if (game.type === 'zip') {
+                    // Option 3 Engine Architecture Loader: 
+                    // Unpack files tree dynamically to local system pointers via Object Blob mapping engine.
+                    const files = game.payload;
+                    const indexBlob = files["index.html"];
+                    if (!indexBlob) return alert("System core file layer error: Index file corrupted.");
+                    
+                    let htmlContent = await indexBlob.text();
+                    
+                    // Replace standard relative asset references with self-contained runtime Object Blobs
+                    for (const [path, blobFile] of Object.entries(files)) {
+                        if (path === "index.html") continue;
+                        const objectURL = URL.createObjectURL(blobFile);
+                        // Escape regex paths safely for document structure injection swap
+                        const escapedPath = path.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                        const regex = new RegExp(`=["']\\.?\\/?${escapedPath}["']`, 'g');
+                        htmlContent = htmlContent.replace(regex, `="${objectURL}"`);
+                    }
+
+                    const bootBlob = new Blob([htmlContent], { type: 'text/html' });
+                    frame.src = URL.createObjectURL(bootBlob);
+                }
+                
+                // Track state to network profile runtime trackers
+                if (myPrefix) {
+                    updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { game: game.title.toUpperCase() });
+                }
+            };
+        };
+
+        window.closeGamePlayer = () => {
+            document.getElementById('game-player-modal').classList.add('hidden');
+            const frame = document.getElementById('player-frame');
+            // Revoke URLs to free memory structure states
+            if(frame.src.startsWith('blob:')) {
+                URL.revokeObjectURL(frame.src);
+            }
+            frame.src = 'about:blank';
+            if (myPrefix) {
+                updateDoc(doc(db, `artifacts/${appId}/public/data/users/${myPrefix}`), { game: 'The Crib' });
+            }
+        };
+
+        window.closeModals = () => {
+            document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
+            document.getElementById('custom-game-modal').classList.add('hidden');
+        };
 
     </script>
 </body>
