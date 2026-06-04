@@ -261,7 +261,13 @@ onAuthStateChanged(auth, async (user) => {
             const regex = /&amp;\*\*\*(?:'|’|‘|`|&#39;)(.*?)(?:'|’|’|`|&#39;)\s*(?:"|“|”|&quot;)(.*?)(?:"|“|”|&quot;)\*\*\*&amp;/g;
             
             return escaped.replace(regex, (match, url, linkText) => {
-                const cleanUrl = url.replace(/&amp;/g, "&");
+                let cleanUrl = url.replace(/&amp;/g, "&").trim();
+                
+                // Prevent relative directory routing on external links (like google.com trying to go to /chat/google.com)
+                if (!/^([a-z0-9]+:)?\/\//i.test(cleanUrl) && !cleanUrl.startsWith('/') && !cleanUrl.startsWith('#')) {
+                    cleanUrl = 'https://' + cleanUrl;
+                }
+                
                 return `<a href="${cleanUrl}" target="_blank" class="text-blue-500 hover:underline font-bold">${linkText}</a>`;
             });
         }
