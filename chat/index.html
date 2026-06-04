@@ -38,9 +38,11 @@
             </button>
         </div>
 
+        <!-- Expanded tabs interface -->
         <div class="flex space-x-8 border-b border-white/10 mb-6">
             <button id="tab-inbox" onclick="switchTab('inbox')" class="pb-2 font-bold tab-active transition-all">INBOX</button>
             <button id="tab-sent" onclick="switchTab('sent')" class="pb-2 font-bold text-neutral-500 transition-all">SENT</button>
+            <button id="tab-global" onclick="switchTab('global')" class="pb-2 font-bold text-neutral-500 transition-all">GLOBAL</button>
         </div>
 
         <div id="scroll-feed" class="space-y-4"></div>
@@ -70,6 +72,7 @@
             </div>
         </div>
     </div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -243,13 +246,49 @@ onAuthStateChanged(auth, async (user) => {
             }, (error) => console.error("Scroll Sync Error:", error));
         }
 
+        // Custom parser to translate &***'url' "text"***& syntax safely into links
+        function parseScrollText(text) {
+            if (!text) return "";
+            
+            // Escape HTML base tags to ensure Daimyan-proof injection security
+            let escaped = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            
+            // Matches single quotes: ', ’, ‘, `, or escaped &#39;
+            // Matches double quotes: ", “, ”, or escaped &quot;
+            const regex = /&amp;\*\*\*(?:'|’|‘|`|&#39;)(.*?)(?:'|’|’|`|&#39;)\s*(?:"|“|”|&quot;)(.*?)(?:"|“|”|&quot;)\*\*\*&amp;/g;
+            
+            return escaped.replace(regex, (match, url, linkText) => {
+                const cleanUrl = url.replace(/&amp;/g, "&");
+                return `<a href="${cleanUrl}" target="_blank" class="text-blue-500 hover:underline font-bold">${linkText}</a>`;
+            });
+        }
+
         function renderScrolls(allScrolls) {
             const feed = document.getElementById('scroll-feed');
             feed.innerHTML = '';
+            
             const filtered = allScrolls.filter(s => {
-                if (currentTab === 'sent') return s.senderEmail === currentUser.email;
-                const isGlobal = !s.targetEmail || s.targetEmail === "null" || s.targetEmail.toUpperCase() === "GLOBAL";
-                return isGlobal || s.targetEmail === currentUser.email;
+                const targetLower = (s.targetEmail || "").trim().toLowerCase();
+                const senderLower = (s.senderEmail || "").trim().toLowerCase();
+                const myEmailLower = currentUser.email.toLowerCase();
+                
+                // Establish global status checks
+                const isGlobal = !s.targetEmail || s.targetEmail === "null" || targetLower === "global";
+
+                if (currentTab === 'inbox') {
+                    // Strictly scrolls sent directly to you (not broadcast globally)
+                    return targetLower === myEmailLower;
+                } else if (currentTab === 'sent') {
+                    // Strictly scrolls sent from you that were targeted at a friend (not broadcast globally)
+                    return senderLower === myEmailLower && !isGlobal;
+                } else if (currentTab === 'global') {
+                    // All global broadcasts (whether you sent them or received them)
+                    return isGlobal;
+                }
+                return false;
             });
 
             if (filtered.length === 0) {
@@ -266,7 +305,7 @@ onAuthStateChanged(auth, async (user) => {
                         <span class="text-sm font-black text-blue-400">${s.senderEmail.split('@')[0]}</span>
                         <span class="text-[9px] text-neutral-600 font-mono">${date}</span>
                     </div>
-                    <p class="text-sm text-neutral-200">${s.text}</p>
+                    <p class="text-sm text-neutral-200">${parseScrollText(s.text)}</p>
                     <div class="mt-4 border-t border-white/5 pt-2 text-[9px] text-neutral-700 font-mono">TO: ${s.targetEmail || 'GLOBAL'}</div>
                 `;
                 feed.appendChild(card);
@@ -277,6 +316,7 @@ onAuthStateChanged(auth, async (user) => {
             currentTab = tab;
             document.getElementById('tab-inbox').className = tab === 'inbox' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
             document.getElementById('tab-sent').className = tab === 'sent' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
+            document.getElementById('tab-global').className = tab === 'global' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
             initScrollListener();
         };
 
@@ -290,7 +330,7 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 await emailjs.send("service_n2hsxcf", "template_rip4cmz", {
                     to_email: targetEmail,
-                    to_name: targetEmail.split("@")[0],   // optional but funny
+                    to_name: targetEmail.split("@")[0],
                     from_name: senderEmail.split("@")[0],
                     message: message
                 });
