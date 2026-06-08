@@ -6,7 +6,7 @@
     <title>The Crib | Music Runner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .song-card { cursor: pointer; transition: 0.2s; }
+        .song-card { transition: 0.2s; }
         .song-card:hover { background: #374151; }
     </style>
 </head>
@@ -31,7 +31,10 @@
             <input type="range" id="progressBar" class="w-full" value="0">
         </div>
         <button id="shuffleBtn" class="text-sm bg-gray-700 px-2 py-1 rounded">Shuffle</button>
-        <button id="gameMenuBtn" class="bg-blue-600 px-4 py-2 rounded">Games</button>
+        <div class="relative">
+            <button id="gameMenuBtn" class="bg-blue-600 px-4 py-2 rounded font-bold">Games</button>
+            <div id="gameDropdown" class="hidden absolute bottom-12 right-0 bg-gray-800 border border-gray-700 rounded-lg w-64 max-h-60 overflow-y-auto"></div>
+        </div>
     </div>
 
     <!-- Upload Popup -->
@@ -46,11 +49,7 @@
     <script>
         let db;
         const request = indexedDB.open("CribMusicDB", 1);
-
-        request.onupgradeneeded = e => {
-            db = e.target.result;
-            db.createObjectStore("musicStore", { keyPath: "id" });
-        };
+        request.onupgradeneeded = e => { e.target.result.createObjectStore("musicStore", { keyPath: "id" }); };
         request.onsuccess = e => { db = e.target.result; loadSongs(); };
 
         document.getElementById('addBtn').onclick = () => document.getElementById('uploadPopup').classList.remove('hidden');
@@ -70,30 +69,26 @@
             req.onsuccess = () => {
                 if(req.result.length > 0) document.getElementById('emptyMsg').hidden = true;
                 list.innerHTML = req.result.map(s => `
-                    <div class="song-card bg-gray-800 p-4 rounded" onclick="playSong('${s.id}')">
-                        ${s.name}
+                    <div class="song-card bg-gray-800 p-4 rounded flex justify-between items-center">
+                        <span>${s.name}</span>
+                        <button onclick="playSong('${s.id}')" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-full">
+                            <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
                     </div>
                 `).join('');
             };
         }
 
-        function playSong(id) {
-            // Logic to pull blob, create URL, and assign to a global Audio object
-            // This global audio object stays alive when you navigate!
-            console.log("Playing:", id);
-        }
+        function playSong(id) { console.log("Playing:", id); }
 
-        // Logic for the Game Menu
-        document.getElementById('gameMenuBtn').onclick = () => {
-            const games = ["Cookie Clicker", "Geometry Dash", "Polytrack", "Ragdoll Hit", "Minecraft", "Ragdoll Melon", "Bloons Tower Defense 2", "Earn to Die 2", "Cut the Rope", "Basket Random", "Ragdoll Archers", "BitLife"];
-            
-            // Generate PNG names based on your rules
-            games.forEach(g => {
-                const words = g.split(' ');
-                let png = words.length === 1 ? words[0].toLowerCase() : words.map(w => w[0]).join('').toLowerCase();
-                console.log(`/storage/photos/${png}.png`); // This gets the path
-            });
-        };
+        const games = ["Cookie Clicker", "Geometry Dash", "Polytrack", "Ragdoll Hit", "Minecraft", "Ragdoll Melon", "Bloons Tower Defense 2", "Earn to Die 2", "Cut the Rope", "Basket Random", "Ragdoll Archers", "BitLife"];
+        const menu = document.getElementById('gameDropdown');
+        menu.innerHTML = games.map(g => {
+            const gameSlug = g.toLowerCase().replace(/\s+/g, '-');
+            return `<a href="/play/${gameSlug}/" class="block px-4 py-2 hover:bg-gray-700">${g}</a>`;
+        }).join('');
+
+        document.getElementById('gameMenuBtn').onclick = () => menu.classList.toggle('hidden');
     </script>
 </body>
 </html>
