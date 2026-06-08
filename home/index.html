@@ -29,7 +29,7 @@
 </head>
 <body class="h-screen flex flex-col items-center justify-center relative">
 
-    <!-- Auth Guard Overlay (Prevents flash of content) -->
+    <!-- Auth Guard Overlay -->
     <div id="loading-screen" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
         <div class="flex flex-col items-center space-y-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -37,14 +37,28 @@
         </div>
     </div>
 
+    <!-- Music Popup -->
+    <div id="music-popup" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+        <div class="bg-neutral-900 border border-blue-500/30 p-8 rounded-2xl max-w-sm w-full relative">
+            <button onclick="closeMusicPopup()" class="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
+            <h2 class="text-2xl font-black text-blue-500 mb-2">NEW FEATURE!!!</h2>
+            <p class="text-gray-300 mb-6">Play your music while gaming, or just chill.</p>
+            <a href="/music/" class="block w-full text-center bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition">GO TO MUSIC</a>
+        </div>
+    </div>
+
     <!-- Top Right Nav -->
     <div id="nav-container" class="absolute top-6 right-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
+        <!-- Music Button -->
+        <a href="/music/" class="p-2 hover:bg-white/10 rounded-full transition-colors text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </a>
         <!-- Notification Bell -->
         <a href="/chat/" class="p-2 hover:bg-white/10 rounded-full transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
         </a>
         
-        <!-- Profile Picture / Account Icon -->
+        <!-- Profile Picture -->
         <a href="/account/" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500 hover:scale-110 transition-transform bg-neutral-800 flex items-center justify-center">
             <img id="user-pfp" src="/storage/photos/guest.png" alt="Profile" class="w-full h-full object-cover" onerror="this.src='/storage/photos/guest.png'">
         </a>
@@ -69,6 +83,20 @@
         </div>
     </div>
 
+    <script>
+        function closeMusicPopup() {
+            document.getElementById('music-popup').classList.add('hidden');
+        }
+
+        // Show popup only once
+        if (!localStorage.getItem('sawMusicFeature')) {
+            setTimeout(() => {
+                document.getElementById('music-popup').classList.remove('hidden');
+                localStorage.setItem('sawMusicFeature', 'true');
+            }, 1000);
+        }
+    </script>
+
     <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -89,7 +117,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Safety timeout
         const safetyTimeout = setTimeout(() => {
             if (!auth.currentUser) window.location.href = "/account/login/";
         }, 5000);
@@ -106,14 +133,11 @@
             }
 
             const pfpImg = document.getElementById('user-pfp');
-            const guestImg = "/storage/photos/guest.png";
             
-            // Priority 1: Check if the Google/Microsoft account already has a photo
             if (user.photoURL) {
                 pfpImg.src = user.photoURL;
             }
 
-            // Priority 2: Check Firestore custom PFP if photoURL is missing or if we want to override
             try {
                 if (user.email) {
                     const username = user.email.split('@')[0];
@@ -122,7 +146,6 @@
 
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        // Only override if Firestore has a valid custom PFP
                         if (data.pfp && (data.pfp.startsWith('data:image') || data.pfp.length > 100)) {
                             pfpImg.src = data.pfp;
                         }
