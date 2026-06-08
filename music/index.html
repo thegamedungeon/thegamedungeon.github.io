@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Crib | Music Runner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .song-card { cursor: pointer; transition: 0.2s; }
+        .song-card:hover { background: #374151; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans min-h-screen">
+
+    <!-- Top Bar -->
+    <nav class="flex justify-between p-4 border-b border-gray-700">
+        <a href="/home/" class="text-blue-400 font-bold">← Back to Home</a>
+        <button id="addBtn" class="bg-green-600 px-4 py-1 rounded font-bold">+</button>
+    </nav>
+
+    <!-- Music List -->
+    <div id="musicList" class="p-6 grid gap-4">
+        <p id="emptyMsg" class="text-gray-500 text-center">No songs yet. Click + to add some!</p>
+    </div>
+
+    <!-- Persistent Music Controller -->
+    <div class="fixed bottom-0 w-full bg-gray-800 p-4 border-t border-gray-700 flex items-center gap-4">
+        <div id="currentArt" class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center font-bold">♪</div>
+        <div class="flex-1">
+            <h3 id="songTitle" class="font-bold">No song playing</h3>
+            <input type="range" id="progressBar" class="w-full" value="0">
+        </div>
+        <button id="shuffleBtn" class="text-sm bg-gray-700 px-2 py-1 rounded">Shuffle</button>
+        <button id="gameMenuBtn" class="bg-blue-600 px-4 py-2 rounded">Games</button>
+    </div>
+
+    <!-- Upload Popup -->
+    <div id="uploadPopup" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center">
+        <div class="bg-gray-800 p-6 rounded-lg w-80">
+            <h2 class="mb-4">Upload MP3</h2>
+            <input type="file" id="fileInput" accept="audio/mp3">
+            <button onclick="closePopup()" class="mt-4 text-red-400">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        const request = indexedDB.open("CribMusicDB", 1);
+
+        request.onupgradeneeded = e => {
+            db = e.target.result;
+            db.createObjectStore("musicStore", { keyPath: "id" });
+        };
+        request.onsuccess = e => { db = e.target.result; loadSongs(); };
+
+        document.getElementById('addBtn').onclick = () => document.getElementById('uploadPopup').classList.remove('hidden');
+        function closePopup() { document.getElementById('uploadPopup').classList.add('hidden'); }
+
+        document.getElementById('fileInput').onchange = e => {
+            const file = e.target.files[0];
+            const tx = db.transaction("musicStore", "readwrite");
+            tx.objectStore("musicStore").add({ id: file.name, name: file.name, data: file });
+            tx.oncomplete = () => { closePopup(); loadSongs(); };
+        };
+
+        function loadSongs() {
+            const list = document.getElementById('musicList');
+            const tx = db.transaction("musicStore", "readonly");
+            const req = tx.objectStore("musicStore").getAll();
+            req.onsuccess = () => {
+                if(req.result.length > 0) document.getElementById('emptyMsg').hidden = true;
+                list.innerHTML = req.result.map(s => `
+                    <div class="song-card bg-gray-800 p-4 rounded" onclick="playSong('${s.id}')">
+                        ${s.name}
+                    </div>
+                `).join('');
+            };
+        }
+
+        function playSong(id) {
+            // Logic to pull blob, create URL, and assign to a global Audio object
+            // This global audio object stays alive when you navigate!
+            console.log("Playing:", id);
+        }
+
+        // Logic for the Game Menu
+        document.getElementById('gameMenuBtn').onclick = () => {
+            const games = ["Cookie Clicker", "Geometry Dash", "Polytrack", "Ragdoll Hit", "Minecraft", "Ragdoll Melon", "Bloons Tower Defense 2", "Earn to Die 2", "Cut the Rope", "Basket Random", "Ragdoll Archers", "BitLife"];
+            
+            // Generate PNG names based on your rules
+            games.forEach(g => {
+                const words = g.split(' ');
+                let png = words.length === 1 ? words[0].toLowerCase() : words.map(w => w[0]).join('').toLowerCase();
+                console.log(`/storage/photos/${png}.png`); // This gets the path
+            });
+        };
+    </script>
+</body>
+</html>
