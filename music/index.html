@@ -30,11 +30,11 @@
     <div class="fixed bottom-0 w-full bg-gray-800 p-4 border-t border-gray-700 flex items-center gap-4">
         <div id="currentArt" class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center font-bold">♪</div>
         <div class="flex-1">
-            <h3 id="songTitle" class="font-bold text-sm">No song playing</h3>
+            <h3 id="songTitle" class="font-bold text-sm truncate">No song playing</h3>
             <div class="flex items-center gap-2">
-                <button id="prevBtn" class="text-xs">⏮</button>
+                <button id="prevBtn" class="text-xs font-bold">⏮</button>
                 <button id="playPauseBtn" class="font-bold">Play</button>
-                <button id="nextBtn" class="text-xs">⏭</button>
+                <button id="nextBtn" class="text-xs font-bold">⏭</button>
                 <input type="range" id="progressBar" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer" value="0" min="0" max="100">
             </div>
         </div>
@@ -55,7 +55,7 @@
 
     <script>
         let db;
-        let currentSongIndex = 0;
+        let currentSongIndex = -1;
         let songList = [];
         const audioPlayer = document.getElementById('audioPlayer');
         const progressBar = document.getElementById('progressBar');
@@ -99,8 +99,10 @@
         }
 
         function playSong(idx) {
+            if(idx < 0 || idx >= songList.length) return;
             currentSongIndex = idx;
             const song = songList[idx];
+            if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
             const url = URL.createObjectURL(song.data);
             audioPlayer.src = url;
             document.getElementById('songTitle').innerText = song.name;
@@ -121,12 +123,20 @@
             if (currentSongIndex > 0) playSong(currentSongIndex - 1);
         };
 
+        audioPlayer.onended = () => {
+            if (songList.length > 1) {
+                let nextIdx;
+                do { nextIdx = Math.floor(Math.random() * songList.length); } while(nextIdx === currentSongIndex);
+                playSong(nextIdx);
+            }
+        };
+
         audioPlayer.ontimeupdate = () => {
-            progressBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            if(audioPlayer.duration) progressBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         };
 
         progressBar.oninput = () => {
-            audioPlayer.currentTime = (progressBar.value / 100) * audioPlayer.duration;
+            if(audioPlayer.duration) audioPlayer.currentTime = (progressBar.value / 100) * audioPlayer.duration;
         };
 
         const games = ["Cookie Clicker", "Geometry Dash", "Polytrack", "Ragdoll Hit", "Minecraft", "Ragdoll Melon", "Bloons Tower Defense 2", "Earn to Die 2", "Cut the Rope", "Basket Random", "Ragdoll Archers", "BitLife"];
