@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Crib | Music Runner</title>
+    <title>The Crib | Music</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .song-card { transition: 0.2s; }
@@ -30,10 +30,14 @@
     <div class="fixed bottom-0 w-full bg-gray-800 p-4 border-t border-gray-700 flex items-center gap-4">
         <div id="currentArt" class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center font-bold">♪</div>
         <div class="flex-1">
-            <h3 id="songTitle" class="font-bold">No song playing</h3>
-            <input type="range" id="progressBar" class="w-full" value="0">
+            <h3 id="songTitle" class="font-bold text-sm">No song playing</h3>
+            <div class="flex items-center gap-2">
+                <button id="prevBtn" class="text-xs">⏮</button>
+                <button id="playPauseBtn" class="font-bold">Play</button>
+                <button id="nextBtn" class="text-xs">⏭</button>
+                <input type="range" id="progressBar" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer" value="0" min="0" max="100">
+            </div>
         </div>
-        <button id="shuffleBtn" class="text-sm bg-gray-700 px-2 py-1 rounded">Shuffle</button>
         <div class="relative">
             <button id="gameMenuBtn" class="bg-blue-600 px-4 py-2 rounded font-bold">Games</button>
             <div id="gameDropdown" class="hidden absolute bottom-12 right-0 bg-gray-800 border border-gray-700 rounded-lg w-64 max-h-60 overflow-y-auto"></div>
@@ -51,9 +55,13 @@
 
     <script>
         let db;
+        let currentSongIndex = 0;
+        let songList = [];
         const audioPlayer = document.getElementById('audioPlayer');
+        const progressBar = document.getElementById('progressBar');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+
         const request = indexedDB.open("CribMusicDB", 1);
-        
         request.onupgradeneeded = e => { e.target.result.createObjectStore("musicStore", { keyPath: "id" }); };
         request.onsuccess = e => { db = e.target.result; loadSongs(); };
 
@@ -77,11 +85,12 @@
             const tx = db.transaction("musicStore", "readonly");
             const req = tx.objectStore("musicStore").getAll();
             req.onsuccess = () => {
-                if(req.result.length > 0) document.getElementById('emptyMsg').hidden = true;
-                list.innerHTML = req.result.map(s => `
+                songList = req.result;
+                if(songList.length > 0) document.getElementById('emptyMsg').hidden = true;
+                list.innerHTML = songList.map((s, idx) => `
                     <div class="song-card bg-gray-800 p-4 rounded flex justify-between items-center">
                         <span class="truncate">${s.name}</span>
-                        <button onclick="playSong('${s.id}')" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-full">
+                        <button onclick="playSong(${idx})" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-full">
                             <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         </button>
                     </div>
@@ -89,25 +98,40 @@
             };
         }
 
-        function playSong(id) {
-            const tx = db.transaction("musicStore", "readonly");
-            const req = tx.objectStore("musicStore").get(id);
-            req.onsuccess = () => {
-                const song = req.result;
-                const url = URL.createObjectURL(song.data);
-                audioPlayer.src = url;
-                document.getElementById('songTitle').innerText = song.name;
-                audioPlayer.play();
-            };
+        function playSong(idx) {
+            currentSongIndex = idx;
+            const song = songList[idx];
+            const url = URL.createObjectURL(song.data);
+            audioPlayer.src = url;
+            document.getElementById('songTitle').innerText = song.name;
+            audioPlayer.play();
+            playPauseBtn.innerText = "Pause";
         }
+
+        playPauseBtn.onclick = () => {
+            if (audioPlayer.paused) { audioPlayer.play(); playPauseBtn.innerText = "Pause"; }
+            else { audioPlayer.pause(); playPauseBtn.innerText = "Play"; }
+        };
+
+        document.getElementById('nextBtn').onclick = () => {
+            if (currentSongIndex < songList.length - 1) playSong(currentSongIndex + 1);
+        };
+
+        document.getElementById('prevBtn').onclick = () => {
+            if (currentSongIndex > 0) playSong(currentSongIndex - 1);
+        };
+
+        audioPlayer.ontimeupdate = () => {
+            progressBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        };
+
+        progressBar.oninput = () => {
+            audioPlayer.currentTime = (progressBar.value / 100) * audioPlayer.duration;
+        };
 
         const games = ["Cookie Clicker", "Geometry Dash", "Polytrack", "Ragdoll Hit", "Minecraft", "Ragdoll Melon", "Bloons Tower Defense 2", "Earn to Die 2", "Cut the Rope", "Basket Random", "Ragdoll Archers", "BitLife"];
         const menu = document.getElementById('gameDropdown');
-        menu.innerHTML = games.map(g => {
-            const gameSlug = g.toLowerCase().replace(/\s+/g, '-');
-            return `<a href="/play/${gameSlug}/" class="block px-4 py-2 hover:bg-gray-700">${g}</a>`;
-        }).join('');
-
+        menu.innerHTML = games.map(g => `<a href="/play/${g.toLowerCase().replace(/\s+/g, '-')}/" class="block px-4 py-2 hover:bg-gray-700">${g}</a>`).join('');
         document.getElementById('gameMenuBtn').onclick = () => menu.classList.toggle('hidden');
     </script>
 </body>
