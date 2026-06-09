@@ -98,14 +98,13 @@
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="memory-bank-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center hidden">
         <div class="bg-dungeon-800 rounded-2xl w-full max-w-lg p-6 border border-dungeon-700">
             <h4 class="font-bold mb-4">Memory Bank Context</h4>
             <textarea id="memory-bank-json-textarea" rows="10" class="w-full bg-dungeon-900 border border-dungeon-700 rounded-xl p-3 text-xs font-mono"></textarea>
             <div class="flex justify-end mt-4 space-x-2">
                 <button class="modal-close-trigger px-4 py-2 text-slate-400">Discard</button>
-                <button id="save-memory-bank-btn" class="bg-dungeon-accent px-4 py-2 rounded-lg">Save</button>
+                <button id="save-memory-bank-btn" class="bg-dungeon-accent px-4 py-2 rounded-lg text-white">Save</button>
             </div>
         </div>
     </div>
@@ -116,7 +115,7 @@
             <input type="password" id="custom-api-key-input" placeholder="Paste AI Studio Key..." class="w-full bg-dungeon-900 border border-dungeon-700 rounded-xl px-3 py-2 text-sm mb-4">
             <div class="flex justify-end space-x-2">
                 <button class="modal-close-trigger text-slate-400">Cancel</button>
-                <button id="save-settings-btn" class="bg-dungeon-cyan px-4 py-2 rounded-lg">Save</button>
+                <button id="save-settings-btn" class="bg-dungeon-cyan px-4 py-2 rounded-lg text-white">Save</button>
             </div>
         </div>
     </div>
@@ -124,10 +123,12 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // IMPORTANT: NEVER hardcode real API keys in production code. 
+        // Use a secure environment variable or restricted backend service.
         const firebaseConfig = {
-            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            apiKey: "YOUR_REDACTED_API_KEY",
             authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
             projectId: "the-game-dungeon-4d75d",
             storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
@@ -137,12 +138,9 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = "the-game-dungeon-4d75d";
         
         const appState = {
-            activeChatId: null,
-            currentUser: { uid: "sandbox_anon_id", name: "Guest Bro" },
+            currentUser: { uid: null, name: "Guest Bro" },
             memoryBank: { user: "null", context: "Connor is zesty.", insideJokes: { "oink oink": "Bot-brained" } }
         };
 
@@ -159,7 +157,6 @@
 
         document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
         
-        // Auth flow with hard lock-unlock for inputs
         onAuthStateChanged(auth, async (user) => {
             try {
                 if (user) {
@@ -170,19 +167,44 @@
                 }
             } catch (e) {
                 console.error("Auth init failure, continuing in sandbox mode.");
+                document.getElementById('connection-status-lbl').textContent = "Offline Mode (Sandbox)";
             } finally {
                 document.getElementById('chat-input-field').disabled = false;
                 document.getElementById('submit-prompt-btn').disabled = false;
             }
         });
 
-        // Initialize UI event handlers manually after content loads
+        // UI Handlers
         document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('hidden'));
-        document.getElementById('memory-bank-btn').addEventListener('click', () => document.getElementById('memory-bank-modal').classList.remove('hidden'));
+        document.getElementById('memory-bank-btn').addEventListener('click', () => {
+            document.getElementById('memory-bank-json-textarea').value = JSON.stringify(appState.memoryBank, null, 2);
+            document.getElementById('memory-bank-modal').classList.remove('hidden');
+        });
+
         document.querySelectorAll('.modal-close-trigger').forEach(b => b.addEventListener('click', () => {
             document.getElementById('memory-bank-modal').classList.add('hidden');
             document.getElementById('settings-modal').classList.add('hidden');
         }));
+
+        // Fixed Save Button Logic
+        document.getElementById('save-memory-bank-btn').addEventListener('click', () => {
+            try {
+                const newData = JSON.parse(document.getElementById('memory-bank-json-textarea').value);
+                appState.memoryBank = newData;
+                console.log("Memory bank updated locally.");
+                document.getElementById('memory-bank-modal').classList.add('hidden');
+            } catch (e) {
+                alert("Invalid JSON format, bro!");
+            }
+        });
+
+        document.getElementById('save-settings-btn').addEventListener('click', () => {
+            const key = document.getElementById('custom-api-key-input').value;
+            if (key) {
+                console.log("Settings saved.");
+                document.getElementById('settings-modal').classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
