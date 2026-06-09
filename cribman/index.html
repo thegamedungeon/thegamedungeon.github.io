@@ -125,8 +125,6 @@
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // IMPORTANT: NEVER hardcode real API keys in production code. 
-        // Use a secure environment variable or restricted backend service.
         const firebaseConfig = {
             apiKey: "YOUR_REDACTED_API_KEY",
             authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
@@ -144,18 +142,24 @@
             memoryBank: { user: "null", context: "Connor is zesty.", insideJokes: { "oink oink": "Bot-brained" } }
         };
 
-        // Sidebar Logic
+        // Improved Sidebar Toggle
         const sidebar = document.getElementById('chat-sidebar');
         const workspace = document.getElementById('chat-workspace');
         
-        function toggleSidebar() {
+        document.getElementById('sidebar-toggle-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
             sidebar.classList.toggle('-translate-x-full');
+            // Desktop behavior
             if (window.innerWidth >= 768) {
                 workspace.classList.toggle('md:pl-80');
             }
-        }
-
-        document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
+        });
+        
+        // Prevent form submission redirect
+        document.getElementById('chat-query-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log("Submit captured, no redirect!");
+        });
         
         onAuthStateChanged(auth, async (user) => {
             try {
@@ -186,12 +190,10 @@
             document.getElementById('settings-modal').classList.add('hidden');
         }));
 
-        // Fixed Save Button Logic
         document.getElementById('save-memory-bank-btn').addEventListener('click', () => {
             try {
                 const newData = JSON.parse(document.getElementById('memory-bank-json-textarea').value);
                 appState.memoryBank = newData;
-                console.log("Memory bank updated locally.");
                 document.getElementById('memory-bank-modal').classList.add('hidden');
             } catch (e) {
                 alert("Invalid JSON format, bro!");
@@ -201,7 +203,6 @@
         document.getElementById('save-settings-btn').addEventListener('click', () => {
             const key = document.getElementById('custom-api-key-input').value;
             if (key) {
-                console.log("Settings saved.");
                 document.getElementById('settings-modal').classList.add('hidden');
             }
         });
