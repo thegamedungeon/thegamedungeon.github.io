@@ -48,7 +48,6 @@
         <iframe id="game-frame" src="" class="w-full h-full border-none"></iframe>
     </div>
 
-    <!-- Main Drawer Trigger -->
     <div id="side-drawer">
         <div class="flex flex-col gap-4">
             <button onclick="toggleMusic()" class="text-blue-500 font-bold">MUSIC</button>
@@ -56,7 +55,6 @@
         </div>
     </div>
 
-    <!-- Music Panel -->
     <div id="music-panel">
         <iframe src="/music/" class="w-full h-full border-none"></iframe>
         <button onclick="toggleMusic()" class="absolute top-2 left-2 text-white bg-red-600 px-2 py-1 rounded">X</button>
@@ -75,8 +73,33 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // ... (standard config/auth logic)
         
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Fail-safe: hide loading screen after 3 seconds anyway
+        const failSafe = setTimeout(() => {
+            document.getElementById('loading-screen').style.display = 'none';
+        }, 3000);
+
+        onAuthStateChanged(auth, (user) => {
+            clearTimeout(failSafe);
+            if (!user) {
+                window.location.href = "/account/login/";
+            } else {
+                document.getElementById('loading-screen').style.display = 'none';
+            }
+        });
+
         window.launchGame = () => {
             document.getElementById('game-frame').src = "/storage/basran-m-ma-mai-main/";
             document.getElementById('game-wrapper').classList.add('expanded');
