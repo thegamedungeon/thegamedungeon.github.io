@@ -38,12 +38,12 @@
     </div>
 
     <!-- Music Popup -->
-    <div id="music-popup" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+    <div id="game-popup" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
         <div class="bg-neutral-900 border border-blue-500/30 p-8 rounded-2xl max-w-sm w-full relative">
             <button onclick="closePopup()" class="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
             <h2 class="text-2xl font-black text-blue-500 mb-2">NEW GAME</h2>
             <p class="text-gray-300 mb-6">Five Nights at Sods is finally here. Go play now.</p>
-            <a href="/music/" class="block w-full text-center bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition">GO TO MUSIC</a>
+            <a href="/play/five-nights-at-sods/" class="block w-full text-center bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition">GO NOW</a>
         </div>
     </div>
 
@@ -84,8 +84,8 @@
     </div>
 
     <script>
-        function closeMusicPopup() {
-            document.getElementById('music-popup').classList.add('hidden');
+        function closePopup() {
+            document.getElementById('game-popup').classList.add('hidden');
         }
 
         // Show popup only once
