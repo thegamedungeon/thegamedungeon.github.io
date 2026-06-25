@@ -6,8 +6,9 @@ const db = getFirestore();
 const auth = getAuth();
 const appId = "the-game-dungeon-4d75d";
 
+let isReady = false; // Prevents "offline" from firing during initial load
+
 // Helper to update user status
-// Now optionally updates the game name if provided
 const updateUserStatus = async (status, gameName = null) => {
     const user = auth.currentUser;
     if (user && user.email) {
@@ -16,14 +17,14 @@ const updateUserStatus = async (status, gameName = null) => {
         
         try {
             const updateData = { status: status };
-            // Only update the game name if one is provided
             if (gameName !== null) {
                 updateData.currentGame = gameName;
             }
             
             await setDoc(userDocRef, updateData, { merge: true });
+            console.log("Status updated successfully:", status, gameName || "");
         } catch (e) {
-            // Keeping it silent
+            console.error("Firebase update failed (Dungeon Error):", e);
         }
     }
 };
@@ -31,16 +32,22 @@ const updateUserStatus = async (status, gameName = null) => {
 // Handle Authentication State
 onAuthStateChanged(auth, (user) => {
     if (user) {
+        console.log("User detected, syncing status...");
         const gameScript = document.querySelector('script[data-game]');
         const game = gameScript ? gameScript.getAttribute('data-game') : "The Crib";
-        updateUserStatus("online", game);
+        
+        updateUserStatus("online", game).then(() => {
+            isReady = true; // Only allow offline status after initial sync
+        });
     }
 });
 
 // The "Bye Bye" logic
-// Now just sets status to offline, keeping the last game in the document
 const setOffline = () => {
-    updateUserStatus("offline");
+    if (isReady) {
+        console.log("Setting user offline...");
+        updateUserStatus("offline");
+    }
 };
 
 // Catching the leave event properly
