@@ -11,7 +11,6 @@
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col items-center justify-center">
 
-    
     <!-- Loading Screen -->
     <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]">
         <img src="/storage/photos/loading.gif" alt="Loading" class="w-24 h-24">
@@ -20,7 +19,7 @@
     <!-- Error Screen -->
     <div id="error-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-950 p-6 text-center">
         <h1 class="text-2xl font-bold mb-4 text-red-200">System Error</h1>
-        <div id="error-message" class="bg-black/50 p-4 rounded-lg font-mono text-red-400 text-sm max-w-lg overflow-auto"></div>
+        <div id="error-message" class="bg-black/50 p-4 rounded-lg font-mono text-red-400 text-sm max-w-lg">firebase error</div>
         <button onclick="location.reload()" class="mt-6 px-4 py-2 bg-red-800 rounded-full hover:bg-red-700 transition">Retry Connection</button>
     </div>
 
@@ -36,6 +35,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -47,41 +47,40 @@
             measurementId: "G-CER9SE96MC"
         };
 
-        const app = initializeApp(firebaseConfig);
-
         async function runSystemCheck() {
             const loader = document.getElementById('loader');
             const errorScreen = document.getElementById('error-screen');
-            const errorMsg = document.getElementById('error-message');
             const homeScreen = document.getElementById('home-screen');
 
             try {
-                // 1. Verify existence
+                // 1. Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                // Optional: Force a quick ping if needed, or just proceed
+                if (!app || !db) throw new Error("Init failure");
+
+                // 2. Verify status.js
                 const response = await fetch('/storage/js/status.js');
-                if (!response.ok) throw new Error(`HTTP Error ${response.status}: status.js not found.`);
+                if (!response.ok) throw new Error("Status failure");
 
-                // 2. Dynamic import to catch syntax/runtime errors
-                await import('/storage/js/status.js');
-
-                // 3. If passed, inject tag as requested
+                // 3. Inject script
                 const s = document.createElement('script');
                 s.type = 'module';
                 s.src = '/storage/js/status.js';
                 s.setAttribute('data-game', 'not in a game');
                 document.body.appendChild(s);
 
-                // 4. UI Transition
+                // 4. Transition
                 loader.classList.add('hidden');
                 homeScreen.classList.remove('hidden');
 
             } catch (err) {
                 loader.classList.add('hidden');
                 errorScreen.classList.remove('hidden');
-                errorMsg.textContent = err.toString();
             }
         }
 
-        // Initialize on load
         window.addEventListener('DOMContentLoaded', runSystemCheck);
     </script>
 </body>
