@@ -1,57 +1,54 @@
-// Import the tools from the CDN
-import { getFirestore, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// Import the necessary Firebase tools
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// Wait for the window to load so the main Firebase app is ready
-window.addEventListener('load', () => {
-    try {
-        // Grab existing services (no initializeApp call needed)
-        const db = getFirestore();
-        const auth = getAuth();
+const db = getFirestore();
+const auth = getAuth();
+const appId = "the-game-dungeon-4d75d";
 
-        // Get game name from the script tag
-        const gameScript = document.querySelector('script[data-game]');
-        const game = gameScript ? gameScript.getAttribute('data-game') : "The Crib";
-
-        let currentUserRef = null;
-
-        // Handle Login and "Online" Status
-        onAuthStateChanged(auth, (user) => {
-            if (user && user.email) {
-                const emailPrefix = user.email.split('@')[0];
-                currentUserRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", emailPrefix);
-
-                setDoc(currentUserRef, {
-                    status: "online",
-                    game: game
-                }, { merge: true }).catch(() => {}); // Keep it silent
+// Helper to update user status
+// Now optionally updates the game name if provided
+const updateUserStatus = async (status, gameName = null) => {
+    const user = auth.currentUser;
+    if (user && user.email) {
+        const emailPrefix = user.email.split('@')[0];
+        const userDocRef = doc(db, "artifacts", appId, "public", "data", "users", emailPrefix);
+        
+        try {
+            const updateData = { status: status };
+            // Only update the game name if one is provided
+            if (gameName !== null) {
+                updateData.currentGame = gameName;
             }
-        });
-
-// Function to cut the lights when someone leaves
-const setOffline = () => {
-    const prefix = auth.currentUser?.email.split('@')[0];
-    if (prefix) {
-        const userDocRef = doc(db, `artifacts/${appId}/public/data/users/${prefix}`);
-        // We use updateDoc, but since the page is closing, 
-        // we don't 'await' it because we need it to fire and forget.
-        updateDoc(userDocRef, {
-            currentGame: "Offline"
-        });
+            
+            await setDoc(userDocRef, updateData, { merge: true });
+        } catch (e) {
+            // Keeping it silent
+        }
     }
 };
 
-// The modern way to catch an iPad user leaving
+// Handle Authentication State
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        const gameScript = document.querySelector('script[data-game]');
+        const game = gameScript ? gameScript.getAttribute('data-game') : "The Crib";
+        updateUserStatus("online", game);
+    }
+});
+
+// The "Bye Bye" logic
+// Now just sets status to offline, keeping the last game in the document
+const setOffline = () => {
+    updateUserStatus("offline");
+};
+
+// Catching the leave event properly
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
         setOffline();
     }
 });
 
-// Keep beforeunload as a backup for desktop druggies
+// Fallback for Desktop
 window.addEventListener("beforeunload", setOffline);
-
-    } catch (e) {
-        console.log("Firebase sync waiting for main app...");
-    }
-});
