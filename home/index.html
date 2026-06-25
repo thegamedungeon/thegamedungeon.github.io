@@ -23,13 +23,20 @@
         <button onclick="location.reload()" class="mt-6 px-4 py-2 bg-red-800 rounded-full hover:bg-red-700 transition">Retry Connection</button>
     </div>
 
+    <!-- Notification Bell -->
+    <a href="/chat/" id="notif-bell" class="hidden absolute top-6 right-6 p-3 text-white/70 hover:text-white transition z-40">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
+    </a>
+
     <!-- Main Dashboard -->
     <main id="home-screen" class="hidden flex flex-col items-center gap-8">
         <h1 class="text-4xl font-bold tracking-tighter">THE GAME DUNGEON</h1>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="flex gap-4">
             <a href="/play/" class="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl transition text-center font-semibold">Play</a>
             <a href="/settings/" class="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl transition text-center font-semibold">Settings</a>
-            <a href="/chat/" class="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl transition text-center font-semibold">Notifications</a>
         </div>
     </main>
 
@@ -51,13 +58,13 @@
             const loader = document.getElementById('loader');
             const errorScreen = document.getElementById('error-screen');
             const homeScreen = document.getElementById('home-screen');
+            const bell = document.getElementById('notif-bell');
 
             try {
                 // 1. Initialize Firebase
                 const app = initializeApp(firebaseConfig);
                 const db = getFirestore(app);
                 
-                // Optional: Force a quick ping if needed, or just proceed
                 if (!app || !db) throw new Error("Init failure");
 
                 // 2. Verify status.js
@@ -74,6 +81,7 @@
                 // 4. Transition
                 loader.classList.add('hidden');
                 homeScreen.classList.remove('hidden');
+                bell.classList.remove('hidden');
 
             } catch (err) {
                 loader.classList.add('hidden');
