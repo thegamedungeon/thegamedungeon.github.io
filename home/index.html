@@ -3,46 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Game Dungeon</title>
+    <title>The Game Dungeon | Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/storage/js/hex.js"></script>
+    <script type="module" src="/storage/js/status.js" data-game="Home"></script>
     <style>
-        body { background-color: #0a0a0a; color: white; font-family: 'Inter', sans-serif; }
+        body {
+            background-color: #0b0b0b;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col items-center justify-center">
+<body class="h-screen flex flex-col items-center justify-center relative">
 
-    <!-- Loading Screen -->
-    <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]">
-        <img src="/storage/photos/loading.gif" alt="Loading" class="w-24 h-24">
-    </div>
-
-    <!-- Error Screen -->
-    <div id="error-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-950 p-6 text-center">
-        <h1 class="text-2xl font-bold mb-4 text-red-200">System Error</h1>
-        <div id="error-message" class="bg-black/50 p-4 rounded-lg font-mono text-red-400 text-sm max-w-lg">firebase error</div>
-        <button onclick="location.reload()" class="mt-6 px-4 py-2 bg-red-800 rounded-full hover:bg-red-700 transition">Retry Connection</button>
-    </div>
-
-    <!-- Notification Bell -->
-    <a href="/chat/" id="notif-bell" class="hidden absolute top-6 right-6 p-3 text-white/70 hover:text-white transition z-40">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-        </svg>
-    </a>
-
-    <!-- Main Dashboard -->
-    <main id="home-screen" class="hidden flex flex-col items-center gap-8">
-        <h1 class="text-4xl font-bold tracking-tighter">THE GAME DUNGEON</h1>
-        <div class="flex gap-4">
-            <a href="/play/" class="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl transition text-center font-semibold">Play</a>
-            <a href="/settings/" class="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl transition text-center font-semibold">Settings</a>
+    <!-- Auth Guard Overlay -->
+    <div id="loading-screen" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div class="flex flex-col items-center space-y-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <p class="text-blue-500 font-mono text-sm tracking-widest animate-pulse">ENTERING THE DUNGEON...</p>
         </div>
-    </main>
+    </div>
 
+    <!-- Music Popup -->
+    <div id="game-popup" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+        <div class="bg-neutral-900 border border-blue-500/30 p-8 rounded-2xl max-w-sm w-full relative">
+            <button onclick="closePopup()" class="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
+            <h2 class="text-2xl font-black text-blue-500 mb-2">NEW GAME</h2>
+            <p class="text-gray-300 mb-6">Five Nights at Sods is finally here. Go play now.</p>
+            <a href="/play/five-nights-at-sods/" class="block w-full text-center bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition">GO NOW</a>
+        </div>
+    </div>
+
+    <!-- Top Right Nav -->
+    <div id="nav-container" class="absolute top-6 right-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
+        <!-- Music Button -->
+        <a href="/music/" class="p-2 hover:bg-white/10 rounded-full transition-colors text-neutral-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </a>
+        <!-- Notification Bell -->
+        <a href="/chat/" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+        </a>
+        
+        <!-- Profile Picture -->
+        <a href="/account/" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500 hover:scale-110 transition-transform bg-neutral-800 flex items-center justify-center">
+            <img id="user-pfp" src="/storage/photos/guest.png" alt="Profile" class="w-full h-full object-cover" onerror="this.src='/storage/photos/guest.png'">
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="text-center space-y-8 opacity-0">
+        <h1 class="text-5xl font-black tracking-tighter text-blue-500 italic">THE GAME DUNGEON</h1>
+        
+        <div class="flex flex-col space-y-4 items-center">
+            <a href="/play/" class="btn-glow px-12 py-4 bg-blue-600 text-white font-bold rounded-xl text-2xl transition-all w-64 text-center">
+                PLAY
+            </a>
+            <a href="/settings/" class="btn-glow px-12 py-4 bg-neutral-800 text-white font-bold rounded-xl text-xl transition-all w-64 text-center border border-white/10">
+                SETTINGS
+            </a>
+            <p>Or miss the <b>OLD</b> Game Dungeon?</p>
+            <a href="https://thegamedungeon.github.io/theoldgamedungeon/" class="btn-glow px-12 py-4 bg-red-800 text-blue font-bold rounded-xl text-xl transition-all w-64 text-center border border-white/10">
+                THE OLD GAME DUNGEON
+            </a>
+            <p>Warning: There isn't a button back. You must retype the link <b>THEGAMEDUNGEON.GITHUB.IO</b></p>
+        </div>
+    </div>
+
+    <script>
+        function closePopup() {
+            document.getElementById('game-popup').classList.add('hidden');
+        }
+
+        // Show popup only once
+        if (!localStorage.getItem('sawMusicFeature')) {
+            setTimeout(() => {
+                document.getElementById('music-popup').classList.remove('hidden');
+                localStorage.setItem('sawMusicFeature', 'true');
+            }, 1000);
+        }
+    </script>
+
+    <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -54,42 +113,53 @@
             measurementId: "G-CER9SE96MC"
         };
 
-        async function runSystemCheck() {
-            const loader = document.getElementById('loader');
-            const errorScreen = document.getElementById('error-screen');
-            const homeScreen = document.getElementById('home-screen');
-            const bell = document.getElementById('notif-bell');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const safetyTimeout = setTimeout(() => {
+            if (!auth.currentUser) window.location.href = "/account/login/";
+        }, 5000);
+
+        onAuthStateChanged(auth, async (user) => {
+            clearTimeout(safetyTimeout);
+            const loadingScreen = document.getElementById('loading-screen');
+            const nav = document.getElementById('nav-container');
+            const mainContent = document.getElementById('main-content');
+
+            if (!user) {
+                window.location.href = "/accounts/login/";
+                return;
+            }
+
+            const pfpImg = document.getElementById('user-pfp');
+            
+            if (user.photoURL) {
+                pfpImg.src = user.photoURL;
+            }
 
             try {
-                // 1. Initialize Firebase
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                
-                if (!app || !db) throw new Error("Init failure");
+                if (user.email) {
+                    const username = user.email.split('@')[0];
+                    const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", username);
+                    const docSnap = await getDoc(docRef);
 
-                // 2. Verify status.js
-                const response = await fetch('/storage/js/status.js');
-                if (!response.ok) throw new Error("Status failure");
-
-                // 3. Inject script
-                const s = document.createElement('script');
-                s.type = 'module';
-                s.src = '/storage/js/status.js';
-                s.setAttribute('data-game', 'not in a game');
-                document.body.appendChild(s);
-
-                // 4. Transition
-                loader.classList.add('hidden');
-                homeScreen.classList.remove('hidden');
-                bell.classList.remove('hidden');
-
-            } catch (err) {
-                loader.classList.add('hidden');
-                errorScreen.classList.remove('hidden');
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.pfp && (data.pfp.startsWith('data:image') || data.pfp.length > 100)) {
+                            pfpImg.src = data.pfp;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Firestore error:", error);
+            } finally {
+                loadingScreen.style.display = 'none';
+                nav.style.opacity = '1';
+                mainContent.classList.add('fade-in');
+                mainContent.classList.remove('opacity-0');
             }
-        }
-
-        window.addEventListener('DOMContentLoaded', runSystemCheck);
+        });
     </script>
 </body>
 </html>
