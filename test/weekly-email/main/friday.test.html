@@ -22,6 +22,28 @@
     }
 </script>
     <!-- Calling the script -->
-    <script src="/storage/js/send-message.js"></script>
+    <script>document.getElementById('test-btn').addEventListener('click', () => {
+    // Check if it's already loaded to avoid duplicates
+    if (document.querySelector('script[src="/storage/js/send-message.js"]')) {
+        logToConsole("send-message.js is already loaded, bro.");
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.src = '/storage/js/send-message.js';
+
+    // Catch if the script fails to load entirely
+    script.onerror = () => {
+        logToConsole("Failed to load /storage/js/send-message.js. Check the path or server status.");
+    };
+
+    // Confirm it started
+    script.onload = () => {
+        logToConsole("send-message.js loaded and executed successfully.");
+    };
+
+    document.body.appendChild(script);
+});
+    </script>
 </body>
 </html>
