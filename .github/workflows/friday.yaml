@@ -29,3 +29,12 @@ jobs:
         env:
           # This pulls the secret key you'll add to GitHub later
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+- name: Post-Run Logging
+        if: always()
+        run: |
+          mkdir -p /test/weekly-email/main/
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Big W" > /test/weekly-email/main/reason.txt
+          else
+            echo "Action failed with status: ${{ job.status }}" > /test/weekly-email/main/reason.txt
+          fi
