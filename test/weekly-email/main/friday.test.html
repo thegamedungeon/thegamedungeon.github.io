@@ -23,17 +23,5 @@
 </script>
     <!-- Calling the script -->
     <script src="/storage/js/send-message.js"></script>
-    
-    <script>
-        document.getElementById('testBtn').addEventListener('click', () => {
-            // Assuming your function in send-message.js is named triggerAlert
-            if (typeof checkAndSendPlaytimeAlerts === 'function') {
-                checkAndSendPlaytimeAlerts();
-            } else {
-                logToConsole("Function triggerAlert not found in /storage/js/send-message.js");
-            }
-        });
-    </script>
-
 </body>
 </html>
