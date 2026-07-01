@@ -44,8 +44,8 @@ async function checkAndSendPlaytimeAlerts() {
 
             // Send via EmailJS
             emailjs.send('service_n2hsxcf', 'template_58qiu5r', templateParams)
-                .then(() => console.log(`Alert sent to ${user.username}`))
-                .catch(err => console.error("Email failed:", err));
+                .then(() => logToConsole(`Alert sent to ${user.username}`))
+                .catch(err => logToConsole("Email failed:", err));
         }
     }
 }
