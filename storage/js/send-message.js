@@ -4,7 +4,6 @@ import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firesto
 // Note: Replace these with your actual Firebase config initialization
 const db = getFirestore();
 
-async function checkAndSendPlaytimeAlerts() {
     const accountsRef = collection(db, "accounts");
     const snapshot = await getDocs(accountsRef);
     const allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -48,4 +47,3 @@ async function checkAndSendPlaytimeAlerts() {
                 .catch(err => logToConsole("Email failed:", err));
         }
     }
-}
