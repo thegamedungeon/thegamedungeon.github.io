@@ -22,7 +22,8 @@
     }
 </script>
     <!-- Calling the script -->
-    <script>document.getElementById('test-btn').addEventListener('click', () => {
+    <script>
+        document.getElementById('test-btn').addEventListener('click', () => {
     // Check if it's already loaded to avoid duplicates
     if (document.querySelector('script[src="/storage/js/send-message.js"]')) {
         logToConsole("send-message.js is already loaded, bro.");
