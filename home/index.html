@@ -30,6 +30,18 @@
     margin-left: auto;
     margin-right: auto;
 }
+
+/* Forces the content to the left */
+#nav-container-l {
+  display: flex;
+  gap: 15px;
+}
+
+/* Forces the content to the right */
+#nav-container-r {
+  display: flex;
+  gap: 15px;
+}
     </style>
 </head>
 <body class="h-screen flex flex-col items-center justify-center relative">
@@ -53,7 +65,7 @@
     </div>
 
     <!-- Top Right Nav -->
-    <div id="nav-container" class="absolute top-6 right-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
+    <div id="nav-container-l" class="absolute top-6 right-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
         <!-- Music Button -->
         <a href="/music/" class="p-2 hover:bg-white/10 rounded-full transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -76,7 +88,7 @@
     </div>
 
     <!-- Top Left Nav -->
-    <div id="nav-container" class="absolute top-6 left-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
+    <div id="nav-container-r" class="absolute top-6 left-6 flex items-center space-x-4 opacity-0 transition-opacity duration-500">
         <!-- Home Button -->
         <a href="/home/" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500 hover:scale-110 transition-transform bg-neutral-800 flex items-center justify-center">
             <img id="home-button-png" src="/storage/photos/tgdtc.png" alt="Home" class="w-full h-full object-cover">
