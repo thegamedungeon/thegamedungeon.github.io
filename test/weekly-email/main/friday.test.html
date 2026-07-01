@@ -11,8 +11,6 @@
     <div>> System Ready...</div>
 </div>
 
-<button id="testBtn">Run Alert Check</button>
-
 <script>
     // This function lets you "log" to your custom console instead of the browser console
     function logToConsole(message) {
@@ -29,10 +27,10 @@
     <script>
         document.getElementById('testBtn').addEventListener('click', () => {
             // Assuming your function in send-message.js is named triggerAlert
-            if (typeof triggerAlert === 'function') {
-                triggerAlert();
+            if (typeof checkAndSendPlaytimeAlerts === 'function') {
+                checkAndSendPlaytimeAlerts();
             } else {
-                console.error("Function triggerAlert not found in /storage/js/send-message.js");
+                logToConsole("Function triggerAlert not found in /storage/js/send-message.js");
             }
         });
     </script>
