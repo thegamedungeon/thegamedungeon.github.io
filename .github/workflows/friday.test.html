@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crib Test</title>
+</head>
+<body>
+
+    <button id="testBtn">Test Message</button>
+
+    <!-- Calling the script -->
+    <script src="/storage/js/send-message.js"></script>
+    
+    <script>
+        document.getElementById('testBtn').addEventListener('click', () => {
+            // Assuming your function in send-message.js is named triggerAlert
+            if (typeof triggerAlert === 'function') {
+                triggerAlert();
+            } else {
+                console.error("Function triggerAlert not found in /storage/js/send-message.js");
+            }
+        });
+    </script>
+
+</body>
+</html>
