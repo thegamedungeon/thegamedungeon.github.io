@@ -7,7 +7,22 @@
 <body>
 
     <button id="testBtn">Test Message</button>
+<div id="cribConsole" style="background: black; color: #00FF00; padding: 15px; font-family: monospace; height: 200px; overflow-y: scroll; border: 1px solid #444; margin-top: 20px;">
+    <div>> System Ready...</div>
+</div>
 
+<button id="testBtn">Run Alert Check</button>
+
+<script>
+    // This function lets you "log" to your custom console instead of the browser console
+    function logToConsole(message) {
+        const consoleDiv = document.getElementById('cribConsole');
+        const newLine = document.createElement('div');
+        newLine.textContent = "> " + message;
+        consoleDiv.appendChild(newLine);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll to bottom
+    }
+</script>
     <!-- Calling the script -->
     <script src="/storage/js/send-message.js"></script>
     
