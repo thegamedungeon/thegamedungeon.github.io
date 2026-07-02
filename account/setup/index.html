@@ -44,19 +44,37 @@
     }
 
     // 2. Attach the listener once the DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-        const saveBtn = document.getElementById('save-btn');
+    document.addEventListener('click', async (event) => {
+    // Check if the element clicked was the save button
+    if (event.target.id === 'save-btn') {
+        console.log("Save button detected! Starting process...");
         
-        onAuthStateChanged(auth, (user) => {
+        // This makes sure we have the user
+        auth.onAuthStateChanged(async (user) => {
             if (!user) {
-                window.location.href = "/accounts/login/";
+                console.log("Error: User not logged in!");
+                return;
+            }
+            
+            const newUsername = document.getElementById('username-input').value;
+            if (!newUsername) {
+                console.log("Error: No username entered.");
                 return;
             }
 
-            // 3. Now attach the click listener
-            saveBtn.onclick = () => saveUsername(user);
+            const emailId = user.email.split('@')[0];
+            const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", emailId);
+
+            try {
+                await setDoc(docRef, { username: newUsername }, { merge: true });
+                console.log("Success! Redirecting...");
+                window.location.href = "/";
+            } catch (e) {
+                console.log("Firestore Error: " + e.message);
+            }
         });
-    });
+    }
+});
 </script>
 </body>
 </html>
