@@ -140,15 +140,20 @@
 
             try {
                 if (user.email) {
-                    const username = user.email.split('@')[0];
-                    const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", username);
+                    const emailId = user.email.split('@')[0];
+                    const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", emailId);
                     const docSnap = await getDoc(docRef);
 
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        if (data.pfp && (data.pfp.startsWith('data:image') || data.pfp.length > 100)) {
-                            pfpImg.src = data.pfp;
-                        }
+                    // --- CHECK FOR USERNAME ---
+                    if (!docSnap.exists() || !docSnap.data().username) {
+                        window.location.href = "/account/setup/"; // Redirect to setup if missing
+                        return;
+                    }
+
+                    // Proceed if username exists
+                    const data = docSnap.data();
+                    if (data.pfp && (data.pfp.startsWith('data:image') || data.pfp.length > 100)) {
+                        pfpImg.src = data.pfp;
                     }
                 }
             } catch (error) {
