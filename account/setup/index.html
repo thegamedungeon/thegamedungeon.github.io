@@ -2,15 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Set CribName | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         #save-btn {
-    pointer-events: auto !important;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-}
+            pointer-events: auto !important;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
     </style>
 </head>
 <body class="bg-[#0b0b0b] text-white h-screen flex items-center justify-center">
@@ -19,54 +20,47 @@
         <h2 class="text-2xl font-black text-blue-500 mb-6">SET YOUR CRIB-NAME</h2>
         <input id="username-input" type="text" placeholder="Enter username..." 
                class="w-full bg-neutral-800 border border-neutral-700 p-3 rounded-xl mb-4 text-center focus:border-blue-500 outline-none">
-        <button id="save-btn" class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+        
+        <!-- The button is now a div for maximum compatibility -->
+        <div id="save-btn" 
+             onclick="handleSave()" 
+             class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition cursor-pointer select-none">
             SAVE
-        </button>
+        </div>
     </div>
 
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // ... your firebaseConfig here ...
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
 
-    // 1. Define the handler separately so it's always accessible
-    async function saveUsername(user) {
-        const newUsername = document.getElementById('username-input').value;
-        if (!newUsername) return alert("Bro, enter a name.");
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        const emailId = user.email.split('@')[0];
-        const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", emailId);
-
-        try {
-            await setDoc(docRef, { username: newUsername }, { merge: true });
-            window.location.href = "/";
-        } catch (e) {
-            console.error(e);
-            alert("Failed to save, bro.");
-        }
-    }
-
-    // 2. Attach the listener once the DOM is ready
-    document.addEventListener('click', async (event) => {
-    // Check if the element clicked was the save button
-    if (event.target.id === 'save-btn') {
-        console.log("Save button detected! Starting process...");
-        
-        // This makes sure we have the user
-        auth.onAuthStateChanged(async (user) => {
+        // Define the function globally so the onclick can see it
+        window.handleSave = async () => {
+            console.log("HandleSave triggered!");
+            
+            const user = auth.currentUser;
             if (!user) {
-                console.log("Error: User not logged in!");
+                console.log("No user logged in!");
                 return;
             }
-            
-            const newUsername = document.getElementById('username-input').value;
-            if (!newUsername) {
-                console.log("Error: No username entered.");
+
+            const username = document.getElementById('username-input').value;
+            if (!username) {
+                alert("Bro, enter a name.");
                 return;
             }
 
@@ -74,15 +68,14 @@
             const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", emailId);
 
             try {
-                await setDoc(docRef, { username: newUsername }, { merge: true });
+                await setDoc(docRef, { username: username }, { merge: true });
                 console.log("Success! Redirecting...");
                 window.location.href = "/";
             } catch (e) {
-                console.log("Firestore Error: " + e.message);
+                console.log("Firestore error: " + e.message);
+                alert("Something went wrong, bro.");
             }
-        });
-    }
-});
-</script>
+        };
+    </script>
 </body>
 </html>
