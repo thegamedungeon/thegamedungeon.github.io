@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Set CribName | The Crib</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b0b0b] text-white h-screen flex items-center justify-center">
+
+    <div class="bg-neutral-900 p-8 rounded-2xl border border-blue-500/30 w-96 text-center">
+        <h2 class="text-2xl font-black text-blue-500 mb-6">SET YOUR CRIB-NAME</h2>
+        <input id="username-input" type="text" placeholder="Enter username..." 
+               class="w-full bg-neutral-800 border border-neutral-700 p-3 rounded-xl mb-4 text-center focus:border-blue-500 outline-none">
+        <button id="save-btn" class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+            SAVE
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { /* SAME CONFIG AS BEFORE */ };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = "/accounts/login/"; return; }
+
+            const emailId = user.email.split('@')[0];
+            const docRef = doc(db, "artifacts", "the-game-dungeon-4d75d", "public", "data", "users", emailId);
+
+            document.getElementById('save-btn').onclick = async () => {
+                const newUsername = document.getElementById('username-input').value;
+                if (!newUsername) return alert("Bro, enter a name.");
+
+                try {
+                    // Saves username, keeping any other data that might already be there
+                    await setDoc(docRef, { username: newUsername }, { merge: true });
+                    window.location.href = "/"; // Go back to home
+                } catch (e) {
+                    console.error(e);
+                    alert("Failed to save, bro.");
+                }
+            };
+        });
+    </script>
+</body>
+</html>
