@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DGame Studio - The Crib's Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .editor-container { height: calc(100vh - 120px); }
+        .tag-doc-item:hover { background-color: #334155; }
+        .dgame-object { transition: transform 0.2s; cursor: grab; }
+        .dgame-object:active { cursor: grabbing; }
+        .lasso-line { stroke: #fbbf24; stroke-width: 3; stroke-dasharray: 4; }
+    </style>
+</head>
+<body class="overflow-hidden">
+
+    <header class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
+        <h1 class="text-xl font-bold text-yellow-500">DGame Studio</h1>
+        <div class="flex gap-2">
+            <button onclick="toggleDocSidebar()" class="px-4 py-2 bg-slate-700 rounded hover:bg-slate-600 transition">Docs</button>
+            <button onclick="saveFileModal()" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 transition">Save .dgame</button>
+            <button onclick="enterFullscreen()" class="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 transition">Fullscreen</button>
+            <button onclick="runDGame()" class="px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition font-bold">RUN</button>
+        </div>
+    </header>
+
+    <main class="flex h-screen">
+        <!-- Sidebar Docs -->
+        <aside id="docSidebar" class="hidden w-64 bg-slate-900 border-r border-slate-700 p-4 overflow-y-auto">
+            <h2 class="text-lg font-semibold mb-4 border-b border-slate-600 pb-2">Tag Reference</h2>
+            <div id="docList" class="text-sm space-y-4"></div>
+        </aside>
+
+        <!-- Editor & Preview -->
+        <div class="flex-1 flex p-4 gap-4 overflow-hidden">
+            <textarea id="editor" class="w-1/2 h-full bg-slate-950 p-4 rounded border border-slate-700 font-mono text-sm resize-none focus:outline-none focus:border-yellow-500" placeholder="Type your .dgame code here..."></textarea>
+            <div id="preview" class="w-1/2 h-full bg-white rounded border border-slate-700 overflow-hidden relative"></div>
+        </div>
+    </main>
+
+    <div id="saveModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center">
+        <div class="bg-slate-800 p-6 rounded-lg w-96">
+            <h3 class="text-lg font-bold mb-4">Save File</h3>
+            <input id="fileName" type="text" placeholder="game-name" class="w-full p-2 bg-slate-700 rounded mb-4">
+            <div class="flex justify-end gap-2">
+                <button onclick="hideModal()" class="px-4 py-2 bg-slate-600 rounded">Cancel</button>
+                <button onclick="performDownload()" class="px-4 py-2 bg-green-600 rounded">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TAGS = {
+            "object": "Defines a game entity: <object id='name' shape='sq' addition-type='svg'></object>",
+            "list": "Groups entities for physics: <list id='name'><1=[id]></list>",
+            "construct": "Stitches entities into ragdolls: <construct id='name' list=[list-id] connect='lasso'></construct>",
+            "route": "Head-only registration: <route [id]='html'></route>",
+            "call": "Embeds iframes: <call src='url'><calltype id='id'></call></call>",
+            "button": "UI Trigger: <button confirm='id' go='url'></button>"
+        };
+
+        const docList = document.getElementById('docList');
+        Object.entries(TAGS).forEach(([tag, desc]) => {
+            docList.innerHTML += `<div class="tag-doc-item p-2 rounded cursor-pointer"><strong>&lt;${tag}&gt;</strong><p class="text-slate-400">${desc}</p></div>`;
+        });
+
+        function toggleDocSidebar() { document.getElementById('docSidebar').classList.toggle('hidden'); }
+        function saveFileModal() { document.getElementById('saveModal').classList.remove('hidden'); }
+        function hideModal() { document.getElementById('saveModal').classList.add('hidden'); }
+        
+        function enterFullscreen() {
+            const preview = document.getElementById('preview');
+            if (preview.requestFullscreen) preview.requestFullscreen();
+        }
+
+        function runDGame() {
+            const code = document.getElementById('editor').value;
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+            
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(code, 'text/html');
+
+            // Render Objects
+            doc.querySelectorAll('object').forEach(obj => {
+                const div = document.createElement('div');
+                div.id = obj.getAttribute('id');
+                div.className = 'dgame-object absolute border-2';
+                div.style.left = Math.random() * 300 + 'px';
+                div.style.top = Math.random() * 300 + 'px';
+                div.style.width = '50px';
+                div.style.height = '50px';
+                div.style.backgroundColor = obj.getAttribute('fill-color') || 'blue';
+                div.style.borderRadius = obj.getAttribute('shape') === 'circle' ? '50%' : '0';
+                div.innerHTML = obj.innerHTML;
+                preview.appendChild(div);
+            });
+
+            // Simulate Ragdoll Lasso (Simple connection visual)
+            doc.querySelectorAll('construct').forEach(cons => {
+                const listId = cons.getAttribute('list').replace('[', '').replace(']', '');
+                const list = doc.querySelector(`list#${listId}`);
+                if(list) {
+                    const parts = Array.from(list.children).map(c => c.innerHTML.match(/\[(.*?)\]/)[1]);
+                    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    svg.setAttribute('class', 'absolute inset-0 w-full h-full pointer-events-none');
+                    preview.appendChild(svg);
+                    
+                    parts.forEach((p1, i) => {
+                        if(parts[i+1]) {
+                            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                            line.setAttribute('class', 'lasso-line');
+                            // Simple visual link logic for simulation
+                            line.setAttribute('x1', '50%'); line.setAttribute('y1', '50%');
+                            line.setAttribute('x2', '60%'); line.setAttribute('y2', '60%');
+                            svg.appendChild(line);
+                        }
+                    });
+                }
+            });
+        }
+
+        function performDownload() {
+            const filename = document.getElementById('fileName').value || 'game';
+            const code = document.getElementById('editor').value;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${filename}.dgame`;
+            a.click();
+            hideModal();
+        }
+    </script>
+</body>
+</html>
