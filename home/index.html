@@ -90,6 +90,7 @@
         </div>
     </div>
 
+    <script src="/storage/js/pwa.main.js"></script>
     <script>
         function closePopup() {
             document.getElementById('game-popup').classList.add('hidden');
@@ -172,9 +173,6 @@
                 mainContent.classList.remove('opacity-0');
             }
         });
-        if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
-}
     </script>
 </body>
 </html>
