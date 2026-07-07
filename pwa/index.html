@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CribOS</title>
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CribOS">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+        
+        body {
+            background-color: #000;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .android-desktop {
+            background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .app-icon-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            background: #333;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .app-icon:active { transform: scale(0.9); }
+        .app-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+        .app-label { font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+        .boot-log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen android-desktop overflow-hidden">
+
+    <div id="boot-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black transition-opacity duration-1000">
+        <div id="boot-log" class="boot-log w-full max-w-sm px-4 h-32 overflow-hidden text-left mb-4"></div>
+        <div class="w-64 h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div id="boot-progress" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+
+    <div id="desktop" class="absolute inset-0 pt-12 p-6 opacity-0 transition-opacity duration-1000">
+        <div id="app-grid" class="app-grid"></div>
+    </div>
+
+    <div id="app-window" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-gray-900 w-full max-w-md h-[85vh] rounded-3xl p-4 relative border border-gray-700 shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <button onclick="closeApp()" class="text-gray-400 font-bold p-2">HOME</button>
+                <div id="app-title" class="text-white font-medium"></div>
+                <div class="w-8"></div>
+            </div>
+            <div id="app-content" class="flex-grow rounded-2xl overflow-hidden bg-black"></div>
+        </div>
+    </div>
+
+    <script>
+        const apps = {
+            scrolls: { title: 'Scrolls', url: '/chat/pwa/' },
+            stats: { title: 'User Stats', url: '/play/playtime/pwa/' },
+            settings: { title: 'Settings', url: '/settings/pwa/' },
+            cribman: { title: 'CribMan', url: '/cribman/pwa/' },
+            ragdollhit: { title: 'Ragdoll Hit', url: '/play/ragdoll-hit/pwa/' },
+            geometrydash: { title: 'Geometry Dash', url: '/play/geometry-dash/pwa/' },
+            cookieclicker: { title: 'Cookie Clicker', url: '/play/cookie-clicker/pwa/' },
+            polytrack: { title: 'Polytrack', url: '/play/polytrack/pwa/' },
+            ragdollmelon: { title: 'Ragdoll Melon', url: '/play/ragdoll-melon/pwa/' },
+            cuttherope: { title: 'Cut The Rope', url: '/play/cut-the-rope/pwa/' },
+            earntodie2: { title: 'Earn To Die 2', url: '/play/earn-to-die-2/pwa/' },
+            polytrack: { title: 'Polytrack', url: '/play/polytrack/pwa/' },
+            bloonstowerdefense2: { title: 'Bloons TD 2', url: '/play/bloons-tower-defense-2/pwa/' },
+            ragdollarchers: { title: 'Ragdoll Archers', url: '/play/ragdoll-archers/pwa/' },
+            basketrandom: { title: 'Basket Random', url: '/play/basket-random/pwa/' },
+            snowrider3d: { title: 'Snow Rider 3D', url: '/play/snow-rider-3d/pwa/' },
+            bitlife: { title: 'Bitlife', url: '/play/bitlife/pwa/' },
+            fivenightsatsods: { title: 'Five Nights At Sod's', url: '/play/five-nights-at-sods/pwa/' },
+            gameadd: { title: 'GameAdd', url: '/play/pwa/' },
+            
+        };
+
+        const bootMessages = ["Initializing kernel...", "Mounting storage...", "Loading drivers...", "Checking for exploits...", "CribOS v1.0.4 loaded."];
+
+        function getIconPath(title) {
+            const words = title.split(' ');
+            return words.length === 1 ? `/storage/photos/${words[0].toLowerCase()}.png` : `/storage/photos/${words.map(w => w[0]).join('').toLowerCase()}.png`;
+        }
+
+        const bootScreen = document.getElementById('boot-screen'), bootLog = document.getElementById('boot-log'), desktop = document.getElementById('desktop'), appGrid = document.getElementById('app-grid'), appWindow = document.getElementById('app-window'), appContent = document.getElementById('app-content'), appTitle = document.getElementById('app-title');
+
+        window.onload = () => {
+            let p = 0, msgIdx = 0;
+            const interval = setInterval(() => {
+                p += 20;
+                if(msgIdx < bootMessages.length) {
+                    const log = document.createElement('div');
+                    log.textContent = `> ${bootMessages[msgIdx++]}`;
+                    bootLog.appendChild(log);
+                }
+                document.getElementById('boot-progress').style.width = p + '%';
+                if (p >= 100) {
+                    clearInterval(interval);
+                    renderIcons();
+                    bootScreen.style.opacity = '0';
+                    setTimeout(() => { bootScreen.style.display = 'none'; desktop.style.opacity = '1'; }, 1000);
+                }
+            }, 600);
+        };
+
+        function renderIcons() {
+            Object.keys(apps).forEach(key => {
+                const app = apps[key], iconPath = getIconPath(app.title);
+                const div = document.createElement('div');
+                div.className = 'app-icon-container';
+                div.innerHTML = `<div class="app-icon" onclick="renderApp('${key}')"><img src="${iconPath}" onerror="this.src='https://placehold.co/64x64/333/fff?text=${app.title.charAt(0)}'"></div><span class="app-label">${app.title}</span>`;
+                appGrid.appendChild(div);
+            });
+        }
+
+        function renderApp(key) {
+            const app = apps[key];
+            appTitle.textContent = app.title;
+            if (app.url) {
+                appContent.innerHTML = `<iframe src="${app.url}" class="w-full h-full border-none"></iframe>`;
+            } else {
+                appContent.innerHTML = `<div class="p-6 text-gray-400">System module for ${app.title} in development.</div>`;
+            }
+            appWindow.classList.remove('hidden');
+        }
+
+        function closeApp() { appWindow.classList.add('hidden'); appContent.innerHTML = ''; }
+    </script>
+</body>
+</html>
