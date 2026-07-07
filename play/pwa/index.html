@@ -6,7 +6,7 @@
     <title>The Playroom | The Crib</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Your custom status tracker -->
-    <script type="module" src="/storage/js/status.js" data-game="Play"></script>
+    <script type="module" src="/storage/js/status.js" data-game="GameAdd PWA"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <!-- JSZip for Option 3 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -36,164 +36,10 @@
 </head>
 <body class="min-h-screen">
 
-    <nav class="p-6 flex items-center justify-between sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-md">
-        <div class="flex items-center space-x-4">
-            <a href="/home/" class="p-3 glass rounded-2xl hover:bg-white/10 transition-all group">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 group-hover:text-white"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </a>
-            <a href="/play/playtime/" class="p-3 glass rounded-2xl hover:bg-blue-600/20 hover:border-blue-500/30 transition-all group">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 group-hover:scale-110 transition-transform"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            </a>
-            <h1 class="text-4xl font-black italic tracking-tighter uppercase ml-2">Play</h1>
-        </div>
-
-        <div id="social-bar" class="flex items-center space-x-2 glass p-2 rounded-full max-w-[50vw] overflow-x-auto no-scrollbar">
-            <div id="friends-list" class="flex items-center space-x-2"></div>
-            <div class="w-px h-6 bg-white/10 mx-1"></div>
-            <button onclick="openRequestsModal()" class="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-yellow-500/20 text-yellow-500 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <div id="request-count" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-[10px] flex items-center justify-center font-bold">0</div>
-            </button>
-            <button onclick="openAddFriendModal()" class="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-green-500/20 text-green-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-        </div>
-    </nav>
-
         <!-- Main Game Grid (No Animation) -->
     <main class="p-6">
         <div id="game-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <!-- Game 1 -->
-            <a href="/play/ragdoll-hit/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/rh.png" alt="Game 1" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">RAGDOLL HIT</h3>
-                </div>
-            </a>
-            <!-- Game 2 -->
-            <a href="/play/geometry-dash/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/gd.png" alt="Game 2" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">GEOMETRY DASH</h3>
-                </div>
-            </a>
-            <!-- Game 3 -->
-            <a href="/play/cookie-clicker/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/cc.png" alt="Game 3" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">COOKIE CLICKER</h3>
-                </div>
-            </a>
-            <!-- Game 4 -->
-            <a href="/play/polytrack/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/polytrack.png" alt="Game 4" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">POLYTRACK</h3>
-                </div>
-            </a>
-          <!-- Game 5 -->
-            <a href="/play/ragdoll-melon/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/rm.png" alt="Game 5" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">RAGDOLL MELON</h3>
-                </div>
-            </a>
-            <!-- Game 6 -->
-            <a href="/play/cut-the-rope/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/ctr.png" alt="Game 6" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">CUT THE ROPE</h3>
-                </div>
-            </a>
-           <!-- Game 7 -->
-            <a href="/play/earn-to-die-2/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/etd2.png" alt="Game 7" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">EARN TO DIE 2</h3>
-                </div>
-            </a>
-            <!-- Game 8 -->
-            <a href="/play/bloons-tower-defense-2/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/btd2.png" alt="Game 8" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">BLOONS TOWER DEFENSE 2</h3>
-                </div>
-            </a>
-            <!-- Game 9 -->
-            <a href="/play/ragdoll-archers/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/ra.png" alt="Game 9" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">RAGDOLL ARCHERS</h3>
-                </div>
-            </a>
-            <!-- Game 10 -->
-            <a href="/play/basket-random/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/br.png" alt="Game 10" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">BASKET RANDOM</h3>
-                </div>
-            </a>
-            <!-- Game 11 -->
-            <a href="/play/snow-rider-3d/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/sr3.png" alt="Game 11" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">SNOW RIDER 3D</h3>
-                </div>
-            </a>
-              <!-- Game 12 -->
-            <a href="/play/bitlife/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/bitlife.png" alt="Game 12" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">BITLIFE</h3>
-                </div>
-            </a>
-            <!-- Game 13 -->
-            <a href="/play/five-nights-at-sods/" class="game-card">
-                <div class="h-48 bg-neutral-800 flex items-center justify-center">
-                    <img src="/storage/photos/fnas.png" alt="Game 13" class="game-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span class="hidden text-neutral-500 font-mono">ICON MISSING</span>
-                </div>
-                <div class="p-4 bg-neutral-900 border-t border-white/5">
-                    <h3 class="text-xl font-bold tracking-tight">FIVE NIGHTS AT SODS</h3>
-                </div>
-            </a>
-            <!-- Custom Dynamic Games Target Inject Point -->
+        <!-- Custom Dynamic Games Target Inject Point -->
             <div id="custom-games-container" class="contents"></div>
             <!-- Dynamic Add Game Button Trigger Card -->
             <button onclick="openCustomGameModal()" class="border-2 border-dashed border-white/10 rounded-[1rem] h-64 flex flex-col items-center justify-center hover:bg-white/5 hover:border-white/30 transition-all text-neutral-500 hover:text-white group">
