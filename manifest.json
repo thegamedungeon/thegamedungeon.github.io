@@ -1,7 +1,7 @@
 {
   "name": "The Crib",
   "short_name": "The Crib",
-  "start_url": "/",
+  "start_url": "/home/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
