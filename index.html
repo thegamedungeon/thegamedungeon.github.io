@@ -59,14 +59,32 @@
         const db = getFirestore(app);
         let currentUserData = null;
 
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('nav-pfp').src = user.photoURL;
                 const cleanEmail = user.email.split('@')[0];
                 
                 const bannedRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'banned-users', cleanEmail);
+                const bannedSnap = await getDoc(bannedRef);
+                if (bannedSnap.exists()) {
+                    document.body.innerHTML = "<div class='flex h-screen items-center justify-center text-red-500'>You have been blicked.</div>";
+                    return;
+                }
+
+                const userRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'users', cleanEmail);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    currentUserData = { ...userSnap.data(), email: user.email, id: cleanEmail };
+                } else {
+                    currentUserData = { username: "Guest", friends: [], email: user.email, id: cleanEmail };
+                    await setDoc(userRef, currentUserData);
+                }
+                switchView('home');
+            } else {
+                renderLogin();
+            }
+        });
+
         window.switchView = async (view, params = {}) => {
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
             document.getElementById(`nav-${view}`).classList.add('nav-active');
@@ -96,7 +114,7 @@
             const container = document.getElementById('main-content');
             container.innerHTML = `
                 <div class="p-8 flex flex-col items-center">
-                    <img src="/storage/photos/tgdl.png" class="w-64 h-64 mx-auto mb-8 shadow-2xl">
+                    <img src="/storage/photos/tgdl.png" class="w-64 h-64 mx-auto mb-8 shadow-2xl border-4 border-gray-800">
                     <h1 class="text-4xl font-bold text-center mb-10">Welcome, ${currentUserData.username || 'User'}!</h1>
                     <div class="w-full max-w-sm">
                         <h2 class="text-xl mb-4 font-semibold text-gray-400">Friends</h2>
