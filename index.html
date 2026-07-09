@@ -117,16 +117,44 @@
             `;
         };
 
+        <!-- ... existing code ... -->
+        window.getGameLogo = (name) => {
+            const parts = name.trim().split(/\s+/);
+            let path = "";
+            if (parts.length === 1) {
+                path = `/storage/photos/${parts[0].toLowerCase()}.png`;
+            } else {
+                const initials = parts.map(p => p[0]).join('').toLowerCase();
+                path = `/storage/photos/${initials}.png`;
+            }
+            return path;
+        };
+
         window.renderPlay = () => {
             const container = document.getElementById('main-content');
+            // List of games here - you can just add strings to this array
+            const games = ["Ragdoll Hit"]; 
+            
             container.innerHTML = `
-                <div class="p-6 flex flex-col items-center">
-                    <h1 class="text-3xl font-bold mb-8">Game Vault</h1>
-                    <button onclick="launchGame('Ragdoll Hit')" class="bg-blue-600 hover:bg-blue-700 transition w-full max-w-sm p-4 rounded-2xl font-bold text-lg">Ragdoll Hit</button>
+                <div class="p-6 w-full max-w-2xl">
+                    <h1 class="text-3xl font-bold mb-8 text-center">Game Vault</h1>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${games.map(game => `
+                            <button onclick="launchGame('${game}')" class="group flex flex-col items-center p-2 rounded-2xl transition hover:bg-gray-800 border border-transparent hover:border-gray-700">
+                                <img src="${getGameLogo(game)}" 
+                                     onerror="this.onerror=null; this.src='https://placehold.co/200x200/333/fff?text=${game.charAt(0)}';" 
+                                     class="w-full aspect-square object-cover rounded-xl shadow-lg">
+                                <span class="mt-2 text-sm font-medium text-gray-300 group-hover:text-white">${game}</span>
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         };
 
+        window.launchGame = (gameName) => {
+// ... existing code ...
+```
         window.launchGame = (gameName) => {
             const container = document.getElementById('main-content');
             container.innerHTML = `<div class="flex h-full items-center justify-center"><div class="loading-spinner w-12 h-12 rounded-full border-4 border-gray-700"></div></div>`;
