@@ -42,7 +42,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -67,27 +67,7 @@
                 const cleanEmail = user.email.split('@')[0];
                 
                 const bannedRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'banned-users', cleanEmail);
-                const bannedSnap = await getDoc(bannedRef);
-                if (bannedSnap.exists()) {
-                    document.body.innerHTML = "<div class='flex h-screen items-center justify-center text-red-500'>You have been blicked.</div>";
-                    return;
-                }
-
-                const userRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'users', cleanEmail);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    currentUserData = { ...userSnap.data(), email: user.email, id: cleanEmail };
-                } else {
-                    currentUserData = { username: "Guest", friends: [], email: user.email, id: cleanEmail };
-                    await setDoc(userRef, currentUserData);
-                }
-                switchView('home');
-            } else {
-                renderLogin();
-            }
-        });
-
-        window.switchView = async (view) => {
+        window.switchView = async (view, params = {}) => {
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
             document.getElementById(`nav-${view}`).classList.add('nav-active');
             
@@ -96,8 +76,20 @@
             
             if (view === 'home') renderHome();
             else if (view === 'play') renderPlay();
-            else if (view === 'chat') renderChat();
+            else if (view === 'chat') renderChat(params.target);
             else if (view === 'account') renderAccount();
+        };
+
+        window.deleteFriend = async (email) => {
+            if(!confirm(`Remove ${email} from friends?`)) return;
+            const userRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'users', currentUserData.id);
+            await updateDoc(userRef, { friends: arrayRemove(email) });
+            currentUserData.friends = currentUserData.friends.filter(f => f !== email);
+            renderHome();
+        };
+
+        window.sendScroll = (email) => {
+            switchView('chat', { target: encodeURIComponent(email) });
         };
 
         window.renderHome = () => {
@@ -109,7 +101,15 @@
                     <div class="w-full max-w-sm">
                         <h2 class="text-xl mb-4 font-semibold text-gray-400">Friends</h2>
                         <div id="friends-list" class="space-y-3">
-                            ${currentUserData.friends?.map(f => `<div class="bg-gray-900 p-4 rounded-xl border border-gray-800">${f}</div>`).join('') || '<p class="text-gray-600">No friends added yet.</p>'}
+                            ${currentUserData.friends?.map(f => `
+                                <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                                    <span>${f}</span>
+                                    <div class="flex gap-2">
+                                        <button onclick="sendScroll('${f}')" class="bg-blue-600 px-3 py-1 rounded-lg text-sm font-bold">Scroll</button>
+                                        <button onclick="deleteFriend('${f}')" class="bg-red-900 px-3 py-1 rounded-lg text-sm">Delete</button>
+                                    </div>
+                                </div>
+                            `).join('') || '<p class="text-gray-600">No friends added yet.</p>'}
                         </div>
                     </div>
                 </div>
@@ -156,11 +156,11 @@
                 `;
             }, 800);
         };
-
-        window.renderChat = () => {
+        window.renderChat = (targetEmail) => {
+            const src = targetEmail ? `/chat/pwa/?sendmessage=${targetEmail}` : "/chat/pwa/";
             document.getElementById('main-content').innerHTML = `
                 <div id="chat-container" class="content-view">
-                    <iframe src="/chat/pwa/" title="Chat" class="full-iframe"></iframe>
+                    <iframe src="${src}" title="Chat" class="full-iframe"></iframe>
                 </div>
             `;
         };
