@@ -1,18 +1,13 @@
 {
   "name": "The Crib",
   "short_name": "The Crib",
-  "start_url": "/pwa/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/photos/tgdtc.png",
-      "sizes": "250x250",
-      "type": "image/png"
-    },
-    {
-      "src": "/photos/tgdtc.png",
+      "src": "/storage/photos/tgdtc.png",
       "sizes": "250x250",
       "type": "image/png"
     }
