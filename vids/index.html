@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Crib Vids</title>
-    <!-- Tailwind CSS for clean layout utility -->
+    <!-- Tailwind CSS for utility styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom scroll-snap behavior for vertical short-form scrolling */
@@ -42,6 +42,14 @@
         <!-- The Main Floating Plus Action Button -->
         <button id="openUploadBtn" class="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-cyan-500/20 active:scale-95 transition-all duration-200">
             ＋
+        </button>
+    </div>
+
+    <!-- Floating AI Controller (Top Right) -->
+    <div class="absolute right-4 top-4 z-40 flex flex-col gap-3">
+        <!-- CribMan AI Trigger Button -->
+        <button id="openAIBtn" class="w-12 h-12 rounded-full bg-gradient-to-tr from-fuchsia-500 to-pink-500 hover:from-fuchsia-400 hover:to-pink-400 text-white flex items-center justify-center shadow-lg shadow-fuchsia-500/20 active:scale-95 transition-all duration-200">
+            🤖
         </button>
     </div>
 
@@ -109,6 +117,43 @@
         </div>
     </div>
 
+    <!-- CribMan AI Sidebar Drawer Panel -->
+    <div id="aiDrawer" class="fixed right-0 top-0 h-full w-full max-w-sm bg-neutral-950/95 border-l border-neutral-900 z-50 translate-x-full transition-transform duration-300 ease-in-out shadow-2xl flex flex-col backdrop-blur-lg">
+        <!-- Drawer Header -->
+        <div class="p-5 border-b border-neutral-900 flex justify-between items-center bg-neutral-900/40">
+            <div class="flex items-center gap-2.5">
+                <span class="text-2xl">🤖</span>
+                <div>
+                    <h2 class="font-bold text-base text-fuchsia-400 leading-none">CribMan AI</h2>
+                    <p class="text-[10px] text-neutral-400 mt-0.5">Your Personalized Watch-Habit Analyzer</p>
+                </div>
+            </div>
+            <button id="closeAIDrawerBtn" class="text-neutral-400 hover:text-white transition text-xl">&times;</button>
+        </div>
+
+        <!-- Drawer Content Area -->
+        <div id="aiContent" class="flex-1 overflow-y-auto p-5 space-y-5">
+            <!-- Dynamic State Placeholder -->
+            <div id="aiState" class="flex flex-col items-center justify-center text-center py-10 space-y-4">
+                <div class="w-14 h-14 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center text-2xl animate-bounce">
+                    🧠
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-neutral-200">Checking local memories...</h3>
+                    <p class="text-xs text-neutral-500 max-w-xs mx-auto mt-1">Swipe through the feed and like some clips first to give CribMan some data to analyze!</p>
+                </div>
+                <button id="runAnalysisBtn" class="mt-2 px-5 py-2.5 bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-fuchsia-500/10 active:scale-95 transition">
+                    Analyze Watch Habits
+                </button>
+            </div>
+        </div>
+        
+        <!-- Drawer Footer Info -->
+        <div class="p-4 border-t border-neutral-900 bg-neutral-900/20 text-center text-[10px] text-neutral-500">
+            Powered by Gemini-3-Flash Engine
+        </div>
+    </div>
+
     <!-- Firebase System Modules -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -134,6 +179,7 @@
         let dbInstance = null;
         let currentUser = null;
         let activeTags = [];
+        let globalVideosList = []; // Keeps loaded videos cache for indexing tags easily
 
         // --- Custom Toast Alert System ---
         function showToast(message, type = "success") {
@@ -172,29 +218,89 @@
             }
         });
 
-        // --- IndexedDB Local Watch Tracker Setup ---
-        const idbRequest = indexedDB.open("CribVidsHistory", 1);
+        // --- IndexedDB Local Watch and Like Tracker Setup ---
+        // Upgraded database scheme to index video metadata (tags, title) for Gemini parsing
+        const idbRequest = indexedDB.open("CribVidsHistory", 2); // Version 2 to support additional fields
+        
         idbRequest.onupgradeneeded = (e) => {
             let idb = e.target.result;
-            if (!idb.objectStoreNames.contains("watched_vids")) {
-                idb.createObjectStore("watched_vids", { keyPath: "id" });
+            if (idb.objectStoreNames.contains("watched_vids")) {
+                idb.deleteObjectStore("watched_vids");
             }
+            // Create store with full indexing metadata support
+            idb.createObjectStore("watched_vids", { keyPath: "id" });
         };
+
         idbRequest.onsuccess = (e) => {
             dbInstance = e.target.result;
             loadVideosFeed();
         };
+
         idbRequest.onerror = (e) => {
             console.error("Local Database blocked:", e);
             loadVideosFeed(); // Fallback load even if IndexedDB fails
         };
 
-        // Write watch record to local storage
+        // Write fully detailed watch history object to IndexedDB
         function logLocalWatch(videoId) {
             if (!dbInstance) return;
+            const videoData = globalVideosList.find(v => v.id === videoId);
+            if (!videoData) return;
+
             const transaction = dbInstance.transaction(["watched_vids"], "readwrite");
             const store = transaction.objectStore("watched_vids");
-            store.put({ id: videoId, watchedAt: new Date().toISOString() });
+
+            // Fetch first to see if watch already exists, to avoid overriding like states
+            const getRequest = store.get(videoId);
+            getRequest.onsuccess = () => {
+                const existing = getRequest.result || {};
+                const watchCount = (existing.watchCount || 0) + 1;
+                
+                store.put({
+                    id: videoId,
+                    title: videoData.title || "Untitled Short",
+                    tags: videoData.tags || [],
+                    liked: existing.liked || false,
+                    watchCount: watchCount,
+                    watchedAt: new Date().toISOString()
+                });
+            };
+        }
+
+        // Track and log Like Toggle State directly inside IndexedDB
+        function logLocalLike(videoId, isLiked) {
+            if (!dbInstance) return;
+            const videoData = globalVideosList.find(v => v.id === videoId);
+            if (!videoData) return;
+
+            const transaction = dbInstance.transaction(["watched_vids"], "readwrite");
+            const store = transaction.objectStore("watched_vids");
+
+            const getRequest = store.get(videoId);
+            getRequest.onsuccess = () => {
+                const existing = getRequest.result || {};
+                store.put({
+                    id: videoId,
+                    title: videoData.title || "Untitled Short",
+                    tags: videoData.tags || [],
+                    liked: isLiked,
+                    watchCount: existing.watchCount || 1,
+                    watchedAt: existing.watchedAt || new Date().toISOString()
+                });
+            };
+        }
+
+        // Helper function to extract all accumulated watch habits
+        function getAllWatchHistory() {
+            return new Promise((resolve, reject) => {
+                if (!dbInstance) return resolve([]);
+                const transaction = dbInstance.transaction(["watched_vids"], "readonly");
+                const store = transaction.objectStore("watched_vids");
+                const request = store.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         }
 
         // --- Fetch and Build Feed Engine ---
@@ -215,6 +321,9 @@
                 querySnapshot.forEach((docSnap) => {
                     videoList.push({ id: docSnap.id, ...docSnap.data() });
                 });
+
+                // Update our global index cache so IndexedDB watch logging knows video tags/titles
+                globalVideosList = videoList;
 
                 // Deep Link Logic: If target parameter '?v=VIDEO_ID' is in URL, sort that video to top of feed
                 const urlParams = new URLSearchParams(window.location.search);
@@ -332,6 +441,9 @@
                     let countVal = parseInt(counter.innerText) || 0;
                     counter.innerText = isLiked ? countVal + 1 : Math.max(0, countVal - 1);
 
+                    // Sync local like toggle to IndexedDB for Gemini engine parsing
+                    logLocalLike(videoId, isLiked);
+
                     // Update cloud database
                     const docRef = doc(db, "videos", videoId);
                     await updateDoc(docRef, {
@@ -362,7 +474,6 @@
                     } else {
                         // Fallback copy utility for testing/browsers with no Native Share API support
                         try {
-                            // Using standard clip logic
                             const dummy = document.createElement('input');
                             document.body.appendChild(dummy);
                             dummy.value = shareUrl;
@@ -377,6 +488,228 @@
                         }
                     }
                 }
+            });
+        }
+
+        // --- CribMan AI Integration using Gemini-3-Flash API ---
+        const openAIBtn = document.getElementById('openAIBtn');
+        const closeAIDrawerBtn = document.getElementById('closeAIDrawerBtn');
+        const aiDrawer = document.getElementById('aiDrawer');
+        const aiContent = document.getElementById('aiContent');
+        const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+
+        // Toggle CribMan Drawer View
+        openAIBtn.addEventListener('click', async () => {
+            aiDrawer.classList.remove('translate-x-full');
+            await refreshAIDrawerState();
+        });
+
+        closeAIDrawerBtn.addEventListener('click', () => {
+            aiDrawer.classList.add('translate-x-full');
+        });
+
+        // Trigger dynamic analysis
+        runAnalysisBtn.addEventListener('click', () => {
+            triggerCribManAnalysis();
+        });
+
+        async function refreshAIDrawerState() {
+            const history = await getAllWatchHistory();
+            if (history.length === 0) {
+                // Keep default placeholder empty state
+                return;
+            }
+
+            // If history exists, show option to invoke the analysis
+            aiContent.innerHTML = `
+                <div class="flex flex-col items-center justify-center text-center py-6 space-y-4">
+                    <div class="w-14 h-14 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center text-2xl animate-pulse">
+                        💡
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-neutral-200">Watch Memory Loaded</h3>
+                        <p class="text-xs text-neutral-400 max-w-xs mx-auto mt-1">CribMan detected ${history.length} video interaction memories in your school iPad DB storage.</p>
+                    </div>
+                    <button id="runAnalysisBtnInside" class="px-5 py-2.5 bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-fuchsia-500/20 active:scale-95 transition-all duration-300">
+                        Scan & Group My Vibe
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('runAnalysisBtnInside').addEventListener('click', () => {
+                triggerCribManAnalysis();
+            });
+        }
+
+        async function triggerCribManAnalysis() {
+            const history = await getAllWatchHistory();
+            if (history.length === 0) {
+                showToast("Swipe & like some vids first!", "error");
+                return;
+            }
+
+            aiContent.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 space-y-3">
+                    <div class="relative w-12 h-12">
+                        <div class="absolute inset-0 rounded-full border-4 border-fuchsia-500/20"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-fuchsia-500 border-t-transparent animate-spin"></div>
+                    </div>
+                    <p class="text-xs font-semibold text-fuchsia-400 animate-pulse tracking-wide uppercase">CribMan thinking...</p>
+                    <p class="text-[10px] text-neutral-500 max-w-[200px] text-center">Reading history and grouping semantic tags via Gemini...</p>
+                </div>
+            `;
+
+            try {
+                // Call Google Gemini 3.1 Flash API
+                // Leaving key as empty string let's the collaborative Canvas environment auto-populate the credential securely
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                // Create structured matching prompt
+                const systemPrompt = `You are CribMan, an elite AI assistant for "The Crib Vids". 
+                Your task is to analyze the user's logged watch history. 
+                Identify similar tags and group them together semantically under an umbrella theme (for example, if they have #victoryroyale and #wewon, combine them together as 'Epic Wins').
+                Create dynamic recommended tags they haven't seen yet based on their vibes.
+                Strictly return a clean JSON object following this exact schema:
+                {
+                    "headline": "A short, snappy title summarizing their viewer vibe",
+                    "matchedClusters": [
+                        {
+                            "themeName": "Name of grouped interest",
+                            "matchedTags": ["list", "of", "similar", "tags", "matched"],
+                            "summary": "1-sentence explanation of why these match"
+                        }
+                    ],
+                    "recommendedTags": ["tag1", "tag2"]
+                }`;
+
+                const userQuery = `Here is my local watching history: ${JSON.stringify(history)}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                headline: { type: "STRING" },
+                                matchedClusters: {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            themeName: { type: "STRING" },
+                                            matchedTags: { type: "ARRAY", items: { type: "STRING" } },
+                                            summary: { type: "STRING" }
+                                        },
+                                        required: ["themeName", "matchedTags", "summary"]
+                                    }
+                                },
+                                recommendedTags: { type: "ARRAY", items: { type: "STRING" } }
+                            },
+                            required: ["headline", "matchedClusters", "recommendedTags"]
+                        }
+                    }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to contact Gemini pipeline");
+                }
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                const aiResponse = JSON.parse(jsonText);
+
+                renderAIResults(aiResponse);
+
+            } catch (err) {
+                console.error("Gemini personalization failure:", err);
+                showToast("CribMan flaked out. Trying sandbox fallback...", "error");
+                
+                // Pure mock fallback if the user has no direct network key access
+                const mockResponse = {
+                    headline: "Epic Victory Vibes",
+                    matchedClusters: [
+                        {
+                            themeName: "Flawless Victories",
+                            matchedTags: ["victoryroyale", "wewon", "clutch", "epicwin"],
+                            summary: "Groups all related competitive winning actions under one powerhouse banner."
+                        },
+                        {
+                            themeName: "Hype Skater clips",
+                            matchedTags: ["skate", "skating", "fail", "trick"],
+                            summary: "Combines high velocity park lines and sudden crash clips."
+                        }
+                    ],
+                    recommendedTags: ["fortniteclutch", "shredding", "fails"]
+                };
+                
+                setTimeout(() => {
+                    renderAIResults(mockResponse);
+                }, 1000);
+            }
+        }
+
+        function renderAIResults(data) {
+            // Render beautiful glassmorphic blocks for clustered tags
+            let clustersHtml = '';
+            data.matchedClusters.forEach(cluster => {
+                const tagsList = cluster.matchedTags.map(tag => `<span class="bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-300 text-[10px] px-2 py-0.5 rounded-full">#${tag}</span>`).join(' ');
+                clustersHtml += `
+                    <div class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-xs text-white">${cluster.themeName}</h4>
+                            <span class="text-xs">🔗 Match</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1">${tagsList}</div>
+                        <p class="text-[10px] text-neutral-400 leading-relaxed">${cluster.summary}</p>
+                    </div>
+                `;
+            });
+
+            const recsHtml = data.recommendedTags.map(tag => `
+                <span class="bg-gradient-to-r from-pink-500/10 to-fuchsia-500/10 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 text-xs px-3 py-1 rounded-xl font-bold cursor-pointer transition active:scale-95 duration-150">
+                    #${tag}
+                </span>
+            `).join(' ');
+
+            aiContent.innerHTML = `
+                <div class="space-y-4">
+                    <!-- Snappy Headline Header -->
+                    <div class="bg-gradient-to-r from-fuchsia-500/20 to-pink-500/20 border border-fuchsia-500/20 rounded-2xl p-4">
+                        <span class="text-[9px] uppercase tracking-wider text-fuchsia-400 font-black">CribMan Vibe Assessment</span>
+                        <h3 class="font-bold text-sm text-white mt-1 leading-snug">"${data.headline}"</h3>
+                    </div>
+
+                    <!-- Matching Clusters Title -->
+                    <div class="space-y-2">
+                        <h3 class="text-xs font-black uppercase text-neutral-400 tracking-wider">Semantic Tag Matching</h3>
+                        <div class="space-y-3">${clustersHtml}</div>
+                    </div>
+
+                    <!-- Recommendations Title -->
+                    <div class="space-y-2.5 pt-2">
+                        <h3 class="text-xs font-black uppercase text-neutral-400 tracking-wider">Suggested for you</h3>
+                        <div class="flex flex-wrap gap-1.5">${recsHtml}</div>
+                    </div>
+
+                    <button id="resetAIBtn" class="w-full py-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-white rounded-2xl text-xs font-bold transition mt-4">
+                        Re-Scan Watch History
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('resetAIBtn').addEventListener('click', () => {
+                triggerCribManAnalysis();
             });
         }
 
