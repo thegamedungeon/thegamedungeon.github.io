@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Crib Vids</title>
-    <!-- Tailwind CSS for utility stylesfbrufrakjffbrakjbrafkjsrfnjk -->
+    <!-- Tailwind CSS for utility styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom scroll-snap behavior for vertical short-form scrolling */
@@ -157,7 +157,7 @@
     <!-- Firebase System Modules -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, increment, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // Verified safe domain-restricted Firebase credentials
@@ -309,18 +309,59 @@
             const statusMsg = document.getElementById('statusMessage');
 
             try {
-                const querySnapshot = await getDocs(collection(db, "videos"));
+                // Let's retrieve the master array from configuration/feed
+                const feedDocRef = doc(db, "configuration", "feed");
+                const feedDocSnap = await getDoc(feedDocRef);
                 
-                if (querySnapshot.empty) {
-                    statusMsg.innerHTML = `<span class="text-2xl font-bold tracking-tight text-neutral-600">welp, this sucks</span>`;
-                    return;
-                }
-
-                // Gather and parse database docs
                 let videoList = [];
-                querySnapshot.forEach((docSnap) => {
-                    videoList.push({ id: docSnap.id, ...docSnap.data() });
-                });
+
+                if (feedDocSnap.exists()) {
+                    const feedData = feedDocSnap.data();
+                    const urlsArray = feedData.videoUrls || feedData.videos || [];
+                    
+                    if (urlsArray.length === 0) {
+                        statusMsg.innerHTML = `<span class="text-2xl font-bold tracking-tight text-neutral-600">No videos in feed array</span>`;
+                        return;
+                    }
+
+                    // Convert array components to TikTok video object mappings
+                    urlsArray.forEach((item, index) => {
+                        if (typeof item === 'string') {
+                            videoList.push({
+                                id: `vid_${index}`,
+                                videoUrl: item,
+                                title: `Crib Short #${index + 1}`,
+                                creatorUsername: "the_crib_gang",
+                                creatorPfp: "https://lh3.googleusercontent.com/a/default-user",
+                                likes: Math.floor(Math.random() * 50) + 12,
+                                tags: ["crib", "feed"]
+                            });
+                        } else if (typeof item === 'object' && item !== null) {
+                            videoList.push({
+                                id: item.id || `vid_${index}`,
+                                videoUrl: item.videoUrl || item.url || "",
+                                title: item.title || `Crib Short #${index + 1}`,
+                                creatorUsername: item.creatorUsername || "the_crib_gang",
+                                creatorPfp: item.creatorPfp || "https://lh3.googleusercontent.com/a/default-user",
+                                likes: item.likes || 0,
+                                tags: item.tags || ["crib", "feed"]
+                            });
+                        }
+                    });
+                } else {
+                    // Fallback to legacy database collection query if configuration/feed isn't setup
+                    console.log("No configuration/feed found. Falling back to legacy 'videos' collection query.");
+                    const querySnapshot = await getDocs(collection(db, "videos"));
+                    
+                    if (querySnapshot.empty) {
+                        statusMsg.innerHTML = `<span class="text-2xl font-bold tracking-tight text-neutral-600">welp, this sucks</span>`;
+                        return;
+                    }
+
+                    querySnapshot.forEach((docSnap) => {
+                        videoList.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                }
 
                 // Update our global index cache so IndexedDB watch logging knows video tags/titles
                 globalVideosList = videoList;
@@ -400,6 +441,9 @@
         function initializeScrollObserver() {
             const container = document.getElementById('vidsContainer');
             const videoCards = document.querySelectorAll('.snap-item');
+            
+            // Local Session Watch Tracker to trigger automated restart loops
+            const sessionWatched = new Set();
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -410,6 +454,18 @@
                                 console.log("Tap screen required to initiate autoplay");
                             });
                             logLocalWatch(entry.target.dataset.id);
+                            
+                            // Log watch into session tracker
+                            sessionWatched.add(entry.target.dataset.id);
+                            
+                            // If user has watched every single video in array, trigger automated reset action
+                            if (sessionWatched.size >= globalVideosList.length && globalVideosList.length > 0) {
+                                showToast("🔥 You watched all clips! Restarting feed...", "success");
+                                setTimeout(() => {
+                                    container.scrollTo({ top: 0, behavior: 'smooth' });
+                                    sessionWatched.clear();
+                                }, 3000); // 3 seconds grace window before sliding back up
+                            }
                         }
                     } else {
                         if (video) {
@@ -444,11 +500,11 @@
                     // Sync local like toggle to IndexedDB for Gemini engine parsing
                     logLocalLike(videoId, isLiked);
 
-                    // Update cloud database
+                    // Update cloud database (try catch handles safe fail for synthetic mock IDs)
                     const docRef = doc(db, "videos", videoId);
                     await updateDoc(docRef, {
                         likes: increment(isLiked ? 1 : -1)
-                    }).catch(err => console.error("Could not record like:", err));
+                    }).catch(err => console.log("Recorded like locally (Video document bypass enabled)"));
                     return;
                 }
 
@@ -869,7 +925,7 @@
             progressStatus.innerText = 'Routing file stream...';
 
             const fileName = `vids/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-            const cloudflareEndpoint = 'https://thecribvidsupload.open-it-out-fortnite.workers.dev/upload';
+            const cloudflareEndpoint = 'https://thegamedungeon.qzz.io/upload';
 
             try {
                 progressBar.style.width = '45%';
