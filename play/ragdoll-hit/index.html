@@ -3,282 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Game Dungeon - Ragdoll Hit</title>
+    <title>Ragdoll Hit | The Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/storage/js/fs.js" defer></script>
+    <script type="module" src="/storage/js/status.js" data-game="Basket Random"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        body { background-color: #0b0b0b; color: #ffffff; font-family: 'Inter', sans-serif; overflow: hidden; }
+        #game-wrapper { transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: scale(0); opacity: 0; width: 0; height: 0; }
+        #game-wrapper.expanded { transform: scale(1); opacity: 1; width: 100vw; height: 100vh; }
+        
+        #side-drawer {
+            position: fixed; right: 0; top: 50%; transform: translateY(-50%) translateX(100%);
+            background: #1e1e1e; border: 1px solid #3b82f6; border-right: none;
+            padding: 1rem; border-radius: 12px 0 0 12px; transition: transform 0.3s ease; z-index: 100;
         }
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            min-height: 100vh;
+        #side-drawer.open { transform: translateY(-50%) translateX(0); }
+        
+        #music-panel {
+            position: fixed; right: 0; top: 0; bottom: 0; width: 320px;
+            background: #000; transform: translateX(100%); transition: transform 0.3s ease; z-index: 120;
         }
-        .game-container {
-            width: 100%;
-            max-width: 800px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .iframe-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background-color: #000000;
-            border: 3px solid #333;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .control-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #1e1e1e;
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: 1px solid #2d2d2d;
-        }
-        .game-title-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .main-app-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            object-fit: cover;
-        }
-        .game-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        .fullscreen-btn {
-            background-color: #ff4757;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            font-weight: 600;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-        .back-btn {
-            background-color: #ff4757;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            font-weight: 600;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-        .fullscreen-btn:hover {
-            background-color: #ff6b81;
-        }
-        .back-btn:hover {
-            background-color: #ff6b81;
-        }
-        .fullscreen-btn:active {
-            transform: scale(0.98);
-        }
-        .back-btn:active {
-            transform: scale(0.98);
-        }
-        .recommendations-section {
-            margin-top: 15px;
-            width: 100%;
-            max-width: 800px;
-        }
-        .rec-heading {
-            font-size: 0.9rem;
-            color: #aaa;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .rec-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .rec-card {
-            background-color: #1e1e1e;
-            border: 1px solid #2d2d2d;
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.2s;
-        }
-        .rec-card:hover {
-            background-color: #252525;
-            transform: translateY(-2px);
-            border-color: #444;
-        }
-        .rec-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            object-fit: cover;
-            background-color: #333;
-        }
-        .rec-info {
-            flex: 1;
-        }
-        .rec-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #fff;
-        }
+        #music-panel.open { transform: translateX(0); }
+        
+        .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); }
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col items-center justify-center">
 
-    <div class="game-container">
-        <!-- The Game Viewport Box -->
-        <div class="iframe-wrapper" id="gameFrameContainer">
-            <iframe id="gameIframe" src="/storage/ragdoll-hit-main/tgd/" allowfullscreen></iframe>
+    <div id="loading-screen" class="fixed inset-0 bg-black z-[200] flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <div id="launcher-menu" class="flex flex-col items-center space-y-6 fade-in">
+        <img src="/storage/photos/rh.png" alt="Ragdoll Hit" class="w-48 h-48 rounded-2xl border-4 border-blue-500 shadow-2xl shadow-blue-500/20">
+        <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter">RAGDOLL HIT</h1>
+        <div class="flex space-x-4">
+            <button onclick="launchGame()" class="px-12 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30">PLAY</button>
         </div>
+    </div>
 
-        <!-- System Controls Underframe -->
-        <div class="control-bar">
-            <div class="game-title-section">
-                <img src="/storage/photos/rh.png" alt="Ragdoll Hit" class="main-app-icon" onerror="this.style.display='none'">
-                <span class="game-title">RAGDOLL HIT</span>
+    <div id="game-wrapper" class="fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <iframe id="game-frame" src="" class="w-full h-full border-none"></iframe>
+    </div>
+
+    <div id="side-drawer">
+        <div class="flex flex-col gap-4">
+            <button onclick="toggleMusic()" class="text-blue-500 font-bold">MUSIC</button>
+            <button onclick="toggleQuitMenu()" class="text-red-500 font-bold">QUIT</button>
+        </div>
+    </div>
+
+    <div id="music-panel">
+        <iframe src="/music/" class="w-full h-full border-none"></iframe>
+        <button onclick="toggleMusic()" class="absolute top-2 left-2 text-white bg-red-600 px-2 py-1 rounded">X</button>
+    </div>
+
+    <div id="quit-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center modal-bg">
+        <div class="bg-neutral-900 border border-white/10 p-8 rounded-2xl text-center space-y-6 shadow-2xl">
+            <h2 class="text-2xl font-bold tracking-tight">ARE YOU SURE?</h2>
+            <div class="flex space-x-4 justify-center">
+                <button onclick="closeModal()" class="px-8 py-2 bg-neutral-800 rounded-lg font-bold hover:bg-neutral-700">NO</button>
+                <button onclick="confirmQuit()" class="px-8 py-2 bg-red-600 rounded-lg font-bold hover:bg-red-500">YES</button>
             </div>
-            <button class="fullscreen-btn" onclick="toggleFullscreen()">FULLSCREEN</button>
-            <button class="back-btn" onclick="goHome()">BACK</button>
         </div>
     </div>
 
-    <!-- Recommendations Tray -->
-    <div class="recommendations-section">
-        <div class="rec-heading">Next up from the dungeon:</div>
-        <div class="rec-grid" id="recGrid">
-            <!-- Driven dynamically via text index parsing -->
-        </div>
-    </div>
-
-    <script>
-        // Native viewport layout handling
-        function toggleFullscreen() {
-            const container = document.getElementById('gameFrameContainer');
-            if (!document.fullscreenElement) {
-                container.requestFullscreen().catch(err => {
-                    console.error(`Fullscreen request failed: ${err.message}`);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function goHome() {
-    // Create the dark background overlay
-    const overlay = document.createElement('div');
-    overlay.style = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; z-index:99999;";
-
-    // Create the center box
-    const box = document.createElement('div');
-    box.style = "background:#1e1e1e; padding:25px; border-radius:8px; border:2px solid #ff4757; text-align:center; min-width:250px;";
-    box.innerHTML = `
-        <p style="color:#fff; font-size:1.2rem; font-weight:bold; margin-bottom:20px;">Are you sure?</p>
-        <div style="display:flex; gap:15px; justify-content:center;">
-            <button id="popNo" style="background:#333; color:#fff; border:none; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">No</button>
-            <button id="popYes" style="background:#ff4757; color:#fff; border:none; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">Yes</button>
-        </div>
-    `;
-
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-
-    // Make the buttons actually do stuff
-    document.getElementById('popNo').onclick = () => overlay.remove();
-    document.getElementById('popYes').onclick = () => window.location.href = '/play/';
-}
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
-        // Logic processing engine for structural path verification
-        async function loadRecommendations() {
-            try {
-                const response = await fetch('/storage/g/all.txt');
-                if (!response.ok) throw new Error('Network failure parsing master manifest file');
-                
-                const text = await response.text();
-                // Filter content splits cleanly by newline or carriage lines
-                let games = text.split('\n')
-                                .map(g => g.trim())
-                                .filter(g => g.length > 0);
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+        };
 
-                // Filter rule: Exclude current active build asset
-                games = games.filter(game => game.toLowerCase() !== 'ragdoll hit');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-                if (games.length === 0) return;
+        // Fail-safe: hide loading screen after 3 seconds anyway
+        const failSafe = setTimeout(() => {
+            document.getElementById('loading-screen').style.display = 'none';
+        }, 3000);
 
-                // Randomizing slice selection algorithm parameters
-                const shuffled = games.sort(() => 0.5 - Math.random());
-                const selectedGames = shuffled.slice(0, 2);
-
-                const recGrid = document.getElementById('recGrid');
-                recGrid.innerHTML = ''; // Purge initial structure frame
-
-                selectedGames.forEach(gameName => {
-                    // Logic rule evaluation: Icon routing layout properties
-                    const words = gameName.split(/\s+/).filter(w => w.length > 0);
-                    let filename = "";
-
-                    if (words.length === 1) {
-                        filename = gameName.toLowerCase() + ".png";
-                    } else {
-                        // Multi-word rule calculation logic
-                        const initials = words.map(w => w[0]).join('').toLowerCase();
-                        filename = initials + ".png";
-                    }
-                    const iconPath = `/storage/photos/${filename}`;
-
-                    // Click routing formatting logic conversion
-                    const routeName = gameName.toLowerCase().replace(/\s+/g, '-');
-                    const targetUrl = `/play/${routeName}/`;
-
-                    // Generate UI markup injection modules safely
-                    const card = document.createElement('div');
-                    card.className = 'rec-card';
-                    card.onclick = () => window.location.href = targetUrl;
-
-                    card.innerHTML = `
-                        <img src="${iconPath}" alt="${gameName}" class="rec-icon" onerror="this.src='/storage/photos/default.png';">
-                        <div class="rec-info">
-                            <div class="rec-title">${gameName}</div>
-                        </div>
-                    `;
-                    recGrid.appendChild(card);
-                });
-
-            } catch (error) {
-                console.error('Failed processing dynamic engine assets:', error);
-                document.getElementById('recGrid').innerHTML = '<div style="color: #666; font-size: 0.9rem;">Could not load standard recommendations module.</div>';
+        onAuthStateChanged(auth, (user) => {
+            clearTimeout(failSafe);
+            if (!user) {
+                window.location.href = "/account/login/";
+            } else {
+                document.getElementById('loading-screen').style.display = 'none';
             }
-        }
+        });
 
-        // Boot system scripts on render cycle termination
-        window.addEventListener('DOMContentLoaded', loadRecommendations);
+        window.launchGame = () => {
+            document.getElementById('game-frame').src = "/storage/ragdoll-hit-main/";
+            document.getElementById('game-wrapper').classList.add('expanded');
+            document.getElementById('side-drawer').classList.add('open');
+        };
+
+        window.toggleMusic = () => document.getElementById('music-panel').classList.toggle('open');
+        window.toggleQuitMenu = () => document.getElementById('quit-modal').classList.remove('hidden');
+        window.closeModal = () => document.getElementById('quit-modal').classList.add('hidden');
+        
+        window.confirmQuit = () => {
+            closeModal();
+            document.getElementById('side-drawer').classList.remove('open');
+            document.getElementById('music-panel').classList.remove('open');
+            document.getElementById('game-wrapper').classList.remove('expanded');
+            setTimeout(() => document.getElementById('game-frame').src = "", 600);
+        };
     </script>
-  <script type="module">
+    <script type="module">
     // Import your Daimyan Proof logic
     import { initTracker } from "/storage/js/tracker.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -302,7 +140,7 @@
 
     // Initialize the tracker with the specific Hall of Records name
     // This must match your UI cards exactly!
-    initTracker("Ragdoll Hit");
+    initTracker("Ragdoll Hir");
 </script>
 </body>
 </html>
