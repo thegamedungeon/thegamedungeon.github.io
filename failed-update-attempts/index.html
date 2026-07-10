@@ -70,10 +70,9 @@
         window.handleLogin = () => signInWithPopup(auth, new GoogleAuthProvider());
         window.handleSignOut = () => signOut(auth).then(() => { location.reload(); });
 
-        // Listen for messages/alerts from the iframe to trigger a reload on login
+        // Listen ONLY for the explicit 'login_success' signal to prevent generic message reload loops
         window.addEventListener('message', (event) => {
-            const activeNav = document.getElementById('nav-account');
-            if (activeNav && activeNav.classList.contains('nav-active') && !auth.currentUser) {
+            if (event.data === 'login_success') {
                 location.reload();
             }
         });
