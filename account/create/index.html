@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Game Dungeon - Create Account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: #f3f4f6;
+        }
+        /* Custom neon glowing elements */
+        .neon-border:focus-within {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .indicator-valid {
+            color: #10b981;
+        }
+        .indicator-invalid {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-black overflow-y-auto">
+
+    <div class="w-full max-w-md bg-gray-950 border border-gray-900 rounded-3xl p-8 shadow-2xl animate-fade-in relative overflow-hidden my-8">
+        
+        <!-- Glowing Ambient light background accents -->
+        <div class="absolute -top-16 -left-16 w-36 h-36 bg-blue-900/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-red-900/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="text-center mb-8 relative z-10">
+            <h2 class="text-3xl font-extrabold text-white tracking-tight">Ascend to the Dungeon</h2>
+            <p class="text-gray-400 text-sm mt-2">Claim your credentials to log your scores and chat with allies</p>
+        </div>
+
+        <!-- Custom Notification Alert Container -->
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-xl border text-sm relative z-10 transition-all duration-300">
+            <p id="alert-message" class="font-medium"></p>
+            <div id="alert-action" class="mt-3 hidden">
+                <a href="/account/login/" class="inline-flex items-center text-blue-400 hover:text-blue-300 font-bold gap-1 transition">
+                    Sign In to Dungeon <span>&rarr;</span>
+                </a>
+            </div>
+        </div>
+
+        <form id="register-form" class="space-y-4 relative z-10">
+            <!-- Username Input -->
+            <div>
+                <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2" for="username">Dungeon Username</label>
+                <div class="relative rounded-xl border border-gray-800 bg-black/60 transition-all neon-border">
+                    <input type="text" id="username" required placeholder="Knight_Alex" 
+                        class="w-full bg-transparent text-white px-4 py-3.5 rounded-xl focus:outline-none placeholder-gray-600 text-sm">
+                </div>
+            </div>
+
+            <!-- Email Input -->
+            <div>
+                <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2" for="email">Dungeon Email</label>
+                <div class="relative rounded-xl border border-gray-800 bg-black/60 transition-all neon-border">
+                    <input type="email" id="email" required placeholder="name@domain.com" 
+                        class="w-full bg-transparent text-white px-4 py-3.5 rounded-xl focus:outline-none placeholder-gray-600 text-sm">
+                </div>
+            </div>
+
+            <!-- Password Input -->
+            <div>
+                <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2" for="password">Create Password</label>
+                <div class="relative rounded-xl border border-gray-800 bg-black/60 transition-all neon-border">
+                    <input type="password" id="password" required placeholder="••••••••" 
+                        class="w-full bg-transparent text-white px-4 py-3.5 rounded-xl focus:outline-none placeholder-gray-600 text-sm">
+                </div>
+                
+                <!-- Password Strength Criteria Visual Indicators -->
+                <div class="mt-2 space-y-1 text-xs">
+                    <div id="req-length" class="flex items-center gap-1.5 indicator-invalid transition">
+                        <span class="bullet">•</span> At least 8 characters
+                    </div>
+                    <div id="req-case" class="flex items-center gap-1.5 indicator-invalid transition">
+                        <span class="bullet">•</span> Uppercase & lowercase letter
+                    </div>
+                    <div id="req-num" class="flex items-center gap-1.5 indicator-invalid transition">
+                        <span class="bullet">•</span> At least one number
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirm Password Input -->
+            <div>
+                <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2" for="confirm-password">Confirm Password</label>
+                <div class="relative rounded-xl border border-gray-800 bg-black/60 transition-all neon-border">
+                    <input type="password" id="confirm-password" required placeholder="••••••••" 
+                        class="w-full bg-transparent text-white px-4 py-3.5 rounded-xl focus:outline-none placeholder-gray-600 text-sm">
+                </div>
+                <!-- Passwords Match check visual indicator -->
+                <div id="req-match" class="mt-2 text-xs flex items-center gap-1.5 indicator-invalid transition">
+                    <span class="bullet">•</span> Passwords match exactly
+                </div>
+            </div>
+
+            <button type="submit" id="btn-register" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition duration-200 transform active:scale-95 shadow-lg shadow-blue-900/30 text-sm flex items-center justify-center gap-2">
+                <span>Forging Profile...</span>
+            </button>
+        </form>
+
+        <div class="relative my-6 flex items-center justify-center z-10">
+            <div class="border-t border-gray-900 w-full"></div>
+            <span class="absolute bg-gray-950 px-4 text-xs font-bold text-gray-500 uppercase tracking-widest">or sign up fast</span>
+        </div>
+
+        <div class="space-y-3 relative z-10">
+            <!-- Google Fast Pass Button -->
+            <button id="btn-google" class="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3.5 rounded-xl transition duration-200 transform active:scale-95 shadow-md flex items-center justify-center gap-3 text-sm">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.69a5.74 5.74 0 0 1-2.49 3.77v3.13h4.01c2.34-2.16 3.68-5.32 3.68-8.73z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-4.01-3.13c-1.12.75-2.55 1.19-3.92 1.19-3.04 0-5.61-2.05-6.53-4.82H1.31v3.23A12 12 0 0 0 12 24z"/>
+                    <path fill="#FBBC05" d="M5.47 14.33a7.14 7.14 0 0 1 0-4.66V6.44H1.31a12 12 0 0 0 0 11.12l4.16-3.23z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.43-3.43A11.93 11.93 0 0 0 12 0 12 12 0 0 0 1.31 6.44l4.16 3.23c.92-2.77 3.49-4.82 6.53-4.82z"/>
+                </svg>
+                <span>Google Fast Pass</span>
+            </button>
+
+            <!-- Login instead redirection -->
+            <a href="/account/login/" class="block w-full text-center bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-white font-semibold py-3.5 rounded-xl border border-gray-800 transition duration-200 transform active:scale-95 text-sm">
+                Already Have a Dungeon Profile? Login
+            </a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const alertBox = document.getElementById('alert-box');
+        const alertMessage = document.getElementById('alert-message');
+        const alertAction = document.getElementById('alert-action');
+        const registerForm = document.getElementById('register-form');
+        const btnRegister = document.getElementById('btn-register');
+        const btnGoogle = document.getElementById('btn-google');
+
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+
+        // Visual validation states
+        const reqLength = document.getElementById('req-length');
+        const reqCase = document.getElementById('req-case');
+        const reqNum = document.getElementById('req-num');
+        const reqMatch = document.getElementById('req-match');
+
+        // Helper function to render elegant custom alerts instead of messy native windows
+        function showAlert(message, type = 'error', showLoginLink = false) {
+            alertBox.className = "mb-6 p-4 rounded-xl border text-sm relative z-10 transition-all duration-300";
+            if (type === 'error') {
+                alertBox.classList.add('bg-red-950/40', 'border-red-900/60', 'text-red-300');
+            } else {
+                alertBox.classList.add('bg-blue-950/40', 'border-blue-900/60', 'text-blue-300');
+            }
+            alertMessage.textContent = message;
+            
+            if (showLoginLink) {
+                alertAction.classList.remove('hidden');
+            } else {
+                alertAction.classList.add('hidden');
+            }
+            alertBox.classList.remove('hidden');
+        }
+
+        // Live Password Evaluation Checks
+        function validatePasswordInput() {
+            const val = passwordInput.value;
+            const hasLength = val.length >= 8;
+            const hasCase = /[A-Z]/.test(val) && /[a-z]/.test(val);
+            const hasNum = /[0-9]/.test(val);
+            const matches = val === confirmPasswordInput.value && val !== '';
+
+            // Update DOM states visually
+            updateIndicator(reqLength, hasLength);
+            updateIndicator(reqCase, hasCase);
+            updateIndicator(reqNum, hasNum);
+            updateIndicator(reqMatch, matches);
+
+            return hasLength && hasCase && hasNum && matches;
+        }
+
+        function updateIndicator(element, isValid) {
+            if (isValid) {
+                element.classList.replace('indicator-invalid', 'indicator-valid');
+                element.querySelector('.bullet').textContent = '✓';
+            } else {
+                element.classList.replace('indicator-valid', 'indicator-invalid');
+                element.querySelector('.bullet').textContent = '•';
+            }
+        }
+
+        passwordInput.addEventListener('input', validatePasswordInput);
+        confirmPasswordInput.addEventListener('input', validatePasswordInput);
+
+        // Helper to check and create a record
+        async function attemptDungeonRegistration(user, preferredUsername = null) {
+            const cleanEmail = user.email.split('@')[0];
+            const userRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'users', cleanEmail);
+
+            try {
+                // Pre-flight check: Ensure profile does not already exist
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    await signOut(auth);
+                    showAlert("This account already exists inside our Dungeon Archives.", 'error', true);
+                    return false;
+                }
+
+                // Register profile inside Firestore
+                const username = preferredUsername || user.displayName || "Guest";
+                await setDoc(userRef, {
+                    username: username,
+                    friends: [],
+                    email: user.email,
+                    id: cleanEmail
+                });
+
+                // Post successful register alert back to the parent frame and invoke refresh
+                window.parent.postMessage('login_success', '*');
+                return true;
+            } catch (error) {
+                console.error("Dungeon Profile construction failed:", error);
+                await signOut(auth);
+                showAlert("A dungeon anomaly occurred while crafting your record. Try again.", 'error');
+                return false;
+            }
+        }
+
+        // Form Registration Submission
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alertBox.classList.add('hidden');
+
+            if (!validatePasswordInput()) {
+                showAlert("Please satisfy all password conditions before forging your profile.", 'error');
+                return;
+            }
+
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = passwordInput.value;
+
+            btnRegister.disabled = true;
+            btnRegister.innerHTML = `<span>Forging Profile...</span>`;
+
+            try {
+                // Step 1: Pre-check database before creating auth to avoid junk accounts
+                const cleanEmail = email.split('@')[0];
+                const userRef = doc(db, 'artifacts', 'the-game-dungeon-4d75d', 'public', 'data', 'users', cleanEmail);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    showAlert("This account already exists inside our Dungeon Archives.", 'error', true);
+                    btnRegister.disabled = false;
+                    btnRegister.innerHTML = `<span>Forging Profile...</span>`;
+                    return;
+                }
+
+                // Step 2: Create user inside Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                
+                // Step 3: Populate Firestore Profile
+                await attemptDungeonRegistration(userCredential.user, username);
+            } catch (error) {
+                console.error("Email registration failed:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    showAlert("This email is already linked to a profile.", 'error', true);
+                } else {
+                    showAlert(error.message, 'error');
+                }
+                btnRegister.disabled = false;
+                btnRegister.innerHTML = `<span>Forging Profile...</span>`;
+            }
+        });
+
+        // Google Fast Pass Sign Up
+        btnGoogle.addEventListener('click', async () => {
+            btnGoogle.disabled = true;
+            alertBox.classList.add('hidden');
+
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                await attemptDungeonRegistration(result.user);
+            } catch (error) {
+                console.error("Google Registration Interrupted:", error);
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    showAlert("Google Fast Pass credentials could not be configured.", 'error');
+                }
+            } finally {
+                btnGoogle.disabled = false;
+            }
+        });
+
+        // Run initial validate state
+        validatePasswordInput();
+    </script>
+</body>
+</html>
