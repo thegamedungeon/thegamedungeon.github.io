@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrolls | The Game Dungeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="/storage/js/status.js" data-game="Scrolls"></script>
+    <style>
+        body { background-color: #0b0b0b; color: #eee; font-family: 'Inter', sans-serif; }
+        .scroll-card { background: #171717; border: 1px solid #262626; transition: all 0.2s; }
+        .scroll-card:hover { border-color: #3b82f6; }
+        .tab-active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
+        .modal-bg { background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(8px); }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen p-4 pb-24 relative">
+
+    <div id="loading-screen" class="fixed inset-0 bg-black z-[200] flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Back Button -->
+    <a href="/" class="absolute top-6 left-6 p-2 bg-neutral-900 border border-white/5 rounded-full hover:bg-neutral-800 transition-all group z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-500 group-hover:text-blue-500"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+
+    <div class="max-w-2xl mx-auto mt-8">
+        <div class="flex justify-between items-end mb-8">
+            <div class="ml-10 sm:ml-0"> <!-- Shift header slightly on mobile to clear back button -->
+                <h1 class="text-4xl font-black italic text-blue-500 tracking-tighter uppercase">SCROLLS</h1>
+                <p class="text-xs text-neutral-500 font-mono">ENCRYPTED COMMS SYSTEM</p>
+            </div>
+            <button onclick="openCompose()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20">
+                SEND SCROLL
+            </button>
+        </div>
+
+        <!-- Expanded tabs interface -->
+        <div class="flex space-x-8 border-b border-white/10 mb-6">
+            <button id="tab-inbox" onclick="switchTab('inbox')" class="pb-2 font-bold tab-active transition-all">INBOX</button>
+            <button id="tab-sent" onclick="switchTab('sent')" class="pb-2 font-bold text-neutral-500 transition-all">SENT</button>
+            <button id="tab-global" onclick="switchTab('global')" class="pb-2 font-bold text-neutral-500 transition-all">GLOBAL</button>
+        </div>
+
+        <div id="scroll-feed" class="space-y-4"></div>
+    </div>
+
+    <!-- Compose Modal -->
+    <div id="compose-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center modal-bg p-4">
+        <div class="bg-neutral-900 border border-white/10 w-full max-w-md p-6 rounded-2xl space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold tracking-tight">NEW SCROLL</h2>
+                <span class="text-[10px] text-blue-500 font-mono">SECURE CHANNEL</span>
+            </div>
+            
+            <div>
+                <label class="text-[10px] text-neutral-500 uppercase font-bold ml-1">To:</label>
+                <input type="text" id="to-email" placeholder="Email or GLOBAL" class="w-full bg-black border border-white/10 p-3 rounded-lg focus:border-blue-500 outline-none transition-all">
+            </div>
+
+            <div>
+                <label class="text-[10px] text-neutral-500 uppercase font-bold ml-1">Message:</label>
+                <textarea id="scroll-text" placeholder="Speak your mind, bro..." rows="5" class="w-full bg-black border border-white/10 p-3 rounded-lg focus:border-blue-500 outline-none resize-none transition-all"></textarea>
+            </div>
+
+            <div class="flex space-x-3 pt-2">
+                <button onclick="closeCompose()" class="flex-1 py-3 bg-neutral-800 rounded-xl font-bold hover:bg-neutral-700 transition-all">CANCEL</button>
+                <button id="send-btn" onclick="sendScroll()" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold opacity-50 cursor-not-allowed transition-all" disabled>SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <script src=“/storage/js/wallpaper.js”></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+    authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+    projectId: "the-game-dungeon-4d75d",
+    storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+    messagingSenderId: "533459716906",
+    appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+    measurementId: "G-CER9SE96MC"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const scrollPath = "artifacts/the-game-dungeon-4d75d/public/data/scrolls";
+
+function getParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+}
+
+async function findScroll(senderParam, messageParam, userEmail) {
+    const q = query(collection(db, scrollPath));
+    const snap = await getDocs(q);
+
+    const senderLower = senderParam.toLowerCase();
+    const messageExact = messageParam;
+
+    let match = null;
+
+    snap.forEach(doc => {
+        const s = doc.data();
+
+        const senderLocal = s.senderEmail.split("@")[0].toLowerCase();
+        const target = (s.targetEmail || "").toLowerCase();
+
+        const senderMatch = senderLocal === senderLower;
+        const messageMatch = s.text === messageExact;
+        const targetMatch = target === userEmail.toLowerCase() || target === "global";
+
+        if (senderMatch && messageMatch && targetMatch) {
+            match = s;
+        }
+    });
+
+    return match;
+}
+
+function showFullscreenScroll(scroll) {
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.inset = "0";
+    wrapper.style.background = "#000";
+    wrapper.style.color = "#fff";
+    wrapper.style.padding = "20px";
+    wrapper.style.zIndex = "999999";
+    wrapper.style.fontFamily = "Inter, sans-serif";
+    wrapper.style.overflowY = "auto";
+
+    wrapper.innerHTML = `
+        <button onclick="window.location.href='/chat/'"
+            style="background:#111;border:1px solid #333;padding:10px 16px;border-radius:8px;color:#3b82f6;font-weight:700;margin-bottom:20px;">
+            ← Back
+        </button>
+
+        <div style="background:#111827;border:1px solid #1f2937;padding:20px;border-radius:12px;">
+            <div style="font-size:12px;color:#9ca3af;text-transform:uppercase;margin-bottom:6px;">From</div>
+            <div style="font-size:18px;font-weight:700;color:#3b82f6;">${scroll.senderEmail}</div>
+
+            <div style="font-size:12px;color:#9ca3af;text-transform:uppercase;margin-top:20px;margin-bottom:6px;">Message</div>
+            <div style="font-size:16px;line-height:1.6;color:#e5e7eb;white-space:pre-wrap;">${scroll.text}</div>
+        </div>
+    `;
+
+    document.body.innerHTML = "";
+    document.body.appendChild(wrapper);
+}
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    const sender = getParam("sender");
+    const yap = getParam("yap");
+
+    if (!sender || !yap) return;
+
+    const decodedMessage = decodeURIComponent(yap);
+
+    const scroll = await findScroll(sender, decodedMessage, user.email);
+
+    if (scroll) {
+        showFullscreenScroll(scroll);
+    }
+});
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+    (function() {
+        emailjs.init("B27WRyM1IvaQI_Ysy");
+    })();
+</script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+            authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+            projectId: "the-game-dungeon-4d75d",
+            storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+            messagingSenderId: "533459716906",
+            appId: "1:533459716906:web:377bf4ea74cf21bf8aac53",
+            measurementId: "G-CER9SE96MC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let currentTab = 'inbox';
+        const scrollPath = "artifacts/the-game-dungeon-4d75d/public/data/scrolls";
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.isAnonymous) {
+                window.location.href = "/accounts/login/";
+            } else {
+                currentUser = user;
+                document.getElementById('loading-screen').style.display = 'none';
+                initScrollListener();
+                
+                // Inspect search parameters for external auto-fill triggers
+                const urlParams = new URLSearchParams(window.location.search);
+                const sendmessageParam = urlParams.get("sendmessage");
+                if (sendmessageParam) {
+                    window.openCompose();
+                    toInp.value = sendmessageParam;
+                    validate();
+                }
+            }
+        });
+
+        const toInp = document.getElementById('to-email');
+        const textInp = document.getElementById('scroll-text');
+        const sendBtn = document.getElementById('send-btn');
+
+        const validate = () => {
+            const emailVal = toInp.value.trim().toLowerCase();
+            const textVal = textInp.value.trim();
+            const isProperEmail = emailVal.includes('@') || emailVal === 'global';
+            const hasText = textVal.length > 0;
+            sendBtn.disabled = !(isProperEmail && hasText);
+            sendBtn.classList.toggle('opacity-50', sendBtn.disabled);
+            sendBtn.classList.toggle('cursor-not-allowed', sendBtn.disabled);
+        };
+
+        toInp.addEventListener('input', validate);
+        textInp.addEventListener('input', validate);
+
+        function initScrollListener() {
+            const q = query(collection(db, scrollPath), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const scrolls = [];
+                snapshot.forEach(doc => scrolls.push(doc.data()));
+                renderScrolls(scrolls);
+            }, (error) => console.error("Scroll Sync Error:", error));
+        }
+
+        // Custom parser to translate &***'url' "text"***& syntax safely into links
+        function parseScrollText(text) {
+            if (!text) return "";
+            
+            // Escape HTML base tags to ensure Daimyan-proof injection security
+            let escaped = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            
+            // Matches single quotes: ', ’, ‘, `, or escaped &#39;
+            // Matches double quotes: ", “, ”, or escaped &quot;
+            const regex = /&amp;\*\*\*(?:'|’|‘|`|&#39;)(.*?)(?:'|’|’|`|&#39;)\s*(?:"|“|”|&quot;)(.*?)(?:"|“|”|&quot;)\*\*\*&amp;/g;
+            
+            return escaped.replace(regex, (match, url, linkText) => {
+                let cleanUrl = url.replace(/&amp;/g, "&").trim();
+                
+                // Prevent relative directory routing on external links (like google.com trying to go to /chat/google.com)
+                if (!/^([a-z0-9]+:)?\/\//i.test(cleanUrl) && !cleanUrl.startsWith('/') && !cleanUrl.startsWith('#')) {
+                    cleanUrl = 'https://' + cleanUrl;
+                }
+                
+                return `<a href="${cleanUrl}" target="_blank" class="text-blue-500 hover:underline font-bold">${linkText}</a>`;
+            });
+        }
+
+        function renderScrolls(allScrolls) {
+            const feed = document.getElementById('scroll-feed');
+            feed.innerHTML = '';
+            
+            const filtered = allScrolls.filter(s => {
+                const targetLower = (s.targetEmail || "").trim().toLowerCase();
+                const senderLower = (s.senderEmail || "").trim().toLowerCase();
+                const myEmailLower = currentUser.email.toLowerCase();
+                
+                // Establish global status checks
+                const isGlobal = !s.targetEmail || s.targetEmail === "null" || targetLower === "global";
+
+                if (currentTab === 'inbox') {
+                    // Strictly scrolls sent directly to you (not broadcast globally)
+                    return targetLower === myEmailLower;
+                } else if (currentTab === 'sent') {
+                    // Strictly scrolls sent from you that were targeted at a friend (not broadcast globally)
+                    return senderLower === myEmailLower && !isGlobal;
+                } else if (currentTab === 'global') {
+                    // All global broadcasts (whether you sent them or received them)
+                    return isGlobal;
+                }
+                return false;
+            });
+
+            if (filtered.length === 0) {
+                feed.innerHTML = `<div class="text-center py-20 opacity-30 font-mono text-sm uppercase tracking-widest">No signals found...</div>`;
+                return;
+            }
+
+            filtered.forEach(s => {
+                const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'}) : '...';
+                const card = document.createElement('div');
+                card.className = 'scroll-card p-5 rounded-2xl';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-sm font-black text-blue-400">${s.senderEmail.split('@')[0]}</span>
+                        <span class="text-[9px] text-neutral-600 font-mono">${date}</span>
+                    </div>
+                    <p class="text-sm text-neutral-200">${parseScrollText(s.text)}</p>
+                    <div class="mt-4 border-t border-white/5 pt-2 text-[9px] text-neutral-700 font-mono">TO: ${s.targetEmail || 'GLOBAL'}</div>
+                `;
+                feed.appendChild(card);
+            });
+        }
+
+        window.switchTab = (tab) => {
+            currentTab = tab;
+            document.getElementById('tab-inbox').className = tab === 'inbox' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
+            document.getElementById('tab-sent').className = tab === 'sent' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
+            document.getElementById('tab-global').className = tab === 'global' ? 'pb-2 font-bold tab-active transition-all' : 'pb-2 font-bold text-neutral-500 transition-all';
+            initScrollListener();
+        };
+
+        window.openCompose = () => document.getElementById('compose-modal').classList.remove('hidden');
+        window.closeCompose = () => {
+            document.getElementById('compose-modal').classList.add('hidden');
+            toInp.value = ''; textInp.value = ''; validate();
+        };
+
+        async function sendEmailNotification(targetEmail, senderEmail, message) {
+            try {
+                await emailjs.send("service_n2hsxcf", "template_rip4cmz", {
+                    to_email: targetEmail,
+                    to_name: targetEmail.split("@")[0],
+                    from_name: senderEmail.split("@")[0],
+                    message: message
+                });
+
+                console.log("EmailJS: Scroll notification sent.");
+            } catch (err) {
+                console.error("EmailJS Error:", err);
+            }
+        }
+
+        window.sendScroll = async () => {
+            if (sendBtn.disabled) return;
+
+            const target = toInp.value.trim();
+            const text = textInp.value.trim();
+
+            try {
+                // Save scroll to Firestore
+                await addDoc(collection(db, scrollPath), {
+                    senderEmail: currentUser.email,
+                    targetEmail: target,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+
+                // Send email notification
+                if (target.toLowerCase() === "global") {
+                    broadcastGlobalEmail(currentUser.email, text);
+                } else {
+                    sendEmailNotification(target, currentUser.email, text);
+                }
+
+                // Smoothly scrub the target parameters from search registers without hard reload
+                const url = new URL(window.location.href);
+                if (url.searchParams.has("sendmessage")) {
+                    url.searchParams.delete("sendmessage");
+                    window.history.replaceState({}, document.title, url.pathname + url.search);
+                }
+
+                async function broadcastGlobalEmail(senderEmail, message) {
+                    const usersRef = collection(db, "users"); // your user list
+                    const snap = await getDocs(usersRef);
+
+                    snap.forEach(doc => {
+                        const user = doc.data();
+                        const email = user.email;
+
+                        if (!email) return;
+                        if (email === senderEmail) return; // don't email yourself
+
+                        emailjs.send("service_n2hsxcf", "template_rip4cmz", {
+                            to_email: email,
+                            to_name: email.split("@")[0],
+                            from_name: senderEmail.split("@")[0],
+                            message: message
+                        }).then(() => {
+                            console.log("Global email sent to:", email);
+                        }).catch(err => {
+                            console.error("Global email error:", err);
+                        });
+                    });
+                }
+
+                closeCompose();
+            } catch (error) {
+                console.error(error);
+            }
+        };
+    </script>
+    <script type="module">
+    // Import your Daimyan Proof logic
+    import { initTracker } from "/storage/js/tracker.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Standard Dungeon Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
+        authDomain: "the-game-dungeon-4d75d.firebaseapp.com",
+        projectId: "the-game-dungeon-4d75d",
+        storageBucket: "the-game-dungeon-4d75d.firebasestorage.app",
+        messagingSenderId: "533459716906",
+        appId: "1:533459716906:web:377bf4ea74cf21bf8aac53"
+    };
+
+    // Initialize Firebase for this page so the tracker has an active context
+    const app = initializeApp(firebaseConfig);
+    getAuth(app);
+    getFirestore(app);
+
+    // Initialize the tracker with the specific Hall of Records name
+    // This must match your UI cards exactly!
+    initTracker("Chat");
+</script>
+</body>
+</html>
