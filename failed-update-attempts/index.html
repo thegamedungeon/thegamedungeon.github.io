@@ -42,7 +42,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAn1vmoPRGXgtsGQrKGtpf0Jt89HWoXRUI",
@@ -58,6 +58,11 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         let currentUserData = null;
+
+        // Bind auth and functions to window so inline HTML onclick handlers can access them
+        window.auth = auth;
+        window.handleLogin = () => signInWithPopup(auth, new GoogleAuthProvider());
+        window.handleSignOut = () => signOut(auth);
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -193,7 +198,7 @@
                     <p class="text-gray-400 mb-8">${currentUserData.email}</p>
                     <button class="bg-gray-800 w-full mb-3 p-3 rounded-xl border border-gray-700">Edit Username</button>
                     ${isAdmin ? `<button id="admin-btn" class="bg-red-900 text-red-200 w-full mb-3 p-3 rounded-xl border border-red-700 font-bold">Admin Settings</button>` : ''}
-                    <button onclick="signOut(auth)" class="bg-black border border-gray-700 w-full p-3 rounded-xl">Log Out</button>
+                    <button onclick="handleSignOut()" class="bg-black border border-gray-700 w-full p-3 rounded-xl">Log Out</button>
                 </div>
             `;
             if (isAdmin) document.getElementById('admin-btn').onclick = () => showAdminPopup();
@@ -231,7 +236,7 @@
             document.getElementById('main-content').innerHTML = `
                 <div class="text-center p-8">
                     <h1 class="text-4xl font-bold mb-8">The Game Dungeon</h1>
-                    <button onclick="signInWithPopup(auth, new GoogleAuthProvider())" class="bg-white text-black px-8 py-4 rounded-xl font-bold">Login with Google</button>
+                    <button onclick="handleLogin()" class="bg-white text-black px-8 py-4 rounded-xl font-bold">Login with Google</button>
                 </div>
             `;
         }
