@@ -1,10 +1,10 @@
-// Gamepad Navigation Script (Handles Buttons + Navigation Links)
+// Gamepad Navigation Script (with Activation Guard)
 (function () {
+  let isActivated = false; // Script stays dormant until first controller input
   let currentIndex = 0;
   let lastAxisTime = 0;
   let aButtonPressed = false;
 
-  // Includes standard buttons, custom buttons, links with hrefs, and onclick elements
   const INTERACTIVE_SELECTOR = [
     'button',
     'a[href]',
@@ -18,7 +18,6 @@
 
   function getInteractiveElements() {
     return Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR)).filter(el => {
-      // Must be visible on screen and not disabled
       const isVisible = el.offsetWidth > 0 && el.offsetHeight > 0;
       const isNotDisabled = !el.hasAttribute('disabled') && el.getAttribute('aria-disabled') !== 'true';
       return isVisible && isNotDisabled;
@@ -51,6 +50,25 @@
       const now = Date.now();
       const elements = getInteractiveElements();
 
+      // Check if ANY button is pressed or stick is moved
+      const anyButtonPressed = gp.buttons.some(b => b && b.pressed);
+      const stickMoved = gp.axes.some(axis => Math.abs(axis) > 0.5);
+
+      // STEP 1: WAKE UP GUARD
+      if (!isActivated) {
+        if (anyButtonPressed || stickMoved) {
+          isActivated = true; // Wake up!
+          updateHighlight(); // NOW we highlight the first element
+          // If the activation input was the A button, consume it so it doesn't trigger a click
+          if (gp.buttons[0] && gp.buttons[0].pressed) {
+            aButtonPressed = true;
+          }
+        }
+        requestAnimationFrame(pollGamepad);
+        return; // Don't run navigation logic on the exact frame we wake up
+      }
+
+      // STEP 2: NORMAL NAVIGATION LOGIC (Only runs after activation)
       if (elements.length > 0) {
         const dpadUp = gp.buttons[12] && gp.buttons[12].pressed;
         const dpadDown = gp.buttons[13] && gp.buttons[13].pressed;
@@ -60,7 +78,7 @@
         const stickY = gp.axes[1] || 0;
         const stickX = gp.axes[0] || 0;
 
-        // Directional Navigation
+        // D-Pad / Stick Movement
         if (now - lastAxisTime > 200) {
           if (dpadDown || stickY > 0.5 || dpadRight || stickX > 0.5) {
             currentIndex++;
@@ -79,11 +97,10 @@
           aButtonPressed = true;
           const currentEl = elements[currentIndex];
           if (currentEl) {
-            // Trigger standard JS click (handles both buttons and page links)
             currentEl.click();
           }
         } else if (!aButton) {
-          aButtonPressed = false;
+          aButtonPressed = false; // Reset when released
         }
       }
     }
@@ -91,27 +108,11 @@
     requestAnimationFrame(pollGamepad);
   }
 
+  window.addEventListener('focus', () => {
+    if (isActivated) updateHighlight();
+  });
+
   window.addEventListener('DOMContentLoaded', () => {
-    updateHighlight();
     requestAnimationFrame(pollGamepad);
   });
 })();
-// Add these event listeners to the bottom of c.main.js:
-
-// 1. Automatically reclaim control if the browser window toggles focus
-window.addEventListener('focus', () => {
-  updateHighlight();
-});
-
-// 2. Keep Edge awake to controller inputs
-window.addEventListener("gamepadconnected", (e) => {
-  console.log("Gamepad connected:", e.gamepad.id);
-  updateHighlight();
-});
-
-// 3. Force element focus inside the poll loop
-// Inside your existing pollGamepad() function, right when you press a direction, 
-// make sure to re-apply focus to the window/document if needed:
-if (document.activeElement !== elements[currentIndex]) {
-  elements[currentIndex].focus();
-}
