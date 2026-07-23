@@ -96,3 +96,22 @@
     requestAnimationFrame(pollGamepad);
   });
 })();
+// Add these event listeners to the bottom of c.main.js:
+
+// 1. Automatically reclaim control if the browser window toggles focus
+window.addEventListener('focus', () => {
+  updateHighlight();
+});
+
+// 2. Keep Edge awake to controller inputs
+window.addEventListener("gamepadconnected", (e) => {
+  console.log("Gamepad connected:", e.gamepad.id);
+  updateHighlight();
+});
+
+// 3. Force element focus inside the poll loop
+// Inside your existing pollGamepad() function, right when you press a direction, 
+// make sure to re-apply focus to the window/document if needed:
+if (document.activeElement !== elements[currentIndex]) {
+  elements[currentIndex].focus();
+}
