@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Game Dungeon - Scroll Messenger & CribMan AI</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            dungeon: {
+              900: '#0b0f19',
+              800: '#111827',
+              700: '#1f2937',
+              accent: '#6366f1',
+              neon: '#22d3ee',
+              cribman: '#a855f7'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+    .glow-cribman {
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+    }
+    .glow-neon {
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.25);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden antialiased bg-slate-950 text-slate-100">
+
+  <div id="app" class="flex h-screen w-full overflow-hidden">
+    
+    <!-- LEFT SIDEBAR: CHAT LIST -->
+    <aside class="w-80 md:w-96 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-full z-10">
+      
+      <!-- User Profile & Status Header -->
+      <div class="p-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center justify-between">
+        <div class="flex items-center space-x-3 overflow-hidden">
+          <div class="relative">
+            <div id="userAvatar" class="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center font-bold text-indigo-300 uppercase shadow-inner">
+              U
+            </div>
+            <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center space-x-1.5">
+              <span id="currentAccountDisplay" class="font-semibold text-sm text-slate-200 truncate">Loading...</span>
+              <button onclick="promptChangeUser()" class="text-xs text-slate-500 hover:text-indigo-400 transition" title="Switch User Handle">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </div>
+            <p class="text-xs text-slate-400 truncate">The Game Dungeon Account</p>
+          </div>
+        </div>
+        
+        <!-- New Group Chat / Message (+) Button -->
+        <button onclick="openNewChatModal()" class="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shadow-lg hover:shadow-indigo-500/25 active:scale-95" title="New Message / Group Chat">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-2">
+        
+        <!-- PINNED ITEM 1: CRIBMAN AI -->
+        <div id="item-CRIBMAN" onclick="selectChat('CRIBMAN')" class="p-3 rounded-2xl cursor-pointer transition border bg-gradient-to-r from-purple-900/30 via-slate-900 to-indigo-900/20 border-purple-500/40 hover:border-purple-400 glow-cribman group relative overflow-hidden">
+          <div class="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition"></div>
+          <div class="flex items-center space-x-3 relative z-10">
+            <div class="relative flex-shrink-0">
+              <!-- AI Futuristic Custom Cover -->
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-500 to-cyan-400 p-[2px] shadow-lg">
+                <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center overflow-hidden">
+                  <i class="fa-solid fa-brain text-purple-400 text-xl animate-pulse"></i>
+                </div>
+              </div>
+              <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+              </span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-purple-300 flex items-center space-x-1.5">
+                  <span>CribMan AI</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">CORE OS</span>
+                </h3>
+                <span class="text-[10px] text-purple-400/70 font-mono">ONLINE</span>
+              </div>
+              <p class="text-xs text-slate-400 truncate mt-0.5">Dungeon Engine & Assistant loaded...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PINNED ITEM 2: GLOBAL CHAT -->
+        <div id="item-GLOBAL" onclick="selectChat('GLOBAL')" class="p-3 rounded-2xl cursor-pointer transition border bg-slate-900/90 hover:bg-slate-800/80 border-slate-800 hover:border-cyan-500/40 group relative">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 flex-shrink-0 group-hover:scale-105 transition shadow-sm">
+              <i class="fa-solid fa-earth-americas text-xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-sm text-cyan-300 flex items-center space-x-1.5">
+                  <span>GLOBAL</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono border border-cyan-500/20">PUBLIC</span>
+                </h3>
+                <span id="globalTime" class="text-[10px] text-slate-500 font-mono">--:--</span>
+              </div>
+              <p id="globalPreview" class="text-xs text-slate-400 truncate mt-0.5">Broadcast scroll room for everyone...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 pb-1 px-2 flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider font-mono">Direct & Group Chats</span>
+          <span id="chatCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">0</span>
+        </div>
+
+        <!-- RECENT CHATS LIST (STACKED BY MOST RECENT TIMESTAMP) -->
+        <div id="dynamicChatList" class="space-y-1.5">
+          <!-- Dynamically populated via JS -->
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN PANEL: ACTIVE CONVERSATION -->
+    <main class="flex-1 flex flex-col h-full bg-slate-950 relative">
+      
+      <!-- Active Chat Header -->
+      <header class="h-16 border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 flex items-center justify-between flex-shrink-0 z-10">
+        <div class="flex items-center space-x-3 min-w-0">
+          <div id="activeHeaderIcon" class="w-10 h-10 rounded-xl bg-purple-900/30 border border-purple-500/40 flex items-center justify-center text-purple-300 font-bold">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 id="activeHeaderTitle" class="font-bold text-base text-slate-100 truncate">CribMan AI</h2>
+            <p id="activeHeaderSub" class="text-xs text-slate-400 truncate">Autonomous Assistant with Dungeon Tool Intelligence</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="refreshScrolls()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm" title="Refresh Messages">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Message Container -->
+      <div id="messageViewport" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <!-- Messages loaded dynamically -->
+      </div>
+
+      <!-- Message Input Bar -->
+      <footer class="p-4 bg-slate-900/80 border-t border-slate-800 flex-shrink-0">
+        <form id="messageForm" onsubmit="handleSendMessage(event)" class="flex items-center space-x-3 max-w-5xl mx-auto">
+          <div class="relative flex-1">
+            <input 
+              type="text" 
+              id="messageInput" 
+              placeholder="Send a scroll or prompt CribMan..." 
+              autocomplete="off"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+            />
+          </div>
+          <button 
+            type="submit" 
+            id="sendBtn"
+            class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm flex items-center space-x-2 transition shadow-lg hover:shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
+          >
+            <span>Send</span>
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+          </button>
+        </form>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- NEW GROUP CHAT / MESSAGE MODAL -->
+  <div id="newChatModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150">
+      <button onclick="closeNewChatModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-5">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
+          <i class="fa-solid fa-users-plus"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-100">Create Scroll / Group Chat</h3>
+          <p class="text-xs text-slate-400">Add user emails/handles to start a conversation</p>
+        </div>
+      </div>
+
+      <!-- Recipient Input Tags Area -->
+      <div class="space-y-3">
+        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Recipients</label>
+        <div id="chipsContainer" class="min-h-[48px] bg-slate-950 border border-slate-800 rounded-xl p-2 flex flex-wrap items-center gap-2 focus-within:border-indigo-500 transition">
+          <!-- Chips render here -->
+          <input 
+            type="text" 
+            id="emailInput" 
+            placeholder="Type email & hit Enter..." 
+            class="bg-transparent text-sm text-slate-100 focus:outline-none flex-1 min-w-[140px] px-1 py-1"
+            onkeydown="handleEmailKeydown(event)"
+          />
+        </div>
+        <p class="text-[11px] text-slate-500">Press <kbd class="px-1.5 py-0.5 rounded bg-slate-800 font-mono text-slate-300">Enter</kbd> or <kbd class="px-1.5 py-0.5 rounded bg-slate-800 font-mono text-slate-300">,</kbd> after each handle.</p>
+
+        <!-- Warning banner if GLOBAL typed -->
+        <div id="globalNotice" class="hidden p-3 rounded-xl bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 text-xs flex items-center space-x-2">
+          <i class="fa-solid fa-circle-info text-cyan-400 text-sm flex-shrink-0"></i>
+          <span>"GLOBAL" is reserved for the public scroll broadcast channel located directly under CribMan!</span>
+        </div>
+
+        <!-- First Message Bar -->
+        <div class="pt-2">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Enter first message</label>
+          <input 
+            type="text" 
+            id="firstMessageInput" 
+            placeholder="Write your initial scroll content..." 
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+          />
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="mt-6 flex items-center justify-end space-x-3">
+        <button onclick="closeNewChatModal()" class="px-4 py-2.5 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-300 text-sm font-medium transition">
+          Cancel
+        </button>
+        <button onclick="submitNewGroupChat()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition shadow-lg hover:shadow-indigo-500/20">
+          Create & Send Scroll
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FIREBASE & CORE ENGINE ES MODULES -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      getDoc, 
+      getDocs, 
+      addDoc, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Firestore Paths
+    const USERS_PATH = "artifacts/the-game-dungeon-4d75d/public/data/users";
+    const SCROLLS_PATH = "artifacts/the-game-dungeon-4d75d/public/data/scrolls";
+
+    let db = null;
+    let geminiApiKey = null;
+    let currentUser = "player1"; // Default current user handle
+    let activeChatId = "CRIBMAN"; // Default selected chat
+    let recipientTags = [];
+    let allScrolls = [];
+    let cribmanChatHistory = [];
+
+    // =========================================================================
+    // Dynamic Config Loaders
+    // =========================================================================
+
+    async function loadConfigs() {
+      // 1. Firebase Config
+      try {
+        const fbRes = await fetch('/storage/config/firebase/firebaseconfig.txt');
+        if (fbRes.ok) {
+          const fbText = await fbRes.text();
+          const fbConfig = {};
+          fbText.split('\n').forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) return;
+            const idx = trimmed.indexOf(':');
+            if (idx !== -1) {
+              fbConfig[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+            }
+          });
+          const app = initializeApp(fbConfig);
+          db = getFirestore(app);
+          console.log("[Messenger] Firebase initialized successfully!");
+        }
+      } catch (err) {
+        console.warn("[Messenger] Fallback or error loading Firebase config:", err);
+      }
+
+      // 2. CribMan AI Studio Key
+      try {
+        const aiRes = await fetch('/storage/config/cribman/ai.txt');
+        if (aiRes.ok) {
+          geminiApiKey = (await aiRes.text()).trim();
+          console.log("[Messenger] Gemini API Key loaded!");
+        }
+      } catch (err) {
+        console.warn("[Messenger] Could not fetch Gemini API key from file:", err);
+      }
+    }
+
+    // =========================================================================
+    // CRIBMAN TOOLS & DISPATCHER IMPLEMENTATION
+    // =========================================================================
+
+    const cribmanToolDeclarations = [
+      {
+        functionDeclarations: [
+          {
+            name: "getScrollByAccount",
+            description: "Retrieves scrolls sent or received by a given account username or handle.",
+            parameters: { type: "OBJECT", properties: { account: { type: "STRING" } }, required: ["account"] }
+          },
+          {
+            name: "getScrollByKeyword",
+            description: "Searches all scroll messages for a specific keyword.",
+            parameters: { type: "OBJECT", properties: { keyword: { type: "STRING" } }, required: ["keyword"] }
+          },
+          {
+            name: "sendScroll",
+            description: "Dispatches a new scroll message to another user or group.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                sender: { type: "STRING" },
+                reciever: { type: "STRING" },
+                message: { type: "STRING" }
+              },
+              required: ["sender", "reciever", "message"]
+            }
+          },
+          {
+            name: "getUser",
+            description: "Fetches user profile info (friends, username, email, friend-requests).",
+            parameters: { type: "OBJECT", properties: { userHandle: { type: "STRING" } }, required: ["userHandle"] }
+          },
+          {
+            name: "getPlaytimeByGame",
+            description: "Retrieves hours played for a specific game.",
+            parameters: {
+              type: "OBJECT",
+              properties: { userId: { type: "STRING" }, gameName: { type: "STRING" } },
+              required: ["userId", "gameName"]
+            }
+          },
+          {
+            name: "createFileInCodeblock",
+            description: "Returns a codeblock payload to display in chat.",
+            parameters: {
+              type: "OBJECT",
+              properties: { code: { type: "STRING" }, language: { type: "STRING" } },
+              required: ["code"]
+            }
+          }
+        ]
+      }
+    ];
+
+    async function executeCribmanTool(name, args) {
+      console.log(`[CribMan Engine Execution] Tool: ${name}`, args);
+      if (name === "getScrollByAccount") {
+        const clean = (args.account || "").split('@')[0].toLowerCase();
+        return allScrolls.filter(s => 
+          (s.sender && s.sender.toLowerCase() === clean) || 
+          (s.reciever && s.reciever.toLowerCase() === clean)
+        );
+      }
+      if (name === "getScrollByKeyword") {
+        const key = (args.keyword || "").toLowerCase();
+        return allScrolls.filter(s => s.message && s.message.toLowerCase().includes(key));
+      }
+      if (name === "sendScroll") {
+        if (db) {
+          await addDoc(collection(db, SCROLLS_PATH), {
+            sender: args.sender,
+            reciever: args.reciever,
+            message: args.message,
+            timestamp: Date.now()
+          });
+        }
+        return { success: true, message: `Scroll dispatched to ${args.reciever}!` };
+      }
+      if (name === "getUser") {
+        const clean = (args.userHandle || "").split('@')[0];
+        if (db) {
+          const snap = await getDoc(doc(db, USERS_PATH, clean));
+          if (snap.exists()) return snap.data();
+        }
+        return { handle: clean, username: clean, email: `${clean}@service.com` };
+      }
+      if (name === "getPlaytimeByGame") {
+        const gameSlug = (args.gameName || "").toLowerCase().trim().replace(/\s+/g, '-');
+        if (db) {
+          const snap = await getDoc(doc(db, "playtime", args.userId));
+          if (snap.exists()) {
+            return { game: gameSlug, hours: snap.data()[gameSlug] || 0 };
+          }
+        }
+        return { game: gameSlug, hours: 0 };
+      }
+      if (name === "createFileInCodeblock") {
+        return { type: "codeblock", language: args.language || "javascript", code: args.code };
+      }
+      return { result: "Executed tool successfully." };
+    }
+
+    // =========================================================================
+    // Realtime Listener & Scroll Grouping
+    // =========================================================================
+
+    function setupRealtimeScrolls() {
+      if (!db) return;
+      const scrollsRef = collection(db, SCROLLS_PATH);
+      onSnapshot(scrollsRef, (snapshot) => {
+        const scrolls = [];
+        snapshot.forEach(docSnap => {
+          scrolls.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        allScrolls = scrolls;
+        renderSidebarChats();
+        renderActiveConversation();
+      }, (err) => {
+        console.error("Firestore onSnapshot error:", err);
+      });
+    }
+
+    // Helper: Categorize scrolls into direct/group chats
+    function getGroupedChats() {
+      const groups = {};
+
+      allScrolls.forEach(scroll => {
+        const sender = (scroll.sender || "unknown").split('@')[0];
+        const reciever = (scroll.reciever || "unknown").split('@')[0];
+
+        // Skip GLOBAL and Cribman messages from personal list grouping
+        if (reciever.toUpperCase() === "GLOBAL" || reciever.toUpperCase() === "CRIBMAN") return;
+
+        // Create thread identifier for group/DM participants
+        const participants = Array.from(new Set([sender, ...reciever.split(',')]))
+          .filter(p => p)
+          .sort();
+
+        // Check if current user is part of this chat thread
+        if (!participants.includes(currentUser)) return;
+
+        const key = participants.join(',');
+        if (!groups[key] || (scroll.timestamp || 0) > (groups[key].lastTimestamp || 0)) {
+          groups[key] = {
+            key,
+            participants,
+            lastMessage: scroll.message || '',
+            lastTimestamp: scroll.timestamp || Date.now(),
+            sender
+          };
+        }
+      });
+
+      // Return array sorted by most recent timestamp
+      return Object.values(groups).sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+    }
+
+    // =========================================================================
+    // UI Render Functions
+    // =========================================================================
+
+    window.renderSidebarChats = function() {
+      const chatListEl = document.getElementById('dynamicChatList');
+      if (!chatListEl) return;
+
+      const grouped = getGroupedChats();
+      document.getElementById('chatCountBadge').textContent = grouped.length;
+
+      // Render Global preview timestamp
+      const globalScrolls = allScrolls.filter(s => (s.reciever || "").toUpperCase() === "GLOBAL");
+      if (globalScrolls.length > 0) {
+        globalScrolls.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+        const latest = globalScrolls[0];
+        document.getElementById('globalPreview').textContent = `${latest.sender}: ${latest.message}`;
+        document.getElementById('globalTime').textContent = formatTime(latest.timestamp);
+      }
+
+      chatListEl.innerHTML = grouped.map(chat => {
+        const isSelected = activeChatId === chat.key;
+        const otherParticipants = chat.participants.filter(p => p !== currentUser);
+        const displayName = otherParticipants.length > 0 ? otherParticipants.join(', ') : chat.key;
+        const timeStr = formatTime(chat.lastTimestamp);
+
+        return `
+          <div 
+            onclick="selectChat('${chat.key}')" 
+            class="p-3 rounded-2xl cursor-pointer transition border ${
+              isSelected 
+                ? 'bg-indigo-900/40 border-indigo-500/50 shadow-md' 
+                : 'bg-slate-900 hover:bg-slate-800/60 border-slate-800/80 hover:border-slate-700'
+            }"
+          >
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-300 uppercase flex-shrink-0">
+                ${displayName.charAt(0)}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-xs text-slate-200 truncate">${displayName}</h4>
+                  <span class="text-[10px] text-slate-500 font-mono">${timeStr}</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate mt-0.5">${chat.sender === currentUser ? 'You: ' : ''}${chat.lastMessage}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.renderActiveConversation = function() {
+      const viewportEl = document.getElementById('messageViewport');
+      const headerTitle = document.getElementById('activeHeaderTitle');
+      const headerSub = document.getElementById('activeHeaderSub');
+      const headerIcon = document.getElementById('activeHeaderIcon');
+
+      if (!viewportEl) return;
+
+      // Highlighting active item styling
+      document.querySelectorAll('[id^="item-"]').forEach(el => el.classList.remove('ring-2', 'ring-indigo-500'));
+      const currentItem = document.getElementById(`item-${activeChatId}`);
+      if (currentItem) currentItem.classList.add('ring-2', 'ring-indigo-500');
+
+      if (activeChatId === "CRIBMAN") {
+        headerTitle.textContent = "CribMan AI";
+        headerSub.textContent = "Autonomous Assistant with Dungeon Tool Intelligence";
+        headerIcon.className = "w-10 h-10 rounded-xl bg-purple-900/40 border border-purple-500/50 flex items-center justify-center text-purple-300 font-bold";
+        headerIcon.innerHTML = `<i class="fa-solid fa-brain"></i>`;
+
+        renderCribmanHistory(viewportEl);
+        return;
+      }
+
+      if (activeChatId === "GLOBAL") {
+        headerTitle.textContent = "GLOBAL BROADCAST";
+        headerSub.textContent = "Public message scroll channel for all Game Dungeon accounts";
+        headerIcon.className = "w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold";
+        headerIcon.innerHTML = `<i class="fa-solid fa-earth-americas"></i>`;
+
+        const globalScrolls = allScrolls
+          .filter(s => (s.reciever || "").toUpperCase() === "GLOBAL")
+          .sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        renderScrollList(viewportEl, globalScrolls);
+        return;
+      }
+
+      // DM / Group Chat
+      const participants = activeChatId.split(',');
+      const otherNames = participants.filter(p => p !== currentUser).join(', ') || currentUser;
+      headerTitle.textContent = otherNames;
+      headerSub.textContent = `Group Chat (${participants.length} members)`;
+      headerIcon.className = "w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-400 font-bold uppercase";
+      headerIcon.textContent = otherNames.charAt(0);
+
+      const chatScrolls = allScrolls.filter(s => {
+        const sender = (s.sender || "").split('@')[0];
+        const reciever = (s.reciever || "").split('@')[0];
+        const threadParties = Array.from(new Set([sender, ...reciever.split(',')])).sort().join(',');
+        return threadParties === activeChatId;
+      }).sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+      renderScrollList(viewportEl, chatScrolls);
+    };
+
+    function renderScrollList(container, list) {
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
+            <i class="fa-regular fa-comments text-3xl"></i>
+            <p class="text-sm">No scrolls sent yet in this channel.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(scroll => {
+        const isMe = (scroll.sender || "").split('@')[0] === currentUser;
+        return `
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+            <div class="flex items-center space-x-2 mb-1">
+              <span class="text-[11px] font-semibold text-slate-400 font-mono">${scroll.sender || 'Unknown'}</span>
+              <span class="text-[10px] text-slate-600">${formatTime(scroll.timestamp)}</span>
+            </div>
+            <div class="max-w-md px-4 py-2.5 rounded-2xl text-sm ${
+              isMe 
+                ? 'bg-indigo-600 text-white rounded-tr-none shadow-md' 
+                : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
+            }">
+              ${escapeHtml(scroll.message || '')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function renderCribmanHistory(container) {
+      if (cribmanChatHistory.length === 0) {
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
+            <div class="w-16 h-16 rounded-2xl bg-purple-900/30 border border-purple-500/40 flex items-center justify-center text-purple-400 text-2xl shadow-xl">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <h3 class="font-bold text-lg text-purple-200">Yo! I'm CribMan.</h3>
+            <p class="text-xs text-slate-400 max-w-sm">I can answer questions, look up user profiles, check game playtime, dispatch scrolls, and run dungeon tools!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = cribmanChatHistory.map(item => {
+        const isUser = item.role === 'user';
+        return `
+          <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'}">
+            <div class="flex items-center space-x-2 mb-1">
+              <span class="text-[11px] font-semibold ${isUser ? 'text-indigo-400' : 'text-purple-400'} font-mono">
+                ${isUser ? currentUser : 'CribMan AI'}
+              </span>
+            </div>
+            <div class="max-w-xl px-4 py-3 rounded-2xl text-sm ${
+              isUser 
+                ? 'bg-indigo-600 text-white rounded-tr-none' 
+                : 'bg-slate-900 border border-purple-500/30 text-slate-200 rounded-tl-none shadow-lg'
+            }">
+              ${formatMessageText(item.text)}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // =========================================================================
+    // Messaging & Gemini API Logic
+    // =========================================================================
+
+    window.handleSendMessage = async function(event) {
+      event.preventDefault();
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+
+      if (activeChatId === "CRIBMAN") {
+        cribmanChatHistory.push({ role: 'user', text });
+        renderActiveConversation();
+        await callCribmanAI(text);
+        return;
+      }
+
+      // Regular Firebase Scroll dispatch
+      const reciever = activeChatId === "GLOBAL" ? "GLOBAL" : activeChatId;
+
+      if (db) {
+        await addDoc(collection(db, SCROLLS_PATH), {
+          sender: currentUser,
+          reciever: reciever,
+          message: text,
+          timestamp: Date.now()
+        });
+      } else {
+        // Local fallback display if offline
+        allScrolls.push({
+          sender: currentUser,
+          reciever: reciever,
+          message: text,
+          timestamp: Date.now()
+        });
+        renderSidebarChats();
+        renderActiveConversation();
+      }
+    };
+
+    async function callCribmanAI(userPrompt) {
+      const apiKey = geminiApiKey || "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const systemInstruction = {
+        parts: [{ 
+          text: `You are CribMan, the intelligent AI OS assistant for The Crib / Game Dungeon setup. You are friendly, helpful, gamer-minded, and equipped with a full suite of dungeon tools to query user profiles, check playtime, send scrolls, search messages, and generate code.` 
+        }]
+      };
+
+      const contents = cribmanChatHistory.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }));
+
+      const payload = {
+        contents: contents,
+        tools: cribmanToolDeclarations,
+        systemInstruction: systemInstruction
+      };
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const candidate = data.candidates?.[0];
+
+        if (candidate?.content?.parts) {
+          for (const part of candidate.content.parts) {
+            if (part.functionCall) {
+              // Execute tool call and respond back
+              const toolResult = await executeCribmanTool(part.functionCall.name, part.functionCall.args);
+              cribmanChatHistory.push({ 
+                role: 'model', 
+                text: `*Executed Tool [${part.functionCall.name}]:* \n\`\`\`json\n${JSON.stringify(toolResult, null, 2)}\n\`\`\`` 
+              });
+            } else if (part.text) {
+              cribmanChatHistory.push({ role: 'model', text: part.text });
+            }
+          }
+        } else {
+          cribmanChatHistory.push({ role: 'model', text: "Yo, I heard you! What's the next move?" });
+        }
+      } catch (err) {
+        console.error("CribMan AI call failed:", err);
+        cribmanChatHistory.push({ role: 'model', text: "Ayo, my core connection lagged out. Make sure my key is valid!" });
+      }
+
+      renderActiveConversation();
+    }
+
+    // =========================================================================
+    // Modal & Recipient Tag Handling
+    // =========================================================================
+
+    window.openNewChatModal = function() {
+      recipientTags = [];
+      document.getElementById('emailInput').value = '';
+      document.getElementById('firstMessageInput').value = '';
+      document.getElementById('globalNotice').classList.add('hidden');
+      renderChips();
+      document.getElementById('newChatModal').classList.remove('hidden');
+    };
+
+    window.closeNewChatModal = function() {
+      document.getElementById('newChatModal').classList.add('hidden');
+    };
+
+    window.handleEmailKeydown = function(event) {
+      if (event.key === 'Enter' || event.key === ',') {
+        event.preventDefault();
+        const input = document.getElementById('emailInput');
+        const val = input.value.trim().replace(/,/g, '');
+
+        if (!val) return;
+
+        // Check for GLOBAL constraint
+        if (val.toUpperCase() === 'GLOBAL') {
+          document.getElementById('globalNotice').classList.remove('hidden');
+          input.value = '';
+          return;
+        }
+
+        document.getElementById('globalNotice').classList.add('hidden');
+        const cleanHandle = val.split('@')[0].toLowerCase();
+        if (!recipientTags.includes(cleanHandle)) {
+          recipientTags.push(cleanHandle);
+        }
+        input.value = '';
+        renderChips();
+      }
+    };
+
+    function renderChips() {
+      const container = document.getElementById('chipsContainer');
+      const input = document.getElementById('emailInput');
+
+      const chipEls = recipientTags.map((tag, idx) => `
+        <span class="inline-flex items-center space-x-1.5 bg-indigo-900/60 border border-indigo-500/40 text-indigo-300 text-xs px-2.5 py-1 rounded-lg">
+          <span>${tag}</span>
+          <button onclick="removeChip(${idx})" class="hover:text-red-400 transition">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </span>
+      `).join('');
+
+      container.innerHTML = chipEls;
+      container.appendChild(input);
+      input.focus();
+    }
+
+    window.removeChip = function(index) {
+      recipientTags.splice(index, 1);
+      renderChips();
+    };
+
+    window.submitNewGroupChat = async function() {
+      const firstMsg = document.getElementById('firstMessageInput').value.trim();
+      if (recipientTags.length === 0) {
+        alert("Please enter at least one recipient handle/email!");
+        return;
+      }
+      if (!firstMsg) {
+        alert("Please enter a first message to kick off the scroll!");
+        return;
+      }
+
+      const recieverStr = recipientTags.join(',');
+
+      if (db) {
+        await addDoc(collection(db, SCROLLS_PATH), {
+          sender: currentUser,
+          reciever: recieverStr,
+          message: firstMsg,
+          timestamp: Date.now()
+        });
+      }
+
+      closeNewChatModal();
+      selectChat(Array.from(new Set([currentUser, ...recipientTags])).sort().join(','));
+    };
+
+    // =========================================================================
+    // Account Switcher & Utility
+    // =========================================================================
+
+    window.selectChat = function(chatId) {
+      activeChatId = chatId;
+      renderSidebarChats();
+      renderActiveConversation();
+    };
+
+    window.promptChangeUser = function() {
+      const handle = prompt("Enter your Game Dungeon user handle or email:", currentUser);
+      if (handle && handle.trim()) {
+        currentUser = handle.trim().split('@')[0].toLowerCase();
+        document.getElementById('currentAccountDisplay').textContent = currentUser;
+        document.getElementById('userAvatar').textContent = currentUser.charAt(0);
+        renderSidebarChats();
+        renderActiveConversation();
+      }
+    };
+
+    window.refreshScrolls = function() {
+      renderSidebarChats();
+      renderActiveConversation();
+    };
+
+    function formatTime(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatMessageText(text) {
+      let formatted = escapeHtml(text);
+      // Basic codeblock formatting
+      formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono text-xs overflow-x-auto my-2 text-cyan-300">$2</pre>');
+      return formatted.replace(/\n/g, '<br>');
+    }
+
+    // Initialize App
+    window.onload = async function() {
+      await loadConfigs();
+      setupRealtimeScrolls();
+      document.getElementById('currentAccountDisplay').textContent = currentUser;
+      document.getElementById('userAvatar').textContent = currentUser.charAt(0);
+      renderSidebarChats();
+      renderActiveConversation();
+    };
+  </script>
+</body>
+</html>
